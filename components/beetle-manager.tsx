@@ -463,7 +463,7 @@ export function BeetleManager() {
 
   const getInitialValues = (type: EntryType, emptyForm: any) => {
     if (!isAutoFillEnabled) return emptyForm;
-    const last = [...entries].reverse().find((e) => e.type === type);
+    const last = [...entries].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).find((e) => e.type === type);
     if (!last) return emptyForm;
 
     const base = {
@@ -523,7 +523,7 @@ export function BeetleManager() {
     };
 
     const lines = text.split('\n');
-    const patch: any = { type: "幼虫", logs: [] };
+    const patch: any = { logs: [] };
     lines.forEach((line) => {
       const l = line.trim();
       if (!l) return;
@@ -562,6 +562,7 @@ export function BeetleManager() {
       if (logMatch) {
         patch.logs.push({
           id: Math.random().toString(36).substr(2, 9),
+          type: "幼虫",
           date: fixOcrDate(logMatch[1]),
           substrate: logMatch[2],
           moisture: parseInt(logMatch[3]),
@@ -588,6 +589,11 @@ export function BeetleManager() {
         patch.feedingDate = fixOcrDate(fDateMatch[1]);
         patch.type = "成虫";
         if (!patch.emergenceDate) patch.emergenceDate = patch.actualEmergenceDate || "";
+      }
+
+      // デフォルト判定
+      if (!patch.type) {
+        patch.type = patch.logs.length > 0 ? "幼虫" : "成虫";
       }
     });
     return patch;
@@ -989,12 +995,14 @@ export function BeetleManager() {
             id="create-form"
             initialValues={pastedData && pastedData.type === "成虫" ? { ...emptyAdultForm, ...pastedData } : getInitialValues("成虫", emptyAdultForm)}
             onSubmit={(value) => {
-              addAdult(value);
+              const mName = generateUniqueMName(value.managementName || "", entries);
+              addAdult({ ...value, managementName: mName });
               setIsCreating(false);
             }}
             onCancel={() => setIsCreating(false)}
           />
         ) : null}
+
         {isCreating && !editingEntry && createType === "幼虫" ? (
           <LarvaForm
             id="create-form"
@@ -1021,7 +1029,8 @@ export function BeetleManager() {
             initialValues={spawnTemplate ? { ...emptySpawnSetForm, ...spawnTemplate } : getInitialValues("産卵セット", emptySpawnSetForm)}
             allEntries={entries}
             onSubmit={(value) => {
-              addSpawnSet(value);
+              const mName = generateUniqueMName(value.managementName || "", entries);
+              addSpawnSet({ ...value, managementName: mName });
               setIsCreating(false);
             }}
             onCancel={() => setIsCreating(false)}

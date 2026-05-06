@@ -41,19 +41,26 @@ export function EntryBaseFields({
     const lSet = new Set<string>();
     const mSet = new Set<string>();
 
-    allEntries.forEach((entry) => {
+    // 文脈フィルタリング: 入力済みの名前と関連のある個体のみを抽出
+    const contextEntries = allEntries.filter(e => 
+      (!japaneseName || e.japaneseName === japaneseName) && 
+      (!scientificName || e.scientificName === scientificName)
+    );
+
+    (contextEntries.length > 0 ? contextEntries : allEntries).forEach((entry) => {
       if (entry.japaneseName) jSet.add(entry.japaneseName);
       if (entry.scientificName) sSet.add(entry.scientificName);
       if (entry.locality) lSet.add(entry.locality);
-      if (entry.managementName) mSet.add(entry.managementName);
+      // 管理名は数値部分を除去してサジェスト
+      if (entry.managementName) mSet.add(entry.managementName.replace(/[- ]\d+$/, ""));
     });
     return {
       japanese: Array.from(jSet).sort(),
       scientific: Array.from(sSet).sort(),
       locality: Array.from(lSet).sort(),
-      management: Array.from(mSet).sort(),
+      management: Array.from(mSet).filter(v => v.length > 0).sort(),
     };
-  }, [allEntries]);
+  }, [allEntries, japaneseName, scientificName]);
 
   const filteredEntries = useMemo(() => {
     const matched = allEntries.filter(e => !scientificName || e.scientificName === scientificName);

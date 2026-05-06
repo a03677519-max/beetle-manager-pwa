@@ -119,6 +119,13 @@ export function EntryCard({
         
         <div className="flex justify-between items-end mt-3">
           <dl className="text-[13px] text-[#8B7D7B] space-y-1">
+            {entry.type === "成虫" && (
+              <div className="text-[11px] font-bold text-gray-600 space-y-0.5">
+                {entry.size && <div><span className="text-muted">サイズ:</span> {entry.size}mm</div>}
+                {entry.emergenceDate && <div><span className="text-muted">羽化日:</span> {entry.emergenceDate.replace(/-/g, "/")}</div>}
+                {entry.feedingDate && <div><span className="text-muted">後食日:</span> {entry.feedingDate.replace(/-/g, "/")}</div>}
+              </div>
+            )}
             {entry.type === "幼虫" && logs[0] && (
               <div className="text-[11px] font-bold text-gray-600 bg-gray-50/80 p-2 rounded-xl mb-2 border border-gray-100">
                 <div className="flex gap-2 mb-0.5">

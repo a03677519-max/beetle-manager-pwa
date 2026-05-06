@@ -85,7 +85,12 @@ function DrumrollPicker<T extends string | number>({ options, value, onChange }:
   const stopPropagation = (e: React.TouchEvent) => {
     if (scrollRef.current) {
       const isScrollable = scrollRef.current.scrollHeight > scrollRef.current.clientHeight;
-      if (isScrollable) {
+      const container = scrollRef.current;
+      const isAtTop = container.scrollTop <= 0;
+      const isAtBottom = container.scrollTop + container.clientHeight >= container.scrollHeight;
+      
+      // 端に達していない時のみイベントを止めることで、ページ全体のスクロールと共存させる
+      if (!isAtTop && !isAtBottom) {
         e.stopPropagation();
       }
     }
@@ -338,15 +343,17 @@ export function BottomSheetSelect({
                 className="bg-white w-full max-w-md rounded-t-3xl p-6 shadow-2xl space-y-4 pointer-events-auto z-10"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="flex justify-between items-center mb-2">
+                <div className="flex justify-between items-center mb-4">
                   <span className="text-[11px] font-bold text-[#A67C52] uppercase tracking-wider">{label}</span>
-                  <button
-                    type="button"
-                    className="bg-[#FF9800] text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-sm"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    閉じる
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      className="bg-gray-100 text-gray-500 px-4 py-1.5 rounded-full text-xs font-bold"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      閉じる
+                    </button>
+                  </div>
                 </div>
                 <div className="space-y-2 max-h-[60vh] overflow-y-auto">
                   {options.map((option) => (
