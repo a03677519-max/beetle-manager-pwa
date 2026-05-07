@@ -22,20 +22,22 @@ export function Navbar({ activeTab, setActiveTab, onTabChange, onAdd, showAddBut
   ];
 
   return (
-    <div className="fixed bottom-on Button) */}
+    <div className="fixed bottom-8 left-6 right-6 z-50">
       {showAddButton && (
       <div className="absolute -top-16 left-1/2 -translate-x-1/2">
         <button
           onClick={onAdd}
           className="w-14 h-14 bg-[#FF9800] text-white rounded-full shadow-[0_8px_25px_rgba(255,152,0,0.4)] flex items-center justify-center active:scale-90 transition-all border-4 border-white"
         >
+          <Plus size={32} />
         </button>
       </div>
       )}
 
       {/* ナビゲーションバー本体 */}
       <nav className="bg-white/90 backdrop-blur-2xl border border-white/60 rounded-[32px] px-2 py-3 flex items-center justify-around shadow-[0_10px_40px_rgba(0,0,0,0.1)]">
-        {navItems.map((it
+        {navItems.map((item) => {
+          const Icon = item.icon;
           const isActive = activeTab === item.id;
 
           return (
