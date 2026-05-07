@@ -1,10 +1,11 @@
 "use client";
 
+import { Plus } from "lucide-react";
 import { buildGenerationLabel } from "@/components/entry-fields";
 import type { SpawnSet } from "@/types/beetle";
 import { formatDate } from "@/lib/utils";
 
-export function SpawnSetDetail({ entry }: { entry: SpawnSet }) {
+export function SpawnSetDetail({ entry, onAddSecondSet }: { entry: SpawnSet; onAddSecondSet: () => void }) {
   const sets = [
     {
       title: "1回目",
@@ -36,6 +37,12 @@ export function SpawnSetDetail({ entry }: { entry: SpawnSet }) {
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-between px-1">
+        <h3 className="font-black text-gray-700">産卵セット履歴</h3>
+        <button onClick={onAddSecondSet} className="bg-[#FF9800] text-white p-1 rounded-full shadow-lg active:scale-95 transition-all">
+          <Plus size={20} />
+        </button>
+      </div>
       <div className="flex gap-4 overflow-x-auto touch-pan-x pb-2 no-scrollbar">
         {sets.map((set, index) => (
           <div key={index} className="min-w-[85%] bg-white p-4 rounded-3xl border border-gray-100 shadow-sm space-y-3">

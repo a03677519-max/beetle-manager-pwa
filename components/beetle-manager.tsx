@@ -53,6 +53,7 @@ export function BeetleManager() {
   const editingEntry = entries.find((entry) => entry.id === editingId) ?? null;
 
   const [selectedEntry, setSelectedEntry] = useState<BeetleEntry | null>(null);
+  const [isAddingSecondSet, setIsAddingSecondSet] = useState(false);
   
   // クロップ用のステート
   const [cropSrc, setCropSrc] = useState<string | null>(null);
@@ -692,7 +693,7 @@ export function BeetleManager() {
   };
 
   return (
-    <div className="app-container font-cute bg-[#F5F0EB] min-h-screen pb-[calc(100px+env(safe-area-inset-bottom,16px))] leading-[1.7]">
+    <div className="app-container font-cute bg-[#F5F0EB] min-h-screen pb-[calc(120px+env(safe-area-inset-bottom,16px))] leading-[1.7]">
       {/* 固定ヘッダーセクション */}
       <section className="sticky top-0 z-30 bg-white/80 backdrop-blur-md pt-8 pb-4 px-6 border-b border-gray-100 mb-6">
         <div className="flex justify-between items-center mb-4">
@@ -1232,9 +1233,22 @@ export function BeetleManager() {
             onClose={() => setSelectedEntry(null)}
             onFetchTemperature={fetchCurrentTemperature}
             isFetchingTemperature={isFetching}
+            onAddSecondSet={() => setIsAddingSecondSet(true)}
           />
         )}
       </AnimatePresence>
+      <Modal isOpen={isAddingSecondSet} onClose={() => setIsAddingSecondSet(false)} title="2回目セット登録">
+        {selectedEntry && selectedEntry.type === "産卵セット" && (
+          <SpawnSetSecondForm
+            initialValues={{ ...emptySpawnSetForm, ...selectedEntry }}
+            onSubmit={(values) => {
+              updateSpawnSet(selectedEntry.id, { ...selectedEntry, ...values } as any);
+              setIsAddingSecondSet(false);
+            }}
+            onCancel={() => setIsAddingSecondSet(false)}
+          />
+        )}
+      </Modal>
       {isSettingsOpen && <SettingsView onClose={() => setIsSettingsOpen(false)} />}
       <Navbar
         activeTab={activeTab}
