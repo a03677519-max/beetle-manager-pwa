@@ -247,6 +247,25 @@ export function BeetleManager() {
 
   const [expandedSpecies, setExpandedSpecies] = useState<string[]>([]);
 
+  // 自動スクロール用のRef
+  const groupRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const prevExpandedCount = useRef(0);
+
+  useEffect(() => {
+    if (expandedSpecies.length > prevExpandedCount.current) {
+      const lastOpened = expandedSpecies[expandedSpecies.length - 1];
+      const element = groupRefs.current[lastOpened];
+      if (element) {
+        // アニメーションによるレイアウト変更を考慮して少し遅延させてからスクロール実行
+        const timer = setTimeout(() => {
+          element.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 300);
+        return () => clearTimeout(timer);
+      }
+    }
+    prevExpandedCount.current = expandedSpecies.length;
+  }, [expandedSpecies]);
+
   const toggleSpecies = (sciName: string) => {
     setExpandedSpecies(prev => 
       prev.includes(sciName) ? prev.filter(s => s !== sciName) : [...prev, sciName]
@@ -1163,7 +1182,11 @@ export function BeetleManager() {
               const japaneseName = group[0]?.japaneseName || "不明";
               
               return (
-                <div key={sciName} className="mb-4">
+                <div 
+                  key={sciName} 
+                  ref={(el) => { groupRefs.current[sciName] = el; }}
+                  className="mb-4 scroll-mt-80"
+                >
                   {!isSelectionMode && query.length === 0 && (
                     <button 
                       onClick={() => toggleSpecies(sciName)}
