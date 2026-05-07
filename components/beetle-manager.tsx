@@ -24,6 +24,7 @@ import { ENTRY_TYPES } from "@/types/beetle";
 import { AdultForm } from "./beetle/adult/adult-form";
 import { LarvaForm } from "./beetle/larva/larva-form";
 import { SpawnSetForm } from "./beetle/spawn-set/spawn-set-form";
+import { SpawnSetSecondForm } from "./beetle/spawn-set/spawn-set-second-form";
 import { EntryCard } from "./beetle/shared/entry-card";
 import { EmptyState } from "./beetle/shared/empty-state";
 import { EntryDetail } from "./beetle/shared/entry-detail";
