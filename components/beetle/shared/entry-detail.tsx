@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { X, Edit2, Copy, Trash2 } from "lucide-react";
+import { useEffect, useRef } from "react";
 import type { BeetleEntry } from "@/types/beetle";
 import { AdultDetail } from "@/components/beetle/adult/adult-detail";
 import { LarvaDetail } from "@/components/beetle/larva/larva-detail";
@@ -25,13 +26,16 @@ export function EntryDetail({
 }) {
   const startEditing = useBeetleStore((state) => state.startEditing);
   const deleteEntry = useBeetleStore((state) => state.deleteEntry);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    modalRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, []);
 
   const copyToClipboard = () => {
-    // 実行時にプロパティが存在するか安全に確認するため、拡張した型として扱う
     const e = entry as any;
     const fmtDate = (d: string) => (d || "").replace(/-/g, "/");
     
-    // 1-4行目
     let text = `和名 ${e.japaneseName}\n`;
     text += `学名 ${e.scientificName}\n`;
     text += `産地 ${e.locality || ""}\n`;
@@ -39,10 +43,8 @@ export function EntryDetail({
     const displayDate = e.hatchDate || e.setDate || e.createdAt || "";
     text += `累代 ${buildGenerationLabel(e.generation)} ${e.managementName || ""} ${fmtDate(displayDate)}`.trimEnd() + "\n";
     
-    // 5行目：空行
     text += `\n`;
     
-    // 6-9行目：飼育ログ（最大4件）
     const logs = (e.type === "幼虫" ? e.logs : []).slice(0, 4);
     for (let i = 0; i < 4; i++) {
       if (logs[i]) {
@@ -53,7 +55,6 @@ export function EntryDetail({
       }
     }
     
-    // 10行目：羽化・後食
     const eDate = e.actualEmergenceDate || e.emergenceDate || "";
     const fDate = e.feedingDate || "";
     const eType = e.emergenceType || "羽化";
@@ -86,6 +87,7 @@ export function EntryDetail({
         onClick={onClose} 
       />
       <motion.div 
+        ref={modalRef}
         initial={{ y: "100%" }}
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
@@ -139,7 +141,12 @@ export function EntryDetail({
                 isFetchingTemperature={isFetchingTemperature}
               />
             ) : null}
-            {entry.type === "産卵セット" ? <SpawnSetDetail entry={entry} onAddSecondSet={onAddSecondSet || (() => {})} /> : null}
+            {entry.type === "産卵セット" ? (
+              <SpawnSetDetail 
+                entry={entry} 
+                onAddSecondSet={onAddSecondSet || (() => {})} 
+              />
+            ) : null}
           </div>
         </div>
 
