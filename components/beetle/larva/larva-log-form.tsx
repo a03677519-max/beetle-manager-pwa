@@ -98,6 +98,9 @@ export function LarvaLogForm({
       className="bg-white/50 backdrop-blur-sm p-4 rounded-3xl border border-white/60 space-y-4"
       onKeyDown={(e) => {
         if (e.key === 'Enter') {
+          // テキストエリア内でのEnterは改行を優先
+          if ((e.target as HTMLElement).tagName === 'TEXTAREA') return;
+
           e.preventDefault();
           const form = e.currentTarget;
           const focusable = Array.from(

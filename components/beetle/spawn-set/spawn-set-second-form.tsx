@@ -25,6 +25,9 @@ export function SpawnSetSecondForm({
       className="flex flex-col h-[70dvh] overflow-hidden"
       onKeyDown={(e) => {
         if (e.key === 'Enter') {
+          // テキストエリア内でのEnterは改行を優先
+          if ((e.target as HTMLElement).tagName === 'TEXTAREA') return;
+
           e.preventDefault();
           const form = e.currentTarget;
           const focusable = Array.from(

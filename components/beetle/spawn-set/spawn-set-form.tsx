@@ -59,6 +59,9 @@ export function SpawnSetForm({
       className={`flex flex-col h-full overflow-hidden touch-pan-y ${className || ''}`}
       onKeyDown={(e) => {
         if (e.key === 'Enter') {
+          // テキストエリア内でのEnterは改行を優先
+          if ((e.target as HTMLElement).tagName === 'TEXTAREA') return;
+
           e.preventDefault();
           const form = formRef.current;
           if (!form) return;

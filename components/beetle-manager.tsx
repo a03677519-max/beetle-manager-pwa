@@ -1275,6 +1275,12 @@ export function BeetleManager() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         onTabChange={(tab) => {
+          // モーダルや詳細画面が開いていればすべて閉じる
+          setIsCreating(false);
+          startEditing(null);
+          setSelectedEntry(null);
+          setIsSettingsOpen(false);
+
           if (tab === "設定") { setIsSettingsOpen(true); return; }
           if (ENTRY_TYPES.includes(tab as EntryType)) setSelectedType(tab as EntryType);
         }}
