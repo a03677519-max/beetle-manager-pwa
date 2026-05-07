@@ -387,7 +387,6 @@ export function AnalysisView({
                        ))
                      ) : (
                        <p className="text-center text-gray-400 py-10">データがありません</p>
-                       <p className="text-center text-gray-400 py-10">データがありません</p>
                      )}
                    </div>
                  </>
@@ -439,7 +438,7 @@ export function AnalysisView({
                        </div>
                      ))
                      ) : (
-                       <p className="text-center text-gray-400 py-10">チE�Eタがありません</p>
+                       <p className="text-center text-gray-400 py-10">データがありません</p>
                      )}
                    </div>
                  </>
