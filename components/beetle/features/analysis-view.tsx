@@ -115,7 +115,7 @@ export function AnalysisView({
       const lastOpened = expandedNames[expandedNames.length - 1];
       const element = itemRefs.current[lastOpened];
       if (element) {
-        // アニメーションによるレイアウト変更を老E�Eして遁E��実衁E
+        // アニメーションによるレイアウト変更を考慮して遅延実行
         const timer = setTimeout(() => {
           element.scrollIntoView({ behavior: "smooth", block: "start" });
         }, 300);
@@ -125,7 +125,7 @@ export function AnalysisView({
     prevExpandedCount.current = expandedNames.length;
   }, [expandedNames]);
 
-  // 管琁E��で自然頁E��ートするユーチE��リチE��
+  // 管理名で自然順ソートするユーティリティ
   const sortRecords = (records: AnalysisRecord[]) => {
     return [...records].sort((a, b) => a.mName.localeCompare(b.mName, "ja", { numeric: true }));
   };
@@ -133,12 +133,12 @@ export function AnalysisView({
   const groupedStats = useMemo(() => {
     const groups: Record<string, GroupStats> = {};
     entries.forEach((entry) => {
-      const key = entry.scientificName || "未設宁E;
+      const key = entry.scientificName || "未設定";
       const mName = entry.managementName || "No Name";
       const currentGender = 
         entry.type === "成虫" ? entry.gender : 
-        entry.type === "幼虫" ? (entry.logs[0]?.gender || "不�E") : 
-        "不�E";
+        entry.type === "幼虫" ? (entry.logs[0]?.gender || "不明") : 
+        "不明";
 
       if (!groups[key]) {
         groups[key] = {
@@ -165,18 +165,18 @@ export function AnalysisView({
           parentAggregatedTotals: {},
         };
       }
-      if (entry.type === "産卵セチE��") {
+      if (entry.type === "産卵セット") {
         const sEntry = entry as any;
         if (sEntry.temperature) groups[key].temperatures.push(Number(sEntry.temperature));
         groups[key].spawnSetEntries.push(sEntry as SpawnSet);
         if (sEntry.eggCount !== undefined) {
-          groups[key].spawnEggRecords.push({ val: sEntry.eggCount, mName, gender: "不�E", entryId: sEntry.id });
+          groups[key].spawnEggRecords.push({ val: sEntry.eggCount, mName, gender: "不明", entryId: sEntry.id });
         }
         if (sEntry.larvaCount !== undefined) {
-          groups[key].spawnLarvaRecords.push({ val: sEntry.larvaCount, mName, gender: "不�E", entryId: sEntry.id });
+          groups[key].spawnLarvaRecords.push({ val: sEntry.larvaCount, mName, gender: "不明", entryId: sEntry.id });
         }
         const total = (sEntry.eggCount || 0) + (sEntry.larvaCount || 0);
-        groups[key].recoveryRecords.push({ val: total, mName, gender: "不�E", entryId: entry.id });
+        groups[key].recoveryRecords.push({ val: total, mName, gender: "不明", entryId: entry.id });
       }
       if (entry.type === "幼虫") {
         entry.logs.forEach(log => {
@@ -189,8 +189,8 @@ export function AnalysisView({
           if (log.temperature) groups[key].temperatures.push(Number(log.temperature));
         });
         if (entry.actualEmergenceDate) {
-          // LarvaBeetle型にhatchDateが含まれてぁE��ぁE��合�Eエラーを回避
-          const hatchDate = entry.hatchDate || entry.extractionDate || entry.createdAt; // 孵化日 > 割出日 > 作�E日の優先頁E��E
+          // LarvaBeetle型にhatchDateが含まれていない場合のエラーを回避
+          const hatchDate = entry.hatchDate || entry.extractionDate || entry.createdAt; // 孵化日 > 割出日 > 作成日の優先順位
           const days = daysBetween(hatchDate, entry.actualEmergenceDate);
           if (days !== null) groups[key].larvaRecords.push({ val: days, mName, gender: currentGender, entryId: entry.id });
         }
@@ -244,15 +244,15 @@ export function AnalysisView({
           Math.max(...group.spawnSetEntries.map((s: any) => (s.eggCount || 0) + (s.larvaCount || 0)))
         ] as [number, number] : null,
       },
-      // 親(管琁E��)ごとに合箁E
+        // 親(管理名)ごとに合算
       parentAggregatedTotals: group.spawnSetEntries.reduce((acc, s) => {
         const ss = s as any;
-        const name = ss.managementName || ss.japaneseName || "不�E";
+          const name = ss.managementName || ss.japaneseName || "不明";
         if (!acc[name]) acc[name] = { eggs: 0, larvae: 0 };
-        acc[name].eggs += ss.eggCount || 0;
-        acc[name].larvae += ss.larvaCount || 0;
+          acc[name].eggs += (ss.eggCount || 0);
+          acc[name].larvae += (ss.larvaCount || 0);
         return acc;
-      }, {} as Record<string, { eggs: number; larvae: number }>),
+        }, {} as Record<string, { eggs: number; larvae: number }>),
     }));
   }, [entries]);
 
@@ -295,19 +295,19 @@ export function AnalysisView({
                   </button>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                <AnalysisItem label="産卵方況E value={stat.spawnSetEntries.length > 0 ? `${stat.spawnSetEntries.length}件の記録` : "-"} onClick={() => setSelectedSpawnTable(stat as any)} isLink />
-                <AnalysisItem label="成虫サイズ篁E��" value={stat.sizeRange ? `${stat.sizeRange[0]}、E{stat.sizeRange[1]}mm` : "-"} onClick={() => setSelectedAnalysis({ label: "成虫サイズ刁E��E, records: stat.adultSizeRecords })} isLink />
-                <AnalysisItem label="回収合訁E(卵+幼虫)" value={stat.spawnResultRange.total ? `${stat.spawnResultRange.total[0]}、E{stat.spawnResultRange.total[1]}個` : "-"} onClick={() => setSelectedAnalysis({ label: "回収合計データ", records: stat.recoveryRecords })} isLink />
-                <AnalysisItem label="休眠期間篁E��" value={stat.dormancyRange ? `${stat.dormancyRange[0]}、E{stat.dormancyRange[1]}日` : "-"} onClick={() => setSelectedAnalysis({ label: "休眠チE�Eタ", records: stat.dormancyRecords })} isLink />
-                <AnalysisItem label="寿命篁E��" value={stat.lifespanRange ? `${stat.lifespanRange[0]}、E{stat.lifespanRange[1]}日` : "-"} onClick={() => setSelectedAnalysis({ label: "生存データ", records: stat.lifespanRecords })} isLink />
-                <AnalysisItem label="幼虫期間篁E��" value={stat.larvaRange ? `${stat.larvaRange[0]}、E{stat.larvaRange[1]}日` : "-"} onClick={() => setSelectedAnalysis({ label: "幼虫チE�Eタ", records: stat.larvaRecords })} isLink />
+                <AnalysisItem label="産卵状況" value={stat.spawnSetEntries.length > 0 ? `${stat.spawnSetEntries.length}件の記録` : "-"} onClick={() => setSelectedSpawnTable(stat as any)} isLink />
+                <AnalysisItem label="成虫サイズ範囲" value={stat.sizeRange ? `${stat.sizeRange[0]}～${stat.sizeRange[1]}mm` : "-"} onClick={() => setSelectedAnalysis({ label: "成虫サイズ分布", records: stat.adultSizeRecords })} isLink />
+                <AnalysisItem label="回収合計(卵+幼虫)" value={stat.spawnResultRange.total ? `${stat.spawnResultRange.total[0]}～${stat.spawnResultRange.total[1]}個` : "-"} onClick={() => setSelectedAnalysis({ label: "回収合計データ", records: stat.recoveryRecords })} isLink />
+                <AnalysisItem label="休眠期間範囲" value={stat.dormancyRange ? `${stat.dormancyRange[0]}～${stat.dormancyRange[1]}日` : "-"} onClick={() => setSelectedAnalysis({ label: "休眠データ", records: stat.dormancyRecords })} isLink />
+                <AnalysisItem label="寿命範囲" value={stat.lifespanRange ? `${stat.lifespanRange[0]}～${stat.lifespanRange[1]}日` : "-"} onClick={() => setSelectedAnalysis({ label: "生存データ", records: stat.lifespanRecords })} isLink />
+                <AnalysisItem label="幼虫期間範囲" value={stat.larvaRange ? `${stat.larvaRange[0]}～${stat.larvaRange[1]}日` : "-"} onClick={() => setSelectedAnalysis({ label: "幼虫データ", records: stat.larvaRecords })} isLink />
                 <div className="col-span-2">
-                  <AnalysisItem label="親別合訁E value={Object.keys(stat.parentAggregatedTotals).length > 0 ? `${Object.keys(stat.parentAggregatedTotals).length}親の合計を確認` : "-"} onClick={() => setSelectedAnalysis({ 
-                    label: "親別回収合箁E, 
-                    records: Object.entries(stat.parentAggregatedTotals).map(([name, val]) => ({ val: val.eggs + val.larvae, mName: name, gender: "不�E", entryId: "" }))
+                  <AnalysisItem label="親別合計" value={Object.keys(stat.parentAggregatedTotals).length > 0 ? `${Object.keys(stat.parentAggregatedTotals).length}親の合計を確認` : "-"} onClick={() => setSelectedAnalysis({ 
+                    label: "親別回収合算", 
+                    records: Object.entries(stat.parentAggregatedTotals).map(([name, val]) => ({ val: val.eggs + val.larvae, mName: name, gender: "不明", entryId: "" }))
                   })} isLink />
                 </div>
-                <AnalysisItem label="成虫サイズ vs 最大幼虫体重" value={stat.adultSizeVsMaxLarvaWeightRecords.length > 0 ? `${stat.adultSizeVsMaxLarvaWeightRecords.length}件のチE�Eタ` : "-"} onClick={() => setSelectedAnalysis({
+                <AnalysisItem label="成虫サイズ vs 最大幼虫体重" value={stat.adultSizeVsMaxLarvaWeightRecords.length > 0 ? `${stat.adultSizeVsMaxLarvaWeightRecords.length}件のデータ` : "-"} onClick={() => setSelectedAnalysis({
                   label: "成虫サイズ vs 最大幼虫体重",
                   scatterData: stat.adultSizeVsMaxLarvaWeightRecords.map(r => ({
                     x: r.maxLarvaWeight,
@@ -336,7 +336,7 @@ export function AnalysisView({
                <h3 className="font-black text-xl mb-6 text-[#333D33] tracking-tight">{selectedAnalysis.label}</h3>
 
                <div className="flex bg-gray-100 p-1 rounded-xl mb-6 shrink-0">
-                 {(["オス", "メス", "不�E"] as const).map((g) => (
+                 {(["オス", "メス", "不明"] as const).map((g) => (
                    <button key={g} onClick={() => setViewGender(g)} className={`flex-1 py-2 text-xs font-black rounded-xl transition-all ${viewGender === g ? "bg-white text-[var(--primary)] shadow-sm" : "text-gray-400"}`}>{g}</button>
                  ))} {/* text-[var(--primary)] will be handled by global CSS variable or direct replacement */}
                </div>
@@ -367,7 +367,7 @@ export function AnalysisView({
                            return null;
                          }} />
                          <Scatter
-                           data={selectedAnalysis.scatterData.filter(d => viewGender === "不�E" || d.gender === viewGender)}
+                           data={selectedAnalysis.scatterData.filter(d => viewGender === "不明" || d.gender === viewGender)}
                            fill={viewGender === "オス" ? "#E67E22" : viewGender === "メス" ? "#EC407A" : "#D35400"}
                            style={{ cursor: "pointer" }}
                            onClick={(d: any) => { if (d?.entryId) { setSelectedEntry(entries.find(e => e.id === d.entryId) || null); setSelectedAnalysis(null); } }}
@@ -376,8 +376,8 @@ export function AnalysisView({
                      </ResponsiveContainer>
                    </div>
                    <div className="flex-1 overflow-y-auto space-y-2 mb-4 pr-2 custom-scrollbar">
-                     {selectedAnalysis.scatterData.filter(d => viewGender === "不�E" || d.gender === viewGender).length > 0 ? (
-                       selectedAnalysis.scatterData.filter(d => viewGender === "不�E" || d.gender === viewGender).map((rec, i) => (
+                     {selectedAnalysis.scatterData.filter(d => viewGender === "不明" || d.gender === viewGender).length > 0 ? (
+                       selectedAnalysis.scatterData.filter(d => viewGender === "不明" || d.gender === viewGender).map((rec, i) => (
                          <div key={i} className="flex justify-between items-center p-3 bg-white shadow-sm rounded-xl font-black border border-gray-200">
                            <span className="text-gray-400 text-[10px] truncate max-w-[120px]">{rec.mName}</span>
                            <span className="text-[#FF9800] text-sm leading-none">
@@ -386,7 +386,8 @@ export function AnalysisView({
                          </div>
                        ))
                      ) : (
-                       <p className="text-center text-gray-400 py-10">チE�Eタがありません</p>
+                       <p className="text-center text-gray-400 py-10">データがありません</p>
+                       <p className="text-center text-gray-400 py-10">データがありません</p>
                      )}
                    </div>
                  </>
@@ -404,7 +405,7 @@ export function AnalysisView({
                                const unit = selectedAnalysis.label.includes("体重") ? "g" :
                                             selectedAnalysis.label.includes("期間") || selectedAnalysis.label.includes("寿命") ? "日" :
                                             selectedAnalysis.label.includes("サイズ") ? "mm" :
-                                            selectedAnalysis.label.includes("卵") ? "倁E : "頭";
+                                            selectedAnalysis.label.includes("卵") ? "個" : "頭";
                                return <div className="bg-white/90 p-2 rounded-lg text-[10px] font-bold shadow-xl">
                                  <p>{payload[0].payload.name}</p>
                                  <p className="text-[#FF9800] text-sm font-black">
@@ -433,7 +434,7 @@ export function AnalysisView({
                             {selectedAnalysis.label.includes("体重") ? "g" :
                              selectedAnalysis.label.includes("期間") || selectedAnalysis.label.includes("寿命") ? "日" :
                              selectedAnalysis.label.includes("サイズ") ? "mm" :
-                             selectedAnalysis.label.includes("卵") ? "倁E : "頭"}
+                             selectedAnalysis.label.includes("卵") ? "個" : "頭"}
                           </span></span>
                        </div>
                      ))
@@ -452,14 +453,14 @@ export function AnalysisView({
         )}
       </AnimatePresence>
 
-      {/* 産卵セチE�� エクセル風チE�Eブルモーダル */}
+      {/* 産卵セット エクセル風テーブルモーダル */}
       <AnimatePresence>
         {selectedSpawnTable && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedSpawnTable(null)} />
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white p-6 rounded-[32px] w-full max-w-lg max-h-[80vh] shadow-2xl relative z-10 flex flex-col overflow-hidden">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="font-black text-xl text-[#4A3F35]">産卵セチE��記録: {selectedSpawnTable.japaneseName}</h3>
+                <h3 className="font-black text-xl text-[#4A3F35]">産卵セット記録: {selectedSpawnTable.japaneseName}</h3>
                 <button onClick={() => setSelectedSpawnTable(null)} className="p-2 bg-gray-100 rounded-full"><X size={18} /></button>
               </div>
 
@@ -473,7 +474,7 @@ export function AnalysisView({
                 }}
                 className="mb-4 w-full flex items-center justify-center gap-2 py-3 bg-[#FF9800] text-white rounded-2xl text-xs font-black shadow-lg active:scale-95 transition-all"
               >
-                <PlusCircle size={16} /> 新しいセチE��を見本として入劁E
+                <PlusCircle size={16} /> 新しいセットを見本として入力
               </button>
               
               <div className="flex-1 overflow-y-auto space-y-3 pr-1 custom-scrollbar">
@@ -489,19 +490,19 @@ export function AnalysisView({
                     >
                       <div className="flex justify-between items-start mb-3">
                         <div>
-                          <div className="font-bold text-gray-800">{s.managementName || "管琁E��なぁE}</div>
+                          <div className="font-bold text-gray-800">{s.managementName || "管理名なし"}</div>
                           <div className="text-[10px] text-gray-400 font-medium">
-                            {s.setDate?.replace(/-/g, "/")} 、E{s.setEndDate?.replace(/-/g, "/") || "継続中"}
+                            {(s.setDate || "").replace(/-/g, "/")} 〜 {s.setEndDate?.replace(/-/g, "/") || "継続中"}
                           </div>
                         </div>
                         <div className="bg-[#FF9800] text-white px-2 py-1 rounded-lg text-[10px] font-black shadow-sm">
-                          回収訁E {totalRecovery}
+                          回収合計 {totalRecovery}
                         </div>
                       </div>
 
                       <div className="grid grid-cols-2 gap-2 text-[11px] mb-3">
                         <div className="bg-white/80 p-2 rounded-xl border border-gray-50">
-                          <span className="text-gray-400 block text-[9px] uppercase font-bold mb-0.5">使用マッチE/span>
+                          <span className="text-gray-400 block text-[9px] uppercase font-bold mb-0.5">使用マット</span>
                           <span className="font-bold text-gray-700 truncate block">{s.substrate || "-"}</span>
                         </div>
                         <div className="bg-white/80 p-2 rounded-xl border border-gray-50">
@@ -509,18 +510,18 @@ export function AnalysisView({
                           <span className="font-bold text-gray-700">{s.temperature ? `${s.temperature}℃` : "-"}</span>
                         </div>
                         <div className="bg-white/80 p-2 rounded-xl border border-gray-50">
-                          <span className="text-gray-400 block text-[9px] uppercase font-bold mb-0.5">詰圧 / 水刁E/span>
+                          <span className="text-gray-400 block text-[9px] uppercase font-bold mb-0.5">詰圧 / 水分</span>
                           <span className="font-bold text-gray-700">{s.pressure || "-"} / {s.moisture}</span>
                         </div>
                         <div className="bg-white/80 p-2 rounded-xl border border-gray-50">
-                          <span className="text-gray-400 block text-[9px] uppercase font-bold mb-0.5">同屁E/span>
+                          <span className="text-gray-400 block text-[9px] uppercase font-bold mb-0.5">同居</span>
                           <span className="font-bold text-gray-700">{s.cohabitation}</span>
                         </div>
                       </div>
 
                       {s.memo && (
                         <div className="bg-white/50 p-2 rounded-xl border border-gray-50 mb-3">
-                          <span className="text-gray-400 block text-[9px] uppercase font-bold mb-0.5">備老E��モ</span>
+                          <span className="text-gray-400 block text-[9px] uppercase font-bold mb-0.5">備考メモ</span>
                           <p className="text-gray-600 line-clamp-2 text-[10px] leading-relaxed italic">{s.memo}</p>
                         </div>
                       )}
@@ -545,13 +546,13 @@ export function AnalysisView({
                         }}
                         className="w-full flex items-center justify-center gap-2 py-2 bg-[#FF9800]/10 text-[#FF9800] rounded-xl text-[10px] font-black active:scale-95 transition-all"
                       >
-                        <PlusCircle size={14} /> こ�E冁E��を見本として新規登録
+                        <PlusCircle size={14} /> この内容を見本として新規登録
                       </button>
                     </div>
                   );
                 })}
               </div>
-              <p className="mt-4 text-[10px] text-gray-400 font-bold text-center italic">行をタチE�Eして詳細チE�EタへジャンチE/p>
+              <p className="mt-4 text-[10px] text-gray-400 font-bold text-center italic">行をタップして詳細データへジャンプ</p>
             </motion.div>
           </div>
         )}
@@ -561,9 +562,9 @@ export function AnalysisView({
         <h3 className="text-[10px] font-black text-[#D7CCC8] uppercase tracking-widest mb-4">Storage Management</h3>
         <div className="mb-4 p-4 bg-white/40 rounded-2xl border border-white/60 flex items-center justify-between">
           <div className="text-[10px] font-bold text-gray-600">
-            {isPersisted ? "✁E永続ストレージ有効" : "⚠�E�E削除される可能性がありまぁE}
+            {isPersisted ? "永続ストレージ有効" : "削除される可能性があります"}
           </div>
-          {!isPersisted && <button onClick={requestPersistence} className="text-[10px] bg-[#FF9800] text-white px-3 py-1 rounded-full font-bold">有効匁E/button>}
+          {!isPersisted && <button onClick={requestPersistence} className="text-[10px] bg-[#FF9800] text-white px-3 py-1 rounded-full font-bold">有効化</button>}
         </div>
         <div className="grid grid-cols-2 gap-3">
           <button 
@@ -572,9 +573,9 @@ export function AnalysisView({
             className="col-span-2 flex items-center justify-center gap-2 bg-[#FF9800] text-white py-3 rounded-xl text-xs font-bold shadow-md active:scale-95 transition-all disabled:opacity-50"
           >
             <Upload size={14} /> 
-            {isSyncing ? "同期中..." : "GitHubへチE�Eタを同朁E}
+            {isSyncing ? "同期中..." : "GitHubへデータを同期"}
           </button>
-          <button onClick={handleExport} className="flex items-center justify-center gap-2 bg-white/80 py-3 rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-all"><Download size={14} /> 書き�EぁE/button>
+          <button onClick={handleExport} className="flex items-center justify-center gap-2 bg-white/80 py-3 rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-all"><Download size={14} /> 書き出し</button>
           <label className="flex items-center justify-center gap-2 bg-white/80 py-3 rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-all cursor-pointer"><Upload size={14} /> 読み込み<input type="file" hidden onChange={handleImport} accept=".json" /></label>
         </div>
       </section>
