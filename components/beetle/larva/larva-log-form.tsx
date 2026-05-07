@@ -96,6 +96,19 @@ export function LarvaLogForm({
   return (
     <form
       className="bg-white/50 backdrop-blur-sm p-4 rounded-3xl border border-white/60 space-y-4"
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const form = e.currentTarget;
+          const focusable = Array.from(
+            form.querySelectorAll('input:not([type="hidden"]), textarea, button:not([disabled])')
+          ) as HTMLElement[];
+          const index = focusable.indexOf(e.target as HTMLElement);
+          if (index > -1 && index < focusable.length - 1) {
+            focusable[index + 1].focus();
+          }
+        }
+      }}
       onSubmit={(event) => {
         event.preventDefault();
         const payload = {

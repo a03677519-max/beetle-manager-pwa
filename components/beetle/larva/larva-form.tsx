@@ -144,6 +144,20 @@ export function LarvaForm({
       id={id}
       ref={formRef}
       className={`flex flex-col h-full overflow-hidden ${className || ''}`}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const form = formRef.current;
+          if (!form) return;
+          const focusable = Array.from(
+            form.querySelectorAll('input:not([type="hidden"]), textarea, button:not([disabled])')
+          ) as HTMLElement[];
+          const index = focusable.indexOf(e.target as HTMLElement);
+          if (index > -1 && index < focusable.length - 1) {
+            focusable[index + 1].focus();
+          }
+        }
+      }}
       onSubmit={(event) => {
         event.preventDefault();
         const finalValues = { ...values };

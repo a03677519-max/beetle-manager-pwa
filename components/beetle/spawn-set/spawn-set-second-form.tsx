@@ -23,6 +23,19 @@ export function SpawnSetSecondForm({
     <form
       id={id}
       className="flex flex-col h-[70dvh] overflow-hidden"
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const form = e.currentTarget;
+          const focusable = Array.from(
+            form.querySelectorAll('input:not([type="hidden"]), textarea, button:not([disabled])')
+          ) as HTMLElement[];
+          const index = focusable.indexOf(e.target as HTMLElement);
+          if (index > -1 && index < focusable.length - 1) {
+            focusable[index + 1].focus();
+          }
+        }
+      }}
       onSubmit={(e) => { e.preventDefault(); onSubmit(values); }}
     >
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
