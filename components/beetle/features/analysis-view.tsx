@@ -491,7 +491,7 @@ export function AnalysisView({
                         <div>
                           <div className="font-bold text-gray-800">{s.managementName || "管理名なし"}</div>
                           <div className="text-[10px] text-gray-400 font-medium">
-                            {s.setDate.replace(/-/g, "/")} 〜 {s.setEndDate?.replace(/-/g, "/") || "継続中"}
+                            {s.setDate?.replace(/-/g, "/")} 〜 {s.setEndDate?.replace(/-/g, "/") || "継続中"}
                           </div>
                         </div>
                         <div className="bg-[#FF9800] text-white px-2 py-1 rounded-lg text-[10px] font-black shadow-sm">
