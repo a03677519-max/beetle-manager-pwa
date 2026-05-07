@@ -89,7 +89,7 @@ export const emptySpawnSetForm: SpawnSetFormValues = {
   moisture: 3,
   temperature: "",
   cohabitation: COHABITATION_OPTIONS[1],
-};
+} as any;
 
 export const useBeetleStore = create<BeetleState>()(
   persist(

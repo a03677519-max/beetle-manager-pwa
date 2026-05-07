@@ -166,15 +166,16 @@ export function AnalysisView({
         };
       }
       if (entry.type === "産卵セット") {
-        if (entry.temperature) groups[key].temperatures.push(Number(entry.temperature));
-        groups[key].spawnSetEntries.push(entry);
-        if (entry.eggCount !== undefined) {
-          groups[key].spawnEggRecords.push({ val: entry.eggCount, mName, gender: "不明", entryId: entry.id });
+        const sEntry = entry as any;
+        if (sEntry.temperature) groups[key].temperatures.push(Number(sEntry.temperature));
+        groups[key].spawnSetEntries.push(sEntry as SpawnSet);
+        if (sEntry.eggCount !== undefined) {
+          groups[key].spawnEggRecords.push({ val: sEntry.eggCount, mName, gender: "不明", entryId: sEntry.id });
         }
-        if (entry.larvaCount !== undefined) {
-          groups[key].spawnLarvaRecords.push({ val: entry.larvaCount, mName, gender: "不明", entryId: entry.id });
+        if (sEntry.larvaCount !== undefined) {
+          groups[key].spawnLarvaRecords.push({ val: sEntry.larvaCount, mName, gender: "不明", entryId: sEntry.id });
         }
-        const total = (entry.eggCount || 0) + (entry.larvaCount || 0);
+        const total = (sEntry.eggCount || 0) + (sEntry.larvaCount || 0);
         groups[key].recoveryRecords.push({ val: total, mName, gender: "不明", entryId: entry.id });
       }
       if (entry.type === "幼虫") {
@@ -238,14 +239,18 @@ export function AnalysisView({
       spawnResultRange: {
         eggs: group.spawnEggRecords.length ? [Math.min(...group.spawnEggRecords.map(r => r.val)), Math.max(...group.spawnEggRecords.map(r => r.val))] as [number, number] : null,
         larvae: group.spawnLarvaRecords.length ? [Math.min(...group.spawnLarvaRecords.map(r => r.val)), Math.max(...group.spawnLarvaRecords.map(r => r.val))] as [number, number] : null,
-        total: group.spawnSetEntries.length ? [Math.min(...group.spawnSetEntries.map(s => (s.eggCount || 0) + (s.larvaCount || 0))), Math.max(...group.spawnSetEntries.map(s => (s.eggCount || 0) + (s.larvaCount || 0)))] as [number, number] : null,
+        total: group.spawnSetEntries.length ? [
+          Math.min(...group.spawnSetEntries.map((s: any) => (s.eggCount || 0) + (s.larvaCount || 0))),
+          Math.max(...group.spawnSetEntries.map((s: any) => (s.eggCount || 0) + (s.larvaCount || 0)))
+        ] as [number, number] : null,
       },
       // 親(管理名)ごとに合算
       parentAggregatedTotals: group.spawnSetEntries.reduce((acc, s) => {
-        const name = s.managementName || s.japaneseName || "不明";
+        const ss = s as any;
+        const name = ss.managementName || ss.japaneseName || "不明";
         if (!acc[name]) acc[name] = { eggs: 0, larvae: 0 };
-        acc[name].eggs += s.eggCount || 0;
-        acc[name].larvae += s.larvaCount || 0;
+        acc[name].eggs += ss.eggCount || 0;
+        acc[name].larvae += ss.larvaCount || 0;
         return acc;
       }, {} as Record<string, { eggs: number; larvae: number }>),
     }));
@@ -472,7 +477,9 @@ export function AnalysisView({
               </button>
               
               <div className="flex-1 overflow-y-auto space-y-3 pr-1 custom-scrollbar">
-                {selectedSpawnTable.spawnSetEntries.sort((a,b) => b.setDate.localeCompare(a.setDate)).map((s) => {
+                {[...selectedSpawnTable.spawnSetEntries]
+                  .sort((a, b) => (b.setDate || "").localeCompare(a.setDate || ""))
+                  .map((s) => {
                   const totalRecovery = (s.eggCount || 0) + (s.larvaCount || 0);
                   return (
                     <div 

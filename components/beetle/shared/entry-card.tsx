@@ -147,8 +147,8 @@ export function EntryCard({
               <div>
                 {(() => {
                   const { label, value } = entry.type === "幼虫" 
-                    ? getLarvaDateInfo(entry as any) 
-                    : getSpawnSetDateInfo(entry as any);
+                    ? getLarvaDateInfo(entry) 
+                    : getSpawnSetDateInfo(entry);
                   return <><span className="text-muted">{label}:</span> {value}</>;
                 })()}
               </div>

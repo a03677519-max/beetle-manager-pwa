@@ -40,11 +40,12 @@ export function SpawnSetForm({
   // 外部からの初期値変更を同期
   useEffect(() => {
     const fmt = (d?: string) => (d ? d.slice(0, 10) : "");
+    const init = initialValues as any;
     setValues({
       ...initialValues,
-      setDate: fmt(initialValues.setDate),
-      setEndDate: fmt(initialValues.setEndDate),
-    });
+      setDate: fmt(init.setDate),
+      setEndDate: fmt(init.setEndDate),
+    } as any);
     // 再編集時に記録に応じてタイプを推定
     if (initialValues.setEndDate) {
       // 必要に応じてロジック追加。デフォルトは割出。
@@ -73,39 +74,39 @@ export function SpawnSetForm({
         <div className="grid grid-cols-2 gap-3">
           <DateRollField
             label="開始日"
-            value={values.setDate}
-            onChange={(value) => setValues({ ...values, setDate: value })}
+            value={values.setDate || ""}
+            onChange={(value) => setValues((prev) => ({ ...prev, setDate: value }))}
           />
           <DateRollField
             label={endDateType === '割出' ? '割出日' : '掘り出し日'}
             value={values.setEndDate || ""}
-            onChange={(value) => setValues({ ...values, setEndDate: value })}
+            onChange={(value) => setValues((prev) => ({ ...prev, setEndDate: value }))}
           />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <BottomSheetInput
             label="使用マット"
-            value={values.substrate}
+            value={values.substrate || ""}
             placeholder="例: クヌギマット"
-            onChange={(val) => setValues({ ...values, substrate: val })}
+            onChange={(val) => setValues((prev) => ({ ...prev, substrate: val }))}
           />
           <BottomSheetInput
             label="容器サイズ"
-            value={values.containerSize}
+            value={values.containerSize || ""}
             placeholder="例: 2000cc"
-            onChange={(val) => setValues({ ...values, containerSize: val })}
+            onChange={(val) => setValues((prev) => ({ ...prev, containerSize: val }))}
           />
         </div>
         <BottomSheetInput
           label="詰圧"
-          value={values.pressure}
+          value={values.pressure || ""}
           placeholder="例: 硬め / 3"
-          onChange={(val) => setValues({ ...values, pressure: val })}
+          onChange={(val) => setValues((prev) => ({ ...prev, pressure: val }))}
         />
         <MoistureField
-          value={values.moisture}
-          onChange={(value) => setValues({ ...values, moisture: value })}
+          value={values.moisture || 3}
+          onChange={(value) => setValues((prev) => ({ ...prev, moisture: value }))}
         />
       <SwitchBotTemperatureField
         value={values.temperature}
@@ -127,13 +128,13 @@ export function SpawnSetForm({
           label="割出卵数"
           value={values.eggCount || ""}
           placeholder="例: 15"
-          onChange={(val) => setValues({ ...values, eggCount: parseInt(val) || 0 })}
+          onChange={(val) => setValues((prev) => ({ ...prev, eggCount: parseInt(val) || 0 }))}
         />
         <BottomSheetInput
           label="割出幼虫数"
           value={values.larvaCount || ""}
           placeholder="例: 10"
-          onChange={(val) => setValues({ ...values, larvaCount: parseInt(val) || 0 })}
+          onChange={(val) => setValues((prev) => ({ ...prev, larvaCount: parseInt(val) || 0 }))}
         />
       </div>
       <div className="pt-2 border-t border-gray-50 space-y-2">
@@ -142,12 +143,12 @@ export function SpawnSetForm({
           <DateRollField
             label="2回目開始日"
             value={values.secondSetDate || ""}
-            onChange={(value) => setValues({ ...values, secondSetDate: value })}
+            onChange={(value) => setValues((prev) => ({ ...prev, secondSetDate: value }))}
           />
           <DateRollField
             label="2回目割出日"
             value={values.secondSetEndDate || ""}
-            onChange={(value) => setValues({ ...values, secondSetEndDate: value })}
+            onChange={(value) => setValues((prev) => ({ ...prev, secondSetEndDate: value }))}
           />
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -155,20 +156,20 @@ export function SpawnSetForm({
             label="2回目卵数"
             value={values.secondEggCount || ""}
             placeholder="例: 5"
-            onChange={(val) => setValues({ ...values, secondEggCount: parseInt(val) || 0 })}
+            onChange={(val) => setValues((prev) => ({ ...prev, secondEggCount: parseInt(val) || 0 }))}
           />
           <BottomSheetInput
             label="2回目幼虫数"
             value={values.secondLarvaCount || ""}
             placeholder="例: 3"
-            onChange={(val) => setValues({ ...values, secondLarvaCount: parseInt(val) || 0 })}
+            onChange={(val) => setValues((prev) => ({ ...prev, secondLarvaCount: parseInt(val) || 0 }))}
           />
         </div>
         <label className="flex items-center gap-2 text-xs font-bold text-gray-500 mt-2">
           <input
             type="checkbox"
             checked={!!values.useDifferentMethod}
-            onChange={(e) => setValues({ ...values, useDifferentMethod: e.target.checked })}
+            onChange={(e) => setValues((prev) => ({ ...prev, useDifferentMethod: e.target.checked }))}
           />
           前回とセット方法が違う
         </label>
@@ -178,23 +179,23 @@ export function SpawnSetForm({
               label="2回目マット"
               value={values.secondSubstrate || ""}
               placeholder="例: 微粒子マット"
-              onChange={(val) => setValues({ ...values, secondSubstrate: val })}
+              onChange={(val) => setValues((prev) => ({ ...prev, secondSubstrate: val }))}
             />
             <BottomSheetInput
               label="2回目容器"
               value={values.secondContainerSize || ""}
               placeholder="例: 1500cc"
-              onChange={(val) => setValues({ ...values, secondContainerSize: val })}
+              onChange={(val) => setValues((prev) => ({ ...prev, secondContainerSize: val }))}
             />
             <BottomSheetInput
               label="2回目詰圧"
               value={values.secondPressure || ""}
               placeholder="例: 3"
-              onChange={(val) => setValues({ ...values, secondPressure: val })}
+              onChange={(val) => setValues((prev) => ({ ...prev, secondPressure: val }))}
             />
             <MoistureField
               value={values.secondMoisture ?? 3}
-              onChange={(value) => setValues({ ...values, secondMoisture: value })}
+              onChange={(value) => setValues((prev) => ({ ...prev, secondMoisture: value }))}
             />
           </div>
         )}

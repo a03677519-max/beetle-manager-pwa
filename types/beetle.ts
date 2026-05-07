@@ -97,6 +97,25 @@ export type SpawnSet = BaseBeetle & {
   feedingDate: string;
   temperature: string;
   cohabitation: CohabitationOption;
+  // 産卵セットのデータ項目（フラット構造の互換性維持のため）
+  setDate?: string;
+  setEndDate?: string;
+  eggCount?: number;
+  larvaCount?: number;
+  substrate?: string;
+  containerSize?: string;
+  pressure?: string;
+  moisture?: number;
+  // 2回目セット用のデータ項目
+  secondSetDate?: string;
+  secondSetEndDate?: string;
+  secondEggCount?: number;
+  secondLarvaCount?: number;
+  secondSubstrate?: string;
+  secondContainerSize?: string;
+  secondPressure?: string;
+  secondMoisture?: number;
+  useDifferentMethod?: boolean;
 };
 
 export type BeetleEntry = AdultBeetle | LarvaBeetle | SpawnSet;

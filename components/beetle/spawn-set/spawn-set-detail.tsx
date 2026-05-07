@@ -6,30 +6,31 @@ import type { SpawnSet } from "@/types/beetle";
 import { formatDate } from "@/lib/utils";
 
 export function SpawnSetDetail({ entry, onAddSecondSet }: { entry: SpawnSet; onAddSecondSet: () => void }) {
+  const s = entry as any;
   const sets = [
     {
       title: "1回目",
-      setDate: entry.setDate,
-      setEndDate: entry.setEndDate,
-      eggCount: entry.eggCount,
-      larvaCount: entry.larvaCount,
-      substrate: entry.substrate,
-      containerSize: entry.containerSize,
-      pressure: entry.pressure,
-      moisture: entry.moisture,
+      setDate: s.setDate,
+      setEndDate: s.setEndDate,
+      eggCount: s.eggCount,
+      larvaCount: s.larvaCount,
+      substrate: s.substrate,
+      containerSize: s.containerSize,
+      pressure: s.pressure,
+      moisture: s.moisture,
     },
-    ...(entry.secondSetDate
+    ...(s.secondSetDate
       ? [
           {
             title: "2回目",
-            setDate: entry.secondSetDate,
-            setEndDate: entry.secondSetEndDate,
-            eggCount: entry.secondEggCount,
-            larvaCount: entry.secondLarvaCount,
-            substrate: entry.secondSubstrate || entry.substrate,
-            containerSize: entry.secondContainerSize || entry.containerSize,
-            pressure: entry.secondPressure || entry.pressure,
-            moisture: entry.secondMoisture ?? entry.moisture,
+            setDate: s.secondSetDate,
+            setEndDate: s.secondSetEndDate,
+            eggCount: s.secondEggCount,
+            larvaCount: s.secondLarvaCount,
+            substrate: s.secondSubstrate || s.substrate,
+            containerSize: s.secondContainerSize || s.containerSize,
+            pressure: s.secondPressure || s.pressure,
+            moisture: s.secondMoisture ?? s.moisture,
           },
         ]
       : []),
