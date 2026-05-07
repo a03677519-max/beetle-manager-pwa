@@ -94,6 +94,11 @@ export type SpawnSet = BaseBeetle & {
   secondSetEndDate?: string;
   secondEggCount?: number;
   secondLarvaCount?: number;
+  useDifferentMethod?: boolean;
+  secondSubstrate?: string;
+  secondContainerSize?: string;
+  secondPressure?: string;
+  secondMoisture?: number;
 };
 
 export type BeetleEntry = AdultBeetle | LarvaBeetle | SpawnSet;

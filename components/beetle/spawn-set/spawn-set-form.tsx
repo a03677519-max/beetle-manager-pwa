@@ -164,6 +164,40 @@ export function SpawnSetForm({
             onChange={(val) => setValues({ ...values, secondLarvaCount: parseInt(val) || 0 })}
           />
         </div>
+        <label className="flex items-center gap-2 text-xs font-bold text-gray-500 mt-2">
+          <input
+            type="checkbox"
+            checked={!!values.useDifferentMethod}
+            onChange={(e) => setValues({ ...values, useDifferentMethod: e.target.checked })}
+          />
+          前回とセット方法が違う
+        </label>
+        {values.useDifferentMethod && (
+          <div className="grid grid-cols-2 gap-3 mt-2 bg-gray-50 p-2 rounded-lg">
+            <BottomSheetInput
+              label="2回目マット"
+              value={values.secondSubstrate || ""}
+              placeholder="例: 微粒子マット"
+              onChange={(val) => setValues({ ...values, secondSubstrate: val })}
+            />
+            <BottomSheetInput
+              label="2回目容器"
+              value={values.secondContainerSize || ""}
+              placeholder="例: 1500cc"
+              onChange={(val) => setValues({ ...values, secondContainerSize: val })}
+            />
+            <BottomSheetInput
+              label="2回目詰圧"
+              value={values.secondPressure || ""}
+              placeholder="例: 3"
+              onChange={(val) => setValues({ ...values, secondPressure: val })}
+            />
+            <MoistureField
+              value={values.secondMoisture ?? 3}
+              onChange={(value) => setValues({ ...values, secondMoisture: value })}
+            />
+          </div>
+        )}
       </div>
 
       <BottomSheetInput

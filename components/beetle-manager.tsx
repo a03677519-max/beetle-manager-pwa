@@ -692,12 +692,18 @@ export function BeetleManager() {
   };
 
   return (
-    <div className="app-container font-cute bg-[#F5F0EB] min-h-screen pb-[calc(140px+env(safe-area-inset-bottom,32px))] leading-[1.7]">
+    <div className="app-container font-cute bg-[#F5F0EB] min-h-screen pb-[calc(100px+env(safe-area-inset-bottom,16px))] leading-[1.7]">
       {/* 固定ヘッダーセクション */}
       <section className="sticky top-0 z-30 bg-white/80 backdrop-blur-md pt-8 pb-4 px-6 border-b border-gray-100 mb-6">
         <div className="flex justify-between items-center mb-4">
           <p className="text-[11px] font-black text-[#D7CCC8] uppercase tracking-[0.2em] opacity-60">Breeding Dashboard</p>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            <button
+              onClick={() => setIsSettingsOpen(true)}
+              className="p-1.5 text-gray-400 hover:text-[#FF9800] transition-colors"
+            >
+              <Settings size={20} />
+            </button>
             <button 
               onClick={() => setShowSort(!showSort)}
               className={`text-[10px] font-bold px-3 py-1 rounded-full transition-all ${showSort ? "bg-[#FF9800] text-white" : "bg-gray-100 text-gray-500"}`}

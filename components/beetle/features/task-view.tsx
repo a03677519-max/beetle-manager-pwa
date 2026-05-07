@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
-import { EyeOff } from "lucide-react";
+import { useMemo, useState } from "react";
+import { EyeOff, ChevronDown, ChevronUp } from "lucide-react";
 import type { BeetleEntry, LarvaBeetle } from "@/types/beetle";
 import { daysBetween, today } from "@/lib/utils";
 
@@ -22,6 +22,8 @@ export function TaskView({
   entries, skippedTaskIds, setSkippedTaskIds, taskSortConfig, setTaskSortConfig, 
   setSelectedEntry, handleQuickExchange, handlePromoteToAdult 
 }: TaskViewProps) {
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+
   const { groupedTasks, totalCount } = useMemo(() => {
     const visibleEntries = entries.filter((e) => !skippedTaskIds.includes(e.id));
     const exchangeTasks = visibleEntries
@@ -40,13 +42,12 @@ export function TaskView({
 
     const allTasks = [...exchangeTasks, ...emergenceTasks];
     
-    const groups: Record<string, { sciName: string, managementName: string, japaneseName: string, items: typeof allTasks }> = {};
+    const groups: Record<string, { sciName: string, japaneseName: string, items: typeof allTasks }> = {};
     allTasks.forEach(task => {
-      const key = `${task.entry.scientificName || "Unknown"}-${task.entry.managementName || "Unknown"}`;
+      const key = task.entry.scientificName || "Unknown";
       if (!groups[key]) {
         groups[key] = {
-          sciName: task.entry.scientificName || "Unknown",
-          managementName: task.entry.managementName || "不明",
+          sciName: key,
           japaneseName: task.entry.japaneseName || "不明",
           items: []
         };
@@ -89,6 +90,10 @@ export function TaskView({
     };
   }, [entries, taskSortConfig, skippedTaskIds]);
 
+  const toggleGroup = (key: string) => {
+    setExpandedGroups(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between mb-4 px-2">
@@ -96,7 +101,6 @@ export function TaskView({
           <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Tasks ({totalCount})</h3>
           {skippedTaskIds.length > 0 && <button onClick={() => setSkippedTaskIds([])} className="text-[9px] font-bold text-[#D7CCC8] bg-[#D7CCC8]/10 px-2 py-0.5 rounded-full">スキップ解除</button>}
         </div>
-        {/* ソートUIの変更が必要 */}
         <div className="flex flex-col gap-1">
           <div className="flex gap-1 overflow-x-auto no-scrollbar">
             {(["urgency", "type", "days", "name"] as SortKey[]).map((k) => (
@@ -120,42 +124,51 @@ export function TaskView({
           <p className="text-gray-400 text-sm font-medium">現在対応が必要な個体はいません</p>
         </div>
       ) : (
-        groupedTasks.map(group => (
-          <div key={`${group.sciName}-${group.managementName}`} className="mb-6">
-            <div className="flex items-center gap-2 mb-2 px-1">
-              <span className="text-[11px] font-black text-[#8B7D7B] uppercase tracking-wider">
-                {group.japaneseName} - {group.managementName}
-              </span>
-              <span className="text-[9px] font-bold bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-full">{group.items.length}</span>
-            </div>
-            <div className="space-y-3">
-              {group.items.map(({ entry, days, type }) => (
-                <div key={`${entry.id}-${type}`} onClick={() => setSelectedEntry(entry)} className="bg-white/80 backdrop-blur-sm p-4 rounded-[24px] border border-white/60 shadow-sm flex items-center justify-between active:scale-[0.98] transition-all">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-1.5 h-10 rounded-full ${type === 'emergence' ? 'bg-[#EC407A]' : (days >= 90 ? 'bg-[#E74C3C]' : 'bg-[#F1C40F]')}`} />
-                    <div>
-                      <div className="font-bold text-[#333D33] text-sm">{entry.managementName || entry.japaneseName}</div>
-                      <div className="text-[9px] text-gray-400 font-bold uppercase tracking-tight">
-                        {type === 'emergence' 
-                          ? (days === 0 ? "今日羽化予定" : (days > 0 ? `あと${days}日で羽化` : `${Math.abs(days)}日前に羽化`))
-                          : `${days}日間未交換`}
+        groupedTasks.map(group => {
+          const isExpanded = expandedGroups[group.sciName];
+          return (
+            <div key={group.sciName} className="mb-6">
+              <div 
+                className="flex items-center justify-between gap-2 mb-2 px-1 cursor-pointer"
+                onClick={() => toggleGroup(group.sciName)}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-black text-[#8B7D7B] uppercase tracking-wider">{group.japaneseName}</span>
+                  <span className="text-[9px] font-bold bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-full">{group.items.length}</span>
+                </div>
+                {isExpanded ? <ChevronUp size={14} className="text-gray-400" /> : <ChevronDown size={14} className="text-gray-400" />}
+              </div>
+              {isExpanded && (
+                <div className="space-y-3">
+                  {group.items.map(({ entry, days, type }) => (
+                    <div key={`${entry.id}-${type}`} onClick={() => setSelectedEntry(entry)} className="bg-white/80 backdrop-blur-sm p-4 rounded-[24px] border border-white/60 shadow-sm flex items-center justify-between active:scale-[0.98] transition-all">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-1.5 h-10 rounded-full ${type === 'emergence' ? 'bg-[#EC407A]' : (days >= 90 ? 'bg-[#E74C3C]' : 'bg-[#F1C40F]')}`} />
+                        <div>
+                          <div className="font-bold text-[#333D33] text-sm">{entry.managementName || entry.japaneseName}</div>
+                          <div className="text-[9px] text-gray-400 font-bold uppercase tracking-tight">
+                            {type === 'emergence' 
+                              ? (days === 0 ? "今日羽化予定" : (days > 0 ? `あと${days}日で羽化` : `${Math.abs(days)}日前に羽化`))
+                              : `${days}日間未交換`}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button onClick={(e) => { e.stopPropagation(); setSkippedTaskIds([...skippedTaskIds, entry.id]); }} className="p-2 text-gray-300"><EyeOff size={14} /></button>
+                        {type === "exchange" && (
+                          <button onClick={(e) => handleQuickExchange(e, entry)} className="text-[10px] font-black bg-[#FB8C00] text-white px-4 py-2 rounded-full shadow-lg active:scale-95 transition-all">交換</button>
+                        )}
+                        {type === "emergence" && days <= 0 && (
+                          <button onClick={(e) => handlePromoteToAdult(e, entry)} className="text-[10px] font-black bg-[#F4511E] text-white px-4 py-2 rounded-full shadow-lg active:scale-95 transition-all">成虫へ</button>
+                        )}
                       </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button onClick={(e) => { e.stopPropagation(); setSkippedTaskIds([...skippedTaskIds, entry.id]); }} className="p-2 text-gray-300"><EyeOff size={14} /></button>
-                    {type === "exchange" && (
-                      <button onClick={(e) => handleQuickExchange(e, entry)} className="text-[10px] font-black bg-[#FB8C00] text-white px-4 py-2 rounded-full shadow-lg active:scale-95 transition-all">交換</button>
-                    )}
-                    {type === "emergence" && days <= 0 && (
-                      <button onClick={(e) => handlePromoteToAdult(e, entry)} className="text-[10px] font-black bg-[#F4511E] text-white px-4 py-2 rounded-full shadow-lg active:scale-95 transition-all">成虫へ</button>
-                    )}
-                  </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
-          </div>
-        ))
+          );
+        })
       )}
     </div>
   );
