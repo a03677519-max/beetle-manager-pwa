@@ -394,7 +394,7 @@ export function BottomSheetInput({
   value: string | number;
   onChange: (val: string) => void;
   placeholder?: string;
-  type?: "text" | "textarea";
+  type?: "text" | "textarea" | "password";
   suggestions?: string[];
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -465,6 +465,7 @@ export function BottomSheetInput({
                 ) : (
                   <input
                     ref={inputRef as React.RefObject<HTMLInputElement>}
+                    type={type}
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     placeholder={placeholder} // Keep placeholder
