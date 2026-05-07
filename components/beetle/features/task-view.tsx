@@ -40,12 +40,13 @@ export function TaskView({
 
     const allTasks = [...exchangeTasks, ...emergenceTasks];
     
-    const groups: Record<string, { sciName: string, japaneseName: string, items: typeof allTasks }> = {};
+    const groups: Record<string, { sciName: string, managementName: string, japaneseName: string, items: typeof allTasks }> = {};
     allTasks.forEach(task => {
-      const key = task.entry.scientificName || "Unknown";
+      const key = `${task.entry.scientificName || "Unknown"}-${task.entry.managementName || "Unknown"}`;
       if (!groups[key]) {
         groups[key] = {
-          sciName: key,
+          sciName: task.entry.scientificName || "Unknown",
+          managementName: task.entry.managementName || "不明",
           japaneseName: task.entry.japaneseName || "不明",
           items: []
         };
@@ -120,9 +121,11 @@ export function TaskView({
         </div>
       ) : (
         groupedTasks.map(group => (
-          <div key={group.sciName} className="mb-6">
+          <div key={`${group.sciName}-${group.managementName}`} className="mb-6">
             <div className="flex items-center gap-2 mb-2 px-1">
-              <span className="text-[11px] font-black text-[#8B7D7B] uppercase tracking-wider">{group.japaneseName}</span>
+              <span className="text-[11px] font-black text-[#8B7D7B] uppercase tracking-wider">
+                {group.japaneseName} - {group.managementName}
+              </span>
               <span className="text-[9px] font-bold bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-full">{group.items.length}</span>
             </div>
             <div className="space-y-3">

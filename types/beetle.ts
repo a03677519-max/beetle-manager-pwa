@@ -35,6 +35,7 @@ export type BaseBeetle = {
   createdAt: string;
   updatedAt: string;
   managementName?: string;
+  entryNumber?: number; // 自動採番用
   linkedEntryId?: string;
   memo?: string;
   order?: number; // 並べ替え用
@@ -89,6 +90,10 @@ export type SpawnSet = BaseBeetle & {
   cohabitation: CohabitationOption;
   eggCount?: number;
   larvaCount?: number;
+  secondSetDate?: string;
+  secondSetEndDate?: string;
+  secondEggCount?: number;
+  secondLarvaCount?: number;
 };
 
 export type BeetleEntry = AdultBeetle | LarvaBeetle | SpawnSet;

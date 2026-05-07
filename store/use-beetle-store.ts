@@ -106,10 +106,13 @@ export const useBeetleStore = create<BeetleState>()(
       updateGitHub: (input) =>
         set((state) => ({ gitHub: { ...state.gitHub, ...input } })),
       addAdult: (input) =>
-        set((state) => ({
-          entries: [{ id: createId(), ...input, photos: input.photos || [], createdAt: today(), updatedAt: today() }, ...state.entries],
-          editingId: null,
-        })),
+        set((state) => {
+          const nextNumber = Math.max(0, ...state.entries.filter(e => e.scientificName === input.scientificName && e.managementName === input.managementName).map(e => e.entryNumber || 0)) + 1;
+          return {
+            entries: [{ id: createId(), ...input, entryNumber: nextNumber, photos: input.photos || [], createdAt: today(), updatedAt: today() }, ...state.entries],
+            editingId: null,
+          };
+        }),
       updateAdult: (id, input) =>
         set((state) => ({
           entries: state.entries.map((entry) =>
@@ -118,10 +121,13 @@ export const useBeetleStore = create<BeetleState>()(
           editingId: null,
         })),
       addLarva: (input) =>
-        set((state) => ({
-          entries: [{ id: createId(), ...input, photos: input.photos || [], createdAt: today(), updatedAt: today() }, ...state.entries],
-          editingId: null,
-        })),
+        set((state) => {
+          const nextNumber = Math.max(0, ...state.entries.filter(e => e.scientificName === input.scientificName && e.managementName === input.managementName).map(e => e.entryNumber || 0)) + 1;
+          return {
+            entries: [{ id: createId(), ...input, entryNumber: nextNumber, photos: input.photos || [], createdAt: today(), updatedAt: today() }, ...state.entries],
+            editingId: null,
+          };
+        }),
       updateLarva: (id, input) =>
         set((state) => ({
           entries: state.entries.map((entry) =>
@@ -130,10 +136,13 @@ export const useBeetleStore = create<BeetleState>()(
           editingId: null,
         })),
       addSpawnSet: (input) =>
-        set((state) => ({
-          entries: [{ id: createId(), ...input, photos: [], createdAt: today(), updatedAt: today() }, ...state.entries],
-          editingId: null,
-        })),
+        set((state) => {
+          const nextNumber = Math.max(0, ...state.entries.filter(e => e.scientificName === input.scientificName && e.managementName === input.managementName).map(e => e.entryNumber || 0)) + 1;
+          return {
+            entries: [{ id: createId(), ...input, entryNumber: nextNumber, photos: [], createdAt: today(), updatedAt: today() }, ...state.entries],
+            editingId: null,
+          };
+        }),
       updateSpawnSet: (id, input) =>
         set((state) => ({
           entries: state.entries.map((entry) =>

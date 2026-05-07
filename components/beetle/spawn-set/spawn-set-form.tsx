@@ -136,6 +136,35 @@ export function SpawnSetForm({
           onChange={(val) => setValues({ ...values, larvaCount: parseInt(val) || 0 })}
         />
       </div>
+      <div className="pt-2 border-t border-gray-50 space-y-2">
+        <h4 className="text-[10px] font-bold text-gray-400">2回目以降のセット</h4>
+        <div className="grid grid-cols-2 gap-3">
+          <DateRollField
+            label="2回目開始日"
+            value={values.secondSetDate || ""}
+            onChange={(value) => setValues({ ...values, secondSetDate: value })}
+          />
+          <DateRollField
+            label="2回目割出日"
+            value={values.secondSetEndDate || ""}
+            onChange={(value) => setValues({ ...values, secondSetEndDate: value })}
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <BottomSheetInput
+            label="2回目卵数"
+            value={values.secondEggCount || ""}
+            placeholder="例: 5"
+            onChange={(val) => setValues({ ...values, secondEggCount: parseInt(val) || 0 })}
+          />
+          <BottomSheetInput
+            label="2回目幼虫数"
+            value={values.secondLarvaCount || ""}
+            placeholder="例: 3"
+            onChange={(val) => setValues({ ...values, secondLarvaCount: parseInt(val) || 0 })}
+          />
+        </div>
+      </div>
 
       <BottomSheetInput
         label="メモ / 備考"

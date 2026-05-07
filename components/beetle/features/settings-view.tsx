@@ -41,7 +41,7 @@ export function SettingsView({ onClose }: { onClose: () => void }) {
           </div>
           <div className="space-y-4">
             <BottomSheetInput label="Repo (owner/name)" value={gitHub.repo} onChange={(v) => updateGitHub({ repo: v })} />
-            <BottomSheetInput label="Token" value={gitHub.token} onChange={(v) => updateGitHub({ token: v })} />
+            <BottomSheetInput label="Token" value={gitHub.token} type="password" onChange={(v) => updateGitHub({ token: v })} />
           </div>
         </section>
       </div>

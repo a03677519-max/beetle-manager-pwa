@@ -25,6 +25,18 @@ export function SpawnSetDetail({ entry }: { entry: SpawnSet }) {
         <div className="text-xs text-[#FF9800]">幼虫数</div>
         <div className="text-xl font-black text-[#FF9800]">{entry.larvaCount ?? "-"} <span className="text-xs">頭</span></div>
       </div>
+      {entry.secondSetDate && (
+        <div className="bg-gray-50 p-4 rounded-2xl col-span-2">
+          <div className="text-xs text-gray-500">2回目セット期間</div>
+          <div className="font-bold text-gray-800 truncate">
+            {formatDate(entry.secondSetDate)} 〜 {entry.secondSetEndDate ? formatDate(entry.secondSetEndDate) : "継続中"}
+          </div>
+          <div className="flex gap-4 mt-2">
+            <div className="text-xs text-[#FF9800]">2回目卵: {entry.secondEggCount ?? "-"}</div>
+            <div className="text-xs text-[#FF9800]">2回目幼虫: {entry.secondLarvaCount ?? "-"}</div>
+          </div>
+        </div>
+      )}
       <div className="bg-gray-50 p-4 rounded-2xl">
         <div className="text-xs text-gray-500">累代</div>
         <div className="font-bold text-gray-800 truncate">{buildGenerationLabel(entry.generation)}</div>
