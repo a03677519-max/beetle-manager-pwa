@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { BottomSheetInput, DateRollField, MoistureField } from "@/components/entry-fields";
 import type { SpawnSetFormValues } from "@/types/beetle";
+import { today } from "@/lib/utils";
 
 export function SpawnSetSecondForm({
   initialValues,
@@ -30,6 +31,10 @@ export function SpawnSetSecondForm({
           <DateRollField label="開始日" value={v.secondSetDate || ""} onChange={(val) => setValues((prev: any) => ({...prev, secondSetDate: val}))} />
           <DateRollField label="割出日" value={v.secondSetEndDate || ""} onChange={(val) => setValues((prev: any) => ({...prev, secondSetEndDate: val}))} />
         </div>
+        <label className="flex items-center gap-2 text-xs font-bold text-gray-500">
+          <input type="checkbox" checked={!!v.secondSetEndDate} onChange={(e) => setValues((prev: any) => ({...prev, secondSetEndDate: e.target.checked ? today() : ""}))} />
+          産卵を終了する（本日）
+        </label>
         <div className="grid grid-cols-2 gap-3">
           <BottomSheetInput label="卵数" value={v.secondEggCount || ""} onChange={(val) => setValues((prev: any) => ({...prev, secondEggCount: parseInt(val) || 0}))} />
           <BottomSheetInput label="幼虫数" value={v.secondLarvaCount || ""} onChange={(val) => setValues((prev: any) => ({...prev, secondLarvaCount: parseInt(val) || 0}))} />

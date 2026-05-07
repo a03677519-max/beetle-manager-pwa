@@ -6,7 +6,7 @@ import { Search, Clipboard, Camera, Loader2, Crop, Check, X as CloseIcon, Trash2
 import { Navbar } from "@/components/layout/navbar";
 import { Modal } from "./ui/modal";
 import { useSwitchBot } from "@/components/use-switchbot";
-import { formatGeneration, today } from "@/lib/utils";
+import { formatGeneration, today, isSpawnSetFinished } from "@/lib/utils";
 import { pushDataToGitHub } from "@/lib/github";
 import {
   emptyAdultForm,
@@ -97,6 +97,7 @@ export function BeetleManager() {
   };
 
   const [activeTab, setActiveTab] = useState("成虫");
+  const [spawnSetFilter, setSpawnSetFilter] = useState<"active" | "finished">("active");
   const [query, setQuery] = useState("");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [createType, setCreateType] = useState<EntryType>("幼虫");
@@ -199,13 +200,14 @@ export function BeetleManager() {
     const normalizedQuery = query.trim().toLowerCase();
      const list = entries.filter((entry) => {
        const matchesType = selectedType === "すべて" || entry.type === selectedType;
+       const matchesStatus = entry.type !== "産卵セット" || (spawnSetFilter === "active" ? !isSpawnSetFinished(entry) : isSpawnSetFinished(entry));
        const matchesQuery =
          normalizedQuery.length === 0 ||
          [entry.japaneseName, entry.scientificName, entry.locality, formatGeneration(entry.generation), entry.managementName]
            .join(" ")
            .toLowerCase()
            .includes(normalizedQuery);
-       return matchesType && matchesQuery;
+       return matchesType && matchesStatus && matchesQuery;
      });
  
      const getSortVal = (e: BeetleEntry, key: string) => {
@@ -820,6 +822,24 @@ export function BeetleManager() {
             className="flex-1 text-base text-[#4A3F35] outline-none bg-transparent"
           />
         </label>
+
+        {selectedType === "産卵セット" && (
+          <div className="flex gap-2 mb-4">
+            <button 
+              onClick={() => setSpawnSetFilter("active")}
+              className={`px-3 py-1 rounded-full text-xs font-bold ${spawnSetFilter === "active" ? "bg-[#FF9800] text-white" : "bg-white/40 text-[#8B7D7B] border border-white/40"}`}
+            >
+              継続中
+            </button>
+            <button 
+              onClick={() => setSpawnSetFilter("finished")}
+              className={`px-3 py-1 rounded-full text-xs font-bold ${spawnSetFilter === "finished" ? "bg-[#FF9800] text-white" : "bg-white/40 text-[#8B7D7B] border border-white/40"}`}
+            >
+              終了
+            </button>
+          </div>
+        )}
+
 
         <div className="flex gap-2 overflow-x-auto no-scrollbar">
           {ENTRY_TYPES.map((type) => (

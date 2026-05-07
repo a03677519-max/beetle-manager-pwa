@@ -101,7 +101,14 @@ export const getLarvaDateInfo = (entry: { hatchDate?: string; extractionDate?: s
 /**
  * 産卵セットの状態に応じた日付表示情報（ラベルと値）を返します。
  */
-export const getSpawnSetDateInfo = (entry: { setDate?: string; setEndDate?: string }) => {
+export const getSpawnSetDateInfo = (entry: { setDate?: string; setEndDate?: string; sets?: any[] }) => {
+  if (entry.sets && entry.sets.length > 0) {
+    const latestSet = entry.sets[entry.sets.length - 1];
+    return {
+      label: "最新セット期間",
+      value: `${formatDate(latestSet.setDate)} 〜 ${latestSet.setEndDate ? formatDate(latestSet.setEndDate) : "継続中"}`
+    };
+  }
   if (entry.setDate && entry.setEndDate) {
     return {
       label: "セット期間",
@@ -119,3 +126,10 @@ export const getSpawnSetDateInfo = (entry: { setDate?: string; setEndDate?: stri
     value: "-"
   };
 };
+
+export const isSpawnSetFinished = (entry: any) => {
+  if (entry.setEndDate) return true;
+  if (entry.sets && entry.sets.some((s: any) => s.setEndDate)) return true;
+  return false;
+};
+

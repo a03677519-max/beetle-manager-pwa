@@ -311,7 +311,13 @@ export function BottomSheetSelect({
   onChange: (val: string) => void;
   placeholder?: string;
 }) {
-  const [isOpen, setIsOpen] = useState(false);
+  const selectedRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (isOpen && selectedRef.current) {
+      selectedRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [isOpen]);
 
   return (
     <div className="field">
@@ -359,6 +365,7 @@ export function BottomSheetSelect({
                   {options.map((option) => (
                     <button
                       key={option}
+                      ref={value === option ? selectedRef : null}
                       type="button"
                       className={`w-full text-left px-4 py-3 rounded-2xl font-bold ${ // Keep button
                         value === option ? "bg-[#FF9800] text-white" : "bg-gray-50 text-gray-700"
