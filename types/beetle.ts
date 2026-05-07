@@ -76,29 +76,27 @@ export type LarvaBeetle = BaseBeetle & {
   extractionDate?: string;
 };
 
-export type SpawnSet = BaseBeetle & {
-  type: "産卵セット";
-  emergenceDate: string;
-  feedingDate: string;
+export type SetInfo = {
+  id: string;
   setDate: string;
   setEndDate?: string;
-  substrate: string;
-  containerSize: string;
-  pressure: string;
-  moisture: number;
-  temperature: string;
-  cohabitation: CohabitationOption;
   eggCount?: number;
   larvaCount?: number;
-  secondSetDate?: string;
-  secondSetEndDate?: string;
-  secondEggCount?: number;
-  secondLarvaCount?: number;
   useDifferentMethod?: boolean;
-  secondSubstrate?: string;
-  secondContainerSize?: string;
-  secondPressure?: string;
-  secondMoisture?: number;
+  substrate?: string;
+  containerSize?: string;
+  pressure?: string;
+  moisture?: number;
+  memo?: string;
+};
+
+export type SpawnSet = BaseBeetle & {
+  type: "産卵セット";
+  sets: SetInfo[];
+  emergenceDate: string;
+  feedingDate: string;
+  temperature: string;
+  cohabitation: CohabitationOption;
 };
 
 export type BeetleEntry = AdultBeetle | LarvaBeetle | SpawnSet;
@@ -115,6 +113,7 @@ export type LarvaFormValues = Omit<LarvaBeetle, "id" | "photos" | "createdAt" | 
 };
 export type SpawnSetFormValues = Omit<SpawnSet, "id" | "photos" | "createdAt" | "updatedAt"> & {
   id?: string;
+  photos?: string[];
 };
 
 export type SwitchBotSettings = {
