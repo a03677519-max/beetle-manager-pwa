@@ -311,6 +311,7 @@ export function BottomSheetSelect({
   onChange: (val: string) => void;
   placeholder?: string;
 }) {
+  const [isOpen, setIsOpen] = useState(false);
   const selectedRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
