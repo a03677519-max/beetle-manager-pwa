@@ -8,6 +8,7 @@ import type {
   AdultFormValues,
   BeetleEntry,
   EntryType,
+  GenerationValue,
   LarvaFormValues,
   LarvaLog,
   SpawnSetFormValues,
@@ -44,6 +45,7 @@ type BeetleState = {
 
 const emptyGeneration = {
   primary: "-",
+  secondary: "-",
   count: "",
 } as const;
 
@@ -67,7 +69,7 @@ export const emptyLarvaForm: LarvaFormValues = {
   scientificName: "",
   locality: "",
   generation: { ...emptyGeneration },
-  linkedEntryIds: [],
+  linkedEntryId: undefined,
   logs: [],
   plannedEmergenceDate: "",
   actualEmergenceDate: "",
@@ -83,6 +85,10 @@ export const emptySpawnSetForm: SpawnSetFormValues = {
   generation: { ...emptyGeneration },
   setDate: "",
   sets: [],
+  emergenceDate: "",
+  feedingDate: "",
+  temperature: "",
+  cohabitation: "なし",
 };
 
 export const useBeetleStore = create<BeetleState>()(
