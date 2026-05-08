@@ -37,6 +37,12 @@ export function SpawnSetForm({
   className?: string;
 }) {
   const [values, setValues] = useState<SpawnSetFormValues>(initialValues);
+  const valuesRef = useRef(values);
+  
+  useEffect(() => {
+    valuesRef.current = values;
+  }, [values]);
+
   const formId = id || "spawn-set-form"; // Keep formId for onSubmit
   const { focusNextField } = useNextFieldNavigation(formId, true);
   const formRef = useRef<HTMLFormElement>(null);
@@ -80,7 +86,7 @@ export function SpawnSetForm({
       setDate: prev.setDate || fmt(initialSetDate),
       setEndDate: prev.setEndDate || fmt(initialSetEndDate),
     }));
-  }, [initialValues.id, initialValues.setDate, initialValues.setEndDate, allEntries]);
+  }, [initialValues.id]);
 
   return (
     <form
@@ -89,7 +95,7 @@ export function SpawnSetForm({
       className={`flex flex-col h-full overflow-hidden touch-pan-y ${className || ''}`}
       onSubmit={(event) => {
         event.preventDefault();
-        onSubmit(values);
+        onSubmit(valuesRef.current);
       }}
     >
       <div className="flex-1 overflow-y-auto px-1 space-y-3 mb-2 overscroll-contain">
