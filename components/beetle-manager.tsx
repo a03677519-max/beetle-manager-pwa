@@ -523,6 +523,7 @@ export function BeetleManager() {
     const confirm = window.confirm(`${entry.japaneseName}を成虫として登録し、幼虫データを移行しますか？`);
     if (!confirm) return;
 
+    const mName = generateUniqueMName(entry.managementName || "", entry.scientificName, entries, "成虫");
     addAdult({
       type: "成虫",
       managementName: mName,
