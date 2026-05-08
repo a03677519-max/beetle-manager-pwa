@@ -83,7 +83,7 @@ export const emptySpawnSetForm: SpawnSetFormValues = {
   scientificName: "",
   locality: "",
   generation: { ...emptyGeneration },
-  setDate: "",
+  setDate: "", // 1回目のセットの開始日
   sets: [],
   emergenceDate: "",
   feedingDate: "",

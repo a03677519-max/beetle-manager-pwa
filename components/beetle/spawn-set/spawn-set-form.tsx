@@ -61,12 +61,20 @@ export function SpawnSetForm({
   // 外部からの初期値変更を同期
   useEffect(() => {
     const fmt = (d?: string) => (d ? d.slice(0, 10) : "");
+    
+    // 最新の産卵セットの終了日を取得
+    const latestSpawnSet = allEntries
+      .filter((e) => e.type === "産卵セット" && e.setEndDate)
+      .sort((a, b) => new Date(b.setDate || 0).getTime() - new Date(a.setDate || 0).getTime())[0];
+
+    const initialSetEndDate = initialValues.setEndDate || (latestSpawnSet?.setEndDate ? fmt(latestSpawnSet.setEndDate) : "");
+
     setValues({
       ...initialValues,
       setDate: fmt(initialValues.setDate),
-      setEndDate: fmt(initialValues.setEndDate),
+      setEndDate: fmt(initialSetEndDate),
     });
-  }, [initialValues.id, initialValues.setDate, initialValues.setEndDate]);
+  }, [initialValues.id, initialValues.setDate, initialValues.setEndDate, allEntries]);
 
   return (
     <form

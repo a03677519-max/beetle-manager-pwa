@@ -1,15 +1,26 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { Plus, Trash2, Edit2 } from "lucide-react";
 import { buildGenerationLabel } from "@/components/entry-fields";
 import type { SpawnSet } from "@/types/beetle";
 import { formatDate } from "@/lib/utils";
 
-export function SpawnSetDetail({ entry, onAddSecondSet }: { entry: SpawnSet; onAddSecondSet: () => void }) {
+export function SpawnSetDetail({ 
+  entry, 
+  onAddSecondSet,
+  onDeleteSet,
+  onEditSet,
+}: { 
+  entry: SpawnSet; 
+  onAddSecondSet: () => void; 
+  onDeleteSet: (setId: string) => void;
+  onEditSet: (set: any) => void;
+}) {
   const s = entry as any;
   // 1回目のセットと2回目以降（sets配列）を統合して日付順にソート
   const allSets = [
     {
+      id: "primary",
       title: "1回目",
       setDate: s.setDate || s.createdAt?.slice(0, 10),
       setEndDate: s.setEndDate,
@@ -20,8 +31,8 @@ export function SpawnSetDetail({ entry, onAddSecondSet }: { entry: SpawnSet; onA
       pressure: s.pressure,
       moisture: s.moisture,
     },
-    ...(s.sets || []).map((set: any, i: number) => ({ ...set, title: `${i + 2}回目` }))
-  ].sort((a, b) => (a.setDate || "").localeCompare(b.setDate || ""));
+    ...(s.sets || []).map((set: any, i: number) => ({ ...set, title: `${i + 2}回目` })) // sets配列の各要素にtitleを追加
+  ].sort((a, b) => (b.setDate || "").localeCompare(a.setDate || "")); // 日付の降順（新しいものが左）
 
   return (
     <div className="space-y-4">
@@ -33,8 +44,24 @@ export function SpawnSetDetail({ entry, onAddSecondSet }: { entry: SpawnSet; onA
       </div>
       <div className="flex gap-4 overflow-x-auto touch-pan-x pb-2 no-scrollbar">
         {allSets.map((set, index) => (
-          <div key={index} className="min-w-[85%] bg-white p-4 rounded-3xl border border-gray-100 shadow-sm space-y-3">
-            <div className="text-sm font-bold text-gray-700">{set.title}</div>
+          <div key={set.id} className="min-w-[85%] bg-white p-4 rounded-3xl border border-gray-100 shadow-sm space-y-3">
+            <div className="flex justify-between items-center">
+              <div className="text-sm font-bold text-gray-700">{set.title}</div>
+              <div className="flex gap-2">
+              <button
+                onClick={() => onEditSet(set)}
+                className="p-1.5 text-gray-300 hover:text-blue-500 transition-colors"
+              >
+                <Edit2 size={14} />
+              </button>
+              <button 
+                onClick={() => { if(window.confirm(`${set.title}の記録を削除しますか？`)) onDeleteSet(set.id); }}
+                className="p-1.5 text-gray-300 hover:text-red-500 transition-colors"
+              >
+                <Trash2 size={14} />
+              </button>
+              </div>
+            </div>
             <div className="space-y-1">
               <div className="text-xs text-gray-500">セット期間</div>
               <div className="font-bold text-gray-800">

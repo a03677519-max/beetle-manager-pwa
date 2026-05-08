@@ -431,7 +431,9 @@ export function BottomSheetInput({
         if (document.activeElement instanceof HTMLElement) {
           document.activeElement.blur();
         }
-        inputRef.current.focus();
+        requestAnimationFrame(() => {
+          inputRef.current?.focus();
+        });
       }
     }, 150); // アニメーションとの競合を避けるため少し長めに設定
     
@@ -530,7 +532,10 @@ export function BottomSheetInput({
                           key={suggestion} // Keep key
                           type="button"
                           className="px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-full text-xs font-bold text-gray-600 active:bg-[#FF9800] active:text-white transition-all"
-                          onClick={() => onChange(suggestion)}
+                          onClick={() => {
+                        onChange(suggestion);
+                        setIsOpen(false);
+                      }}
                         >
                           {suggestion}
                         </button>

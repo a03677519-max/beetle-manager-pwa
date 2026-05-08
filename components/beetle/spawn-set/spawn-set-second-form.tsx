@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { BottomSheetInput, DateRollField, MoistureField } from "@/components/entry-fields";
 import type { SpawnSetFormValues } from "@/types/beetle";
 import { today } from "@/lib/utils";
@@ -10,28 +10,71 @@ export function SpawnSetSecondForm({
   onSubmit,
   onCancel,
   id,
+  allEntries, // サジェスト用に追加
 }: {
   initialValues: SpawnSetFormValues;
   onSubmit: (value: SpawnSetFormValues) => void;
   onCancel: () => void;
   id?: string;
+  allEntries?: any[]; // サジェスト用に追加
 }) {
   // 最新のセット終了日を取得して開始日の初期値にする
   const latestEndDate = useMemo(() => {
     const entry = initialValues as any;
     if (entry.sets && entry.sets.length > 0) {
-      const sorted = [...entry.sets].sort((a, b) => (b.setDate || "").localeCompare(a.setDate || ""));
+      const sorted = [...entry.sets].sort((a, b) => (a.setDate || "").localeCompare(b.setDate || "")); // 昇順でソート
       return sorted[0].setEndDate || sorted[0].setDate || today();
     }
     return entry.setEndDate || entry.setDate || today();
   }, [initialValues]);
 
   const [values, setValues] = useState<any>({
+    id: initialValues.id, // 編集用にIDを保持
+    useDifferentMethod: false, // デフォルトでfalse
     setDate: latestEndDate,
     setEndDate: "",
     eggCount: 0,
     larvaCount: 0,
   });
+
+  // initialValuesが変更されたらstateを更新 (編集モード用)
+  useEffect(() => {
+    if (initialValues.id) {
+      setValues({
+        id: initialValues.id,
+        setDate: initialValues.setDate || latestEndDate,
+        setEndDate: initialValues.setEndDate || "",
+        eggCount: initialValues.eggCount ?? 0,
+        larvaCount: initialValues.larvaCount ?? 0,
+        substrate: initialValues.substrate || "",
+        containerSize: initialValues.containerSize || "",
+        pressure: initialValues.pressure || "",
+        moisture: initialValues.moisture ?? 3,
+        temperature: initialValues.temperature || "",
+        cohabitation: initialValues.cohabitation || "なし",
+        memo: initialValues.memo || "",
+        useDifferentMethod: initialValues.useDifferentMethod || false,
+      });
+    }
+  }, [initialValues, latestEndDate]);
+
+  const suggestions = useMemo(() => {
+    const cSet = new Set<string>();
+    const tSet = new Set<string>();
+    (allEntries || []).forEach((e) => {
+      if (e.type === "産卵セット") {
+        if (e.containerSize) cSet.add(e.containerSize);
+        if (e.temperature) tSet.add(String(e.temperature));
+        (e as any).sets?.forEach((s: any) => {
+          if (s.containerSize) cSet.add(s.containerSize);
+        });
+      }
+    });
+    return {
+      container: Array.from(cSet).sort(),
+      temperature: Array.from(tSet).sort(),
+    };
+  }, [allEntries]);
 
   return (
     <form
@@ -64,10 +107,10 @@ export function SpawnSetSecondForm({
         </label>
         {values.useDifferentMethod && (
           <div className="grid grid-cols-2 gap-3 bg-gray-50 p-2 rounded-lg">
-            <BottomSheetInput label="マット" value={values.substrate || ""} onChange={(val) => setValues((prev: any) => ({...prev, substrate: val}))} />
-            <BottomSheetInput label="容器" value={values.containerSize || ""} onChange={(val) => setValues((prev: any) => ({...prev, containerSize: val}))} />
+            <BottomSheetInput label="マット" value={values.substrate || ""} onChange={(val) => setValues((prev: any) => ({...prev, substrate: val}))} suggestions={suggestions.container} />
+            <BottomSheetInput label="容器" value={values.containerSize || ""} onChange={(val) => setValues((prev: any) => ({...prev, containerSize: val}))} suggestions={suggestions.container} />
             <BottomSheetInput label="詰圧" value={values.pressure || ""} onChange={(val) => setValues((prev: any) => ({...prev, pressure: val}))} />
-            <MoistureField value={values.moisture ?? 3} onChange={(val) => setValues((prev: any) => ({...prev, moisture: val}))} />
+            <MoistureField value={values.moisture ?? 3} onChange={(val) => setValues((prev: any) => ({...prev, moisture: val}))} /> {/* suggestions.temperature は温度用なので注意 */}
           </div>
         )}
         <BottomSheetInput

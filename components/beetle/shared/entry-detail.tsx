@@ -23,6 +23,8 @@ export function EntryDetail({
   onFetchTemperature: (setter: (value: string) => void) => void;
   isFetchingTemperature: boolean;
   onAddSecondSet?: () => void;
+  onDeleteSet?: (setId: string) => void;
+  onEditSet?: (set: any) => void;
 }) {
   const startEditing = useBeetleStore((state) => state.startEditing);
   const deleteEntry = useBeetleStore((state) => state.deleteEntry);
@@ -224,6 +226,8 @@ export function EntryDetail({
               <SpawnSetDetail 
                 entry={entry} 
                 onAddSecondSet={onAddSecondSet || (() => {})} 
+                onDeleteSet={onDeleteSet}
+                onEditSet={onEditSet || (() => {})}
               />
             ) : null}
           </div>
