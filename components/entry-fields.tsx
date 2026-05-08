@@ -439,8 +439,12 @@ export function BottomSheetInput({
     
     // iOS キーボード展開時のスクロール追従対策
     const handler = () => {
-      if (window.visualViewport && document.activeElement instanceof HTMLElement) {
-          document.activeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (window.visualViewport) {
+        setTimeout(() => {
+          if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 300);
       }
     };
     window.visualViewport?.addEventListener('resize', handler);
