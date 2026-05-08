@@ -393,6 +393,7 @@ export function BottomSheetInput({
   type = "text",
   suggestions,
   enterKeyHint,
+  id,
   inputMode,
 }: {
   label: string;
