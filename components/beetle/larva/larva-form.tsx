@@ -30,6 +30,12 @@ export function LarvaForm({
   className?: string;
 }) {
   const [values, setValues] = useState<LarvaFormValues>(initialValues);
+  const valuesRef = useRef(values);
+
+  useEffect(() => {
+    valuesRef.current = values;
+  }, [values]);
+  
   const [count, setCount] = useState(1);
   const [setStartDate, setSetStartDate] = useState(today());
   const [setEndDate, setSetEndDate] = useState(today());
@@ -148,7 +154,7 @@ export function LarvaForm({
       className={`flex flex-col h-full overflow-hidden ${className || ''}`}
       onSubmit={(event) => {
         event.preventDefault();
-        const finalValues = { ...values };
+        const finalValues = { ...valuesRef.current };
         
         if (dateType === "hatch") {
           // 値が空の場合はフォールバックを適用してリセットを防ぐ

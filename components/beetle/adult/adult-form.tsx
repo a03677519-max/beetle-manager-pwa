@@ -22,6 +22,12 @@ export function AdultForm({
   className?: string;
 }) {
   const [values, setValues] = useState<AdultFormValues>(initialValues);
+  const valuesRef = useRef(values);
+
+  useEffect(() => {
+    valuesRef.current = values;
+  }, [values]);
+
   const formId = id || "adult-form"; // Keep formId for onSubmit
   const { focusNextField } = useNextFieldNavigation(formId, true);
   const formRef = useRef<HTMLFormElement>(null);
@@ -57,7 +63,7 @@ export function AdultForm({
       className={`flex flex-col h-full overflow-hidden ${className || ''}`}
       onSubmit={(event) => {
         event.preventDefault();
-        onSubmit(values);
+        onSubmit(valuesRef.current);
       }}
     >
       <div className="flex-1 overflow-y-auto px-1 space-y-3 mb-2">
