@@ -435,7 +435,7 @@ export function BottomSheetInput({
           inputRef.current?.focus();
         });
       }
-    }, 150); // アニメーションとの競合を避けるため少し長めに設定
+    }, 500); // 300ms から 500ms に増やす
     
     return () => clearTimeout(focusTimer);
   }, [isOpen]);
