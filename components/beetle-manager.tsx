@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect, useRef } from "react";
 import { AnimatePresence, motion, Reorder } from "framer-motion";
-import { Search, Clipboard, Camera, Loader2, Crop, Check, X as CloseIcon, Trash2, Edit, CheckSquare, Square, ArrowUpDown, ChevronDown, ChevronUp, Settings, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Clipboard, Camera, Loader2, Crop, Check, X as CloseIcon, Trash2, Edit, CheckSquare, Square, ArrowUpDown, ChevronDown, ChevronUp, Settings, ChevronLeft, ChevronRight, FileSpreadsheet } from "lucide-react";
 import { Navbar } from "@/components/layout/navbar";
 import { Modal } from "./ui/modal";
 import { useSwitchBot } from "@/components/use-switchbot";
@@ -282,6 +282,110 @@ export function BeetleManager() {
     setSelectedIds(prev => 
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
+  };
+
+  const handleBulkCopyToExcel = () => {
+    if (selectedIds.length === 0) return;
+    
+    // 現在の並び順を維持した状態で選択個体を抽出
+    const sortedSelectedEntries = filteredEntries.filter(e => selectedIds.includes(e.id));
+    const fmtDate = (d: string) => (d || "").replace(/-/g, "/");
+    
+    // 全選択個体の中で最大のログ数を確認
+    const maxLogsCount = Math.max(...sortedSelectedEntries.map(e => (e as any).logs?.length || 0));
+    // 2回目セットが存在するか確認
+    const hasAnySecondSet = sortedSelectedEntries.some(e => (e as any).secondSetDate);
+
+    const headers = ["管理名", "和名", "学名", "累代", "種別", "孵化/開始日", "羽化日", "掘出日", "計測値", "温度", "水分", "詰圧", "容器サイズ", "メモ"];
+
+    // ログ用のヘッダーを履歴数に合わせて動的に生成
+    for (let i = 0; i < maxLogsCount; i++) {
+      const num = i + 1;
+      headers.push(`履歴${num}_日付`, `履歴${num}_体重`, `履歴${num}_ステージ`, `履歴${num}_マット`, `履歴${num}_ボトル`, `履歴${num}_温度`, `履歴${num}_水分`, `履歴${num}_詰圧`);
+    }
+
+    if (hasAnySecondSet) {
+      headers.push("セット2_開始日", "セット2_割出日", "セット2_卵数", "セット2_幼虫数", "セット2_マット", "セット2_容器", "セット2_詰圧", "セット2_水分");
+    }
+
+    const rows = sortedSelectedEntries.map(e => {
+      const entry = e as any;
+      const hatchOrSetDate = entry.hatchDate || entry.setDate || "";
+      const emergenceDate = (entry.emergenceType === "羽化") ? (entry.actualEmergenceDate || entry.emergenceDate || "") : "";
+      const extractionDate = entry.extractionDate || (entry.emergenceType === "掘り出し" ? (entry.actualEmergenceDate || entry.emergenceDate || "") : "");
+
+      let measurement = "";
+      if (entry.type === "幼虫" && entry.logs && entry.logs.length > 0) {
+        measurement = `${entry.logs[0].weight}g`;
+      } else if (entry.type === "成虫") {
+        measurement = entry.size ? `${entry.size}mm` : "";
+      }
+
+      const rowData = [
+        entry.managementName || "",
+        entry.japaneseName,
+        entry.scientificName,
+        formatGeneration(entry.generation),
+        entry.type,
+        fmtDate(hatchOrSetDate),
+        fmtDate(emergenceDate),
+        fmtDate(extractionDate),
+        measurement,
+        entry.temperature || "",
+        entry.moisture || "",
+        entry.pressure || "",
+        entry.containerSize || "",
+        (entry.memo || "").replace(/\n/g, " ")
+      ];
+
+      // ログデータ（古い順）を追加
+      const logs = [...(entry.logs || [])].reverse();
+      for (let i = 0; i < maxLogsCount; i++) {
+        if (logs[i]) {
+          rowData.push(
+            fmtDate(logs[i].date),
+            logs[i].weight ? `${logs[i].weight}g` : "",
+            logs[i].stage || "",
+            logs[i].substrate || "",
+            logs[i].bottleSize || "",
+            logs[i].temperature || "",
+            logs[i].moisture || "",
+            logs[i].pressure || ""
+          );
+        } else {
+          // 履歴がない列は空欄にする
+          rowData.push("", "", "", "", "", "", "", "");
+        }
+      }
+
+      // 産卵セットの2回目データ追加
+      if (hasAnySecondSet) {
+        if (entry.type === "産卵セット" && entry.secondSetDate) {
+          rowData.push(
+            fmtDate(entry.secondSetDate),
+            fmtDate(entry.secondSetEndDate),
+            entry.secondEggCount ?? "",
+            entry.secondLarvaCount ?? "",
+            entry.secondSubstrate || entry.substrate || "",
+            entry.secondContainerSize || entry.containerSize || "",
+            entry.secondPressure || entry.pressure || "",
+            entry.secondMoisture ?? entry.moisture ?? ""
+          );
+        } else {
+          rowData.push("", "", "", "", "", "", "", "");
+        }
+      }
+
+      return rowData.join("\t");
+    });
+
+    const text = headers.join("\t") + "\n" + rows.join("\n");
+    
+    navigator.clipboard.writeText(text).then(() => {
+      window.alert(`${selectedIds.length}件のデータをExcel形式でコピーしました`);
+    }).catch(() => {
+      window.alert("コピーに失敗しました");
+    });
   };
 
   const handleBulkDelete = () => {
@@ -825,6 +929,9 @@ export function BeetleManager() {
             </div>
             {isSelectionMode && (
               <div className="flex gap-2 pt-2 border-t border-gray-200/50">
+                <button onClick={handleBulkCopyToExcel} disabled={selectedIds.length === 0} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-green-50 text-green-600 rounded-xl text-[11px] font-bold disabled:opacity-30 transition-all active:scale-95">
+                  <FileSpreadsheet size={14} /> Excelコピー
+                </button>
                 <button onClick={handleBulkDelete} disabled={selectedIds.length === 0} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-red-50 text-red-500 rounded-xl text-[11px] font-bold disabled:opacity-30 transition-all active:scale-95">
                   <Trash2 size={14} /> 削除 ({selectedIds.length})
                 </button>

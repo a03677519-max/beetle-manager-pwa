@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { X, Edit2, Copy, Trash2 } from "lucide-react";
+import { X, Edit2, Copy, Trash2, FileSpreadsheet } from "lucide-react";
 import { useEffect, useRef } from "react";
 import type { BeetleEntry } from "@/types/beetle";
 import { AdultDetail } from "@/components/beetle/adult/adult-detail";
@@ -70,6 +70,77 @@ export function EntryDetail({
     });
   };
 
+  const copyToExcel = () => {
+    const e = entry as any;
+    const fmtDate = (d: string) => (d || "").replace(/-/g, "/");
+    
+    // 種別に応じた計測値の抽出
+    let measurement = "";
+    if (e.type === "幼虫" && e.logs && e.logs.length > 0) {
+      measurement = `${e.logs[0].weight}g`;
+    } else if (e.type === "成虫") {
+      measurement = e.size ? `${e.size}mm` : "";
+    }
+
+    // コピーする項目とその順番の定義
+    const columns = [
+      { header: "管理名", value: e.managementName || "" },
+      { header: "和名", value: e.japaneseName },
+      { header: "学名", value: e.scientificName },
+      { header: "累代", value: buildGenerationLabel(e.generation) },
+      { header: "種別", value: e.type },
+      { header: "孵化/開始日", value: fmtDate(e.hatchDate || e.setDate) },
+      { header: "羽化日", value: fmtDate(e.emergenceType === "羽化" ? (e.actualEmergenceDate || e.emergenceDate) : "") },
+      { header: "掘出日", value: fmtDate(e.extractionDate || (e.emergenceType === "掘り出し" ? (e.actualEmergenceDate || e.emergenceDate) : "")) },
+      { header: "計測値", value: measurement },
+      { header: "温度", value: e.temperature || "" },
+      { header: "水分", value: e.moisture || "" },
+      { header: "詰圧", value: e.pressure || "" },
+      { header: "容器サイズ", value: e.containerSize || "" },
+      { header: "メモ", value: (e.memo || "").replace(/\n/g, " ") },
+    ];
+
+    // 飼育ログ（交換履歴）を古い順に横並びで追加
+    const logs = [...(e.logs || [])].reverse();
+    logs.forEach((log, index) => {
+      const num = index + 1;
+      columns.push(
+        { header: `履歴${num}_日付`, value: fmtDate(log.date) },
+        { header: `履歴${num}_体重`, value: log.weight ? `${log.weight}g` : "" },
+        { header: `履歴${num}_ステージ`, value: log.stage || "" },
+        { header: `履歴${num}_マット`, value: log.substrate || "" },
+        { header: `履歴${num}_ボトル`, value: log.bottleSize || "" },
+        { header: `履歴${num}_温度`, value: log.temperature || "" },
+        { header: `履歴${num}_水分`, value: log.moisture || "" },
+        { header: `履歴${num}_詰圧`, value: log.pressure || "" }
+      );
+    });
+
+    // 産卵セットの2回目履歴がある場合に追加
+    if (e.type === "産卵セット" && e.secondSetDate) {
+      columns.push(
+        { header: "セット2_開始日", value: fmtDate(e.secondSetDate) },
+        { header: "セット2_割出日", value: fmtDate(e.secondSetEndDate) },
+        { header: "セット2_卵数", value: e.secondEggCount ?? "" },
+        { header: "セット2_幼虫数", value: e.secondLarvaCount ?? "" },
+        { header: "セット2_マット", value: e.secondSubstrate || e.substrate || "" },
+        { header: "セット2_容器", value: e.secondContainerSize || e.containerSize || "" },
+        { header: "セット2_詰圧", value: e.secondPressure || e.pressure || "" },
+        { header: "セット2_水分", value: e.secondMoisture ?? e.moisture ?? "" }
+      );
+    }
+
+    const headers = columns.map(c => c.header).join("\t");
+    const row = columns.map(c => c.value).join("\t");
+    const text = headers + "\n" + row;
+    
+    navigator.clipboard.writeText(text).then(() => {
+      alert("Excel形式でコピーしました");
+    }).catch(() => {
+      alert("コピーに失敗しました");
+    });
+  };
+
   const handleDelete = () => {
     if (window.confirm("この個体データを削除してもよろしいですか？")) {
       deleteEntry(entry.id);
@@ -100,6 +171,14 @@ export function EntryDetail({
             <p className="text-[12px] font-serif italic text-gray-400">{entry.scientificName}</p>
           </div>
           <div className="flex items-center gap-2">
+            <button 
+              type="button" 
+              className="p-2 bg-gray-50 rounded-full text-gray-400 hover:text-green-600 transition-colors" 
+              onClick={copyToExcel}
+              title="Excel形式でコピー"
+            >
+              <FileSpreadsheet size={18} />
+            </button>
             <button 
               type="button" 
               className="p-2 bg-gray-50 rounded-full text-gray-400 hover:text-blue-500 transition-colors" 
