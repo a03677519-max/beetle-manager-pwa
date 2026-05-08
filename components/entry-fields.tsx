@@ -642,14 +642,13 @@ export const buildGenerationLabel = (value: GenerationValue) =>
 
 interface NextFieldButtonProps {
   formId: string;
-  currentInputRef: React.RefObject<HTMLElement>;
   onNext: () => void;
   onDone: () => void;
   isLastField: boolean;
   isModalOpen: boolean;
 }
 
-export function NextFieldButton({ formId, currentInputRef, onNext, onDone, isLastField, isModalOpen }: NextFieldButtonProps) {
+export function NextFieldButton({ formId, onNext, onDone, isLastField, isModalOpen }: NextFieldButtonProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [activeElement, setActiveElement] = useState<HTMLElement | null>(null);
 

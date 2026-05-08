@@ -240,7 +240,6 @@ export function SpawnSetForm({
 
         <NavButton 
           formId={formId}
-          currentInputRef={useRef(null)}
           onNext={focusNextField}
           onDone={focusDone}
           isLastField={isLastField}
