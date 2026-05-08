@@ -53,6 +53,7 @@ interface DrumrollPickerProps<T> {
   options: readonly T[];
   value: T;
   onChange: (value: string) => void;
+  id?: string; // idプロパティを追加
 }
 
 function DrumrollPicker<T extends string | number>({ options, value, onChange }: DrumrollPickerProps<T>) {
