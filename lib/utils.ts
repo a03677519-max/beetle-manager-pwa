@@ -138,15 +138,11 @@ export const getSpawnSetDateInfo = (entry: { setDate?: string; setEndDate?: stri
 };
 
 export const isSpawnSetFinished = (entry: any) => {
-  // 2回目セットが入力されている場合は、2回目の終了日で判定
-  if (entry.secondSetDate) {
-    return !!entry.secondSetEndDate;
-  }
-  // 配列形式のセットデータがある場合の互換性対応
-  if (entry.sets && entry.sets.length > 0) {
-    const latest = entry.sets[entry.sets.length - 1];
-    return !!latest.setEndDate;
-  }
-  // 1回目セットの終了日
-  return !!entry.setEndDate;
+  // 最新のセットを取得（sets配列があればそれの最後、なければ primary）
+  const allSets = [
+    { setEndDate: entry.setEndDate },
+    ...(entry.sets || [])
+  ];
+  const latest = allSets[allSets.length - 1];
+  return !!latest.setEndDate;
 };

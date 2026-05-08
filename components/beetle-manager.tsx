@@ -158,7 +158,7 @@ export function BeetleManager() {
   }, [selectedIds, entries]);
 
   const bulkFormId = "bulk-edit-form";
-  const generateUniqueMName = (base: string, sciName: string, currentEntries: BeetleEntry[]) => {
+  const generateUniqueMName = (base: string, sciName: string, currentEntries: BeetleEntry[], type: EntryType) => {
     const trimmedBase = base.trim();
     const namePart = trimmedBase || "個体";
     
@@ -181,7 +181,7 @@ export function BeetleManager() {
 
     // 指定したプレフィックスに合致する既存の数値を集計
     const existingNumbers = currentEntries
-      .filter(e => e.scientificName === sciName)
+      .filter(e => e.scientificName === sciName && e.type === type)
       .map(e => e.managementName || "")
       .filter(name => name.startsWith(prefix))
       .map(name => {
@@ -525,7 +525,7 @@ export function BeetleManager() {
 
     addAdult({
       type: "成虫",
-      managementName: entry.managementName,
+      managementName: mName,
       gender: "不明",
       japaneseName: entry.japaneseName,
       scientificName: entry.scientificName,
@@ -1225,7 +1225,7 @@ export function BeetleManager() {
             id="create-form"
             initialValues={pastedData && pastedData.type === "成虫" ? { ...emptyAdultForm, ...pastedData } : getInitialValues("成虫", emptyAdultForm)}
             onSubmit={(value) => {
-              const mName = generateUniqueMName(value.managementName || "", value.scientificName, entries);
+              const mName = generateUniqueMName(value.managementName || "", value.scientificName, entries, "成虫");
               addAdult({ ...value, managementName: mName });
               setIsCreating(false);
             }}
@@ -1243,10 +1243,10 @@ export function BeetleManager() {
             onSubmit={(values, count) => {
             let currentEntries = [...entries];
               for (let index = 0; index < count; index += 1) {
-              const mName = generateUniqueMName(values.managementName || "", values.scientificName, currentEntries);
+              const mName = generateUniqueMName(values.managementName || "", values.scientificName, currentEntries, "幼虫");
               addLarva({ ...values, managementName: mName });
               // 次のループの判定用に管理名だけ仮追加した配列を作る
-              currentEntries.push({ managementName: mName, scientificName: values.scientificName } as any);
+              currentEntries.push({ managementName: mName, scientificName: values.scientificName, type: "幼虫" } as any);
               }
               setIsCreating(false);
             }}
@@ -1259,7 +1259,7 @@ export function BeetleManager() {
             initialValues={pastedData && pastedData.type === "産卵セット" ? { ...emptySpawnSetForm, ...pastedData } : (spawnTemplate ? { ...emptySpawnSetForm, ...spawnTemplate } : getInitialValues("産卵セット", emptySpawnSetForm))}
             allEntries={entries}
             onSubmit={(value) => {
-              const mName = generateUniqueMName(value.managementName || "", value.scientificName, entries);
+              const mName = generateUniqueMName(value.managementName || "", value.scientificName, entries, "産卵セット");
               addSpawnSet({ ...value, managementName: mName });
               setIsCreating(false);
             }}
