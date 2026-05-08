@@ -70,11 +70,11 @@ export function SpawnSetForm({
 
     const initialSetEndDate = initialValues.setEndDate || (latestSpawnSet?.setEndDate ? fmt(latestSpawnSet.setEndDate) : "");
 
-    setValues({
+    setValues(prev => ({
       ...initialValues,
-      setDate: fmt(initialValues.setDate),
-      setEndDate: fmt(initialSetEndDate),
-    });
+      setDate: prev.setDate || fmt(initialValues.setDate),
+      setEndDate: prev.setEndDate || fmt(initialSetEndDate),
+    }));
   }, [initialValues.id, initialValues.setDate, initialValues.setEndDate, allEntries]);
 
   return (

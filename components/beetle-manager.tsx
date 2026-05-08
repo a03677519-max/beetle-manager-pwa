@@ -896,27 +896,27 @@ export function BeetleManager() {
   return (
     <div className="app-container font-cute bg-[#F5F0EB] min-h-screen pb-[calc(120px+env(safe-area-inset-bottom,16px))] leading-[1.7]">
       {/* 固定ヘッダーセクション */}
-      <section className="sticky top-0 z-30 bg-white/80 backdrop-blur-md pt-8 pb-4 px-6 border-b border-gray-100 mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <p className="text-[11px] font-black text-[#D7CCC8] uppercase tracking-[0.2em] opacity-60">Breeding Dashboard</p>
-          <div className="flex gap-2 items-center">
+      <section className="sticky top-0 z-30 bg-white/80 backdrop-blur-md pt-4 pb-2 px-6 border-b border-gray-100 mb-4">
+        <div className="flex justify-between items-center mb-2">
+          <p className="text-[10px] font-black text-[#D7CCC8] uppercase tracking-[0.2em] opacity-60">Breeding Dashboard</p>
+          <div className="flex gap-1 items-center">
             <button
               onClick={() => setIsSettingsOpen(true)}
               className="p-1.5 text-gray-400 hover:text-[#FF9800] transition-colors"
             >
-              <Settings size={20} />
+              <Settings size={18} />
             </button>
             <button 
               onClick={() => setShowSort(!showSort)}
-              className={`text-[10px] font-bold px-3 py-1 rounded-full transition-all ${showSort ? "bg-[#FF9800] text-white" : "bg-gray-100 text-gray-500"}`}
+              className={`text-[9px] font-bold px-2 py-0.5 rounded-full transition-all ${showSort ? "bg-[#FF9800] text-white" : "bg-gray-100 text-gray-500"}`}
             >
               並び替え
             </button>
             <button 
               onClick={handleToggleSelectionMode}
-              className={`text-[10px] font-bold px-3 py-1 rounded-full transition-all ${isSelectionMode ? "bg-[#F4511E] text-white" : "bg-gray-100 text-gray-500"}`}
+              className={`text-[9px] font-bold px-2 py-0.5 rounded-full transition-all ${isSelectionMode ? "bg-[#F4511E] text-white" : "bg-gray-100 text-gray-500"}`}
             >
-              {isSelectionMode ? "選択解除" : "一括操作"}
+              一括
             </button>
           </div>
         </div>
@@ -1461,6 +1461,7 @@ export function BeetleManager() {
             isFetchingTemperature={isFetching}
             onAddSecondSet={() => setIsAddingSecondSet(true)}
             onDeleteSet={(setId) => handleDeleteSet(selectedEntry.id, setId)}
+            onEditSet={(set) => handleEditSet(selectedEntry.id, set)}
           />
         )}
       </AnimatePresence>

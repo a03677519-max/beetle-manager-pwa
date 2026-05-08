@@ -36,7 +36,7 @@ export function Navbar({ activeTab, setActiveTab, onTabChange, onAdd, showAddBut
       )}
 
       {/* ナビゲーションバー本体 */}
-      <nav className="bg-white/90 backdrop-blur-xl border-t border-gray-100 px-2 py-3 pb-[calc(8px+env(safe-area-inset-bottom,16px))] flex items-center justify-around shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+      <nav className="bg-white/90 backdrop-blur-xl border-t border-gray-100 px-2 py-3 pb-[calc(16px+env(safe-area-inset-bottom,24px))] flex items-center justify-around shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
