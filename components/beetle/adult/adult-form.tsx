@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { DateRollField, Field, BottomSheetInput, GenderField } from "@/components/entry-fields";
+import { DateRollField, Field, BottomSheetInput, GenderField, useNextFieldNavigation } from "@/components/entry-fields";
 import type { AdultFormValues } from "@/types/beetle";
 import { EntryBaseFields } from "@/components/beetle/shared/entry-base-fields";
 import { useBeetleStore } from "@/store/use-beetle-store";
@@ -21,6 +21,13 @@ export function AdultForm({
   className?: string;
 }) {
   const [values, setValues] = useState<AdultFormValues>(initialValues);
+  const formId = id || "adult-form";
+  const { 
+    NextFieldButton: NavButton, 
+    focusNextField, 
+    focusDone, 
+    isLastField 
+  } = useNextFieldNavigation(formId, true);
   const formRef = useRef<HTMLFormElement>(null);
 
   // Effect to synchronize internal form state with external initialValues prop.
@@ -47,7 +54,7 @@ export function AdultForm({
 
   return (
     <form
-      id={id}
+      id={formId}
       ref={formRef}
       className={`flex flex-col h-full overflow-hidden ${className || ''}`}
       onKeyDown={(e) => {
@@ -179,6 +186,15 @@ export function AdultForm({
         {/* ナビゲーションバー回避用のスペーサー */}
         <div className="h-32" />
         </div>
+
+        <NavButton 
+          formId={formId}
+          currentInputRef={useRef(null)}
+          onNext={focusNextField}
+          onDone={focusDone}
+          isLastField={isLastField}
+          isModalOpen={true}
+        />
       </div>
     </form>
   );

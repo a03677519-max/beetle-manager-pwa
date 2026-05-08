@@ -7,6 +7,7 @@ import {
   BottomSheetInput,
   MoistureField,
   SwitchBotTemperatureField,
+  useNextFieldNavigation,
 } from "@/components/entry-fields";
 import type { BeetleEntry, SpawnSetFormValues } from "@/types/beetle";
 import { EntryBaseFields } from "@/components/beetle/shared/entry-base-fields";
@@ -35,6 +36,13 @@ export function SpawnSetForm({
   className?: string;
 }) {
   const [values, setValues] = useState<SpawnSetFormValues>(initialValues);
+  const formId = id || "spawn-set-form";
+  const { 
+    NextFieldButton: NavButton, 
+    focusNextField, 
+    focusDone, 
+    isLastField 
+  } = useNextFieldNavigation(formId, true);
   const formRef = useRef<HTMLFormElement>(null);
 
   // 外部からの初期値変更を同期
@@ -54,7 +62,7 @@ export function SpawnSetForm({
 
   return (
     <form
-      id={id}
+      id={formId}
       ref={formRef}
       className={`flex flex-col h-full overflow-hidden touch-pan-y ${className || ''}`}
       onKeyDown={(e) => {
@@ -229,6 +237,15 @@ export function SpawnSetForm({
         {/* ナビゲーションバー回避用のスペーサー */}
         <div className="h-32" />
         </div>
+
+        <NavButton 
+          formId={formId}
+          currentInputRef={useRef(null)}
+          onNext={focusNextField}
+          onDone={focusDone}
+          isLastField={isLastField}
+          isModalOpen={true}
+        />
       </div>
     </form>
   );

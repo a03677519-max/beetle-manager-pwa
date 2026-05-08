@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { CountRollField, Field, DateRollField, BottomSheetInput, MoistureField, PressureField } from "@/components/entry-fields";
+import { CountRollField, Field, DateRollField, BottomSheetInput, MoistureField, PressureField, useNextFieldNavigation } from "@/components/entry-fields";
 import type { BeetleEntry, LarvaFormValues, LarvaLog, LogStage, Gender } from "@/types/beetle";
 import { EntryBaseFields } from "@/components/beetle/shared/entry-base-fields";
 import { today, daysBetween } from "@/lib/utils";
@@ -33,6 +33,13 @@ export function LarvaForm({
   const [count, setCount] = useState(1);
   const [setStartDate, setSetStartDate] = useState(today());
   const [setEndDate, setSetEndDate] = useState(today());
+  const formId = id || "larva-form";
+  const { 
+    NextFieldButton: NavButton, 
+    focusNextField, 
+    focusDone, 
+    isLastField 
+  } = useNextFieldNavigation(formId, true);
 
   const formRef = useRef<HTMLFormElement>(null);
   const isEmerged = !!values.actualEmergenceDate;
@@ -141,7 +148,7 @@ export function LarvaForm({
 
   return (
     <form
-      id={id}
+      id={formId}
       ref={formRef}
       className={`flex flex-col h-full overflow-hidden ${className || ''}`}
       onKeyDown={(e) => {

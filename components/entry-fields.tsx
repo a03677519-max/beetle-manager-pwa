@@ -1,6 +1,6 @@
 "use client";
 
-import { Thermometer } from "lucide-react";
+import { Thermometer, ChevronRight } from "lucide-react";
 import { useMemo, useRef, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
@@ -21,6 +21,7 @@ import {
   type Gender,
   type GenerationValue,
   type LogStage,
+  type EntryType,
 } from "@/types/beetle";
 import { buildDateFromParts, createDateOptions, splitDate, today } from "@/lib/utils";
 
@@ -30,6 +31,7 @@ function Portal({ children }: { children: React.ReactNode }) {
   if (typeof window === "undefined") return null;
   return createPortal(children, document.body);
 }
+
 
 export function Field({
   label,
@@ -45,6 +47,7 @@ export function Field({
     </label>
   );
 }
+
 
 interface DrumrollPickerProps<T> {
   options: readonly T[];
@@ -137,6 +140,7 @@ export function DateRollField({
   onChange, // Keep onChange
 }: {
   label: string;
+  id?: string; // Add id prop
   value: string;
   onChange: (value: string) => void;
 }) {
@@ -171,6 +175,7 @@ export function DateRollField({
       <PickerContainer>
         <DrumrollPicker
           options={dateOptions.years}
+          id={`${id}-year`} // Pass id to DrumrollPicker
           value={parts.year !== "-" ? parts.year : currentParts.year}
           onChange={(v) => {
             const m = parts.month !== "-" ? parts.month : currentParts.month;
@@ -181,6 +186,7 @@ export function DateRollField({
         <div className="w-[1px] h-full bg-gray-100/50" />
         <DrumrollPicker
           options={dateOptions.months}
+          id={`${id}-month`} // Pass id to DrumrollPicker
           value={parts.month !== "-" ? parts.month : currentParts.month}
           onChange={(v) => {
             const y = parts.year !== "-" ? parts.year : currentParts.year;
@@ -191,6 +197,7 @@ export function DateRollField({
         <div className="w-[1px] h-full bg-gray-100/50" />
         <DrumrollPicker
           options={dateOptions.days}
+          id={`${id}-day`} // Pass id to DrumrollPicker
           value={parts.day !== "-" ? parts.day : currentParts.day}
           onChange={(v) => {
             const y = parts.year !== "-" ? parts.year : currentParts.year;
@@ -390,6 +397,7 @@ export function BottomSheetInput({
   type?: "text" | "textarea" | "password";
   suggestions?: string[];
   enterKeyHint?: "next" | "done" | "send" | "search" | "go";
+  id?: string; // Add id prop
   inputMode?: "text" | "decimal" | "numeric" | "tel" | "search" | "email" | "url";
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -441,6 +449,7 @@ export function BottomSheetInput({
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-[11px] font-bold text-[#A67C52] uppercase tracking-wider">{label}</span>
                   <button
+                    id={`${id}-done-button`} // Add id to done button
                     type="button"
                     className="bg-[#FF9800] text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-sm"
                     onClick={() => setIsOpen(false)}
@@ -451,6 +460,7 @@ export function BottomSheetInput({
                 {type === "textarea" ? (
                   <textarea
                     ref={inputRef as React.RefObject<HTMLTextAreaElement>}
+                    id={id} // Pass id to textarea
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     enterKeyHint={enterKeyHint || "done"}
@@ -461,6 +471,7 @@ export function BottomSheetInput({
                 ) : (
                   <input
                     ref={inputRef as React.RefObject<HTMLInputElement>}
+                    id={id} // Pass id to input
                     type={type}
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
@@ -507,6 +518,7 @@ export function PressureField(props: { value: number; onChange: (value: number) 
 }
 
 export function SwitchBotTemperatureField({
+  id, // Add id prop
   value,
   onChange,
   onFetch,
@@ -515,6 +527,7 @@ export function SwitchBotTemperatureField({
   value: string;
   onChange: (value: string) => void;
   onFetch: () => void;
+  id?: string; // Add id prop
   isFetching: boolean;
 }) {
   return (
@@ -522,6 +535,7 @@ export function SwitchBotTemperatureField({
       <span className="text-[11px] font-bold text-[#A67C52] mb-1 block uppercase tracking-wider">温度 (℃)</span>
       <div className="relative">
         <input 
+          id={id} // Pass id to input
           className="w-full h-[36px] px-3 rounded-xl border border-[#DEE2E6] focus:border-[#FF9800] focus:ring-1 focus:ring-[#FF9800] outline-none text-sm placeholder:text-gray-300"
           value={value} // Keep value
           onChange={(event) => onChange(event.target.value)} 
@@ -540,6 +554,7 @@ export function SwitchBotTemperatureField({
 export function EmergenceTypeField({
   value,
   onChange,
+  id, // Add id prop
 }: {
   value: EmergenceType;
   onChange: (value: EmergenceType) => void;
@@ -550,6 +565,7 @@ export function EmergenceTypeField({
       <div className="flex bg-[#F5F0EB] rounded-xl p-1 gap-1">
         {(EMERGENCE_TYPES as unknown as string[]).map((option) => (
           <button
+            id={`${id}-${option}`} // Add id to button
             key={option} // Keep key
             type="button"
             className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${option === value ? "bg-[#FF9800] text-white shadow-sm" : "text-gray-500"}`}
@@ -566,6 +582,7 @@ export function EmergenceTypeField({
 export function GenderField({
   value,
   onChange,
+  id, // Add id prop
 }: {
   value: Gender;
   onChange: (value: Gender) => void;
@@ -573,6 +590,7 @@ export function GenderField({
   return (
     <WheelSelect
       label="雌雄"
+      id={id} // Pass id to WheelSelect
       value={value}
       options={GENDERS}
       onChange={(value) => onChange(value as Gender)}
@@ -583,6 +601,7 @@ export function GenderField({
 export function LarvaStageField({
   value,
   onChange,
+  id, // Add id prop
 }: {
   value: LogStage;
   onChange: (value: LogStage) => void;
@@ -590,6 +609,7 @@ export function LarvaStageField({
   return (
     <WheelSelect
       label="加齢状況"
+      id={id} // Pass id to WheelSelect
       value={value}
       options={LOG_STAGES}
       onChange={(value) => onChange(value as LogStage)}
@@ -600,6 +620,7 @@ export function LarvaStageField({
 export function CohabitationField({
   value,
   onChange,
+  id, // Add id prop
 }: {
   value: CohabitationOption;
   onChange: (value: CohabitationOption) => void;
@@ -607,6 +628,7 @@ export function CohabitationField({
   return (
     <WheelSelect
       label="同居の有無"
+      id={id} // Pass id to WheelSelect
       value={value}
       options={COHABITATION_OPTIONS}
       onChange={(value) => onChange(value as CohabitationOption)}
@@ -616,3 +638,123 @@ export function CohabitationField({
 
 export const buildGenerationLabel = (value: GenerationValue) =>
   value.primary !== "-" ? `${value.primary}${value.count || ""}` : "-";
+
+
+interface NextFieldButtonProps {
+  formId: string;
+  currentInputRef: React.RefObject<HTMLElement>;
+  onNext: () => void;
+  onDone: () => void;
+  isLastField: boolean;
+  isModalOpen: boolean;
+}
+
+export function NextFieldButton({ formId, currentInputRef, onNext, onDone, isLastField, isModalOpen }: NextFieldButtonProps) {
+  const [isVisible, setIsVisible] = useState(false);
+  const [activeElement, setActiveElement] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const handleFocusIn = () => {
+      setActiveElement(document.activeElement as HTMLElement);
+    };
+
+    const handleFocusOut = () => {
+      setActiveElement(null);
+    };
+
+    document.addEventListener('focusin', handleFocusIn);
+    document.addEventListener('focusout', handleFocusOut);
+
+    return () => {
+      document.removeEventListener('focusin', handleFocusIn);
+      document.removeEventListener('focusout', handleFocusOut);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isModalOpen) {
+      setIsVisible(false);
+      return;
+    }
+
+    const form = document.getElementById(formId);
+    if (!form || !activeElement) {
+      setIsVisible(false);
+      return;
+    }
+
+    // フォーム内にあるか、もしくはポータル内の入力フィールドを判定
+    const isInput = activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA';
+    const isInsideForm = form.contains(activeElement);
+    const isNavigable = isInput || (activeElement.tagName === 'BUTTON' && isInsideForm);
+    
+    // テキストエリアの場合は表示しない（改行を優先するため）
+    if (activeElement.tagName === 'TEXTAREA') {
+      setIsVisible(false);
+      return;
+    }
+
+    setIsVisible(isNavigable);
+  }, [activeElement, formId, isModalOpen]);
+
+  if (!isVisible) return null;
+
+  return (
+    <Portal>
+      <motion.button
+        initial={{ y: 100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 100, opacity: 0 }}
+        transition={{ type: "spring", damping: 20, stiffness: 200 }}
+        className="fixed bottom-[calc(env(safe-area-inset-bottom,16px)+64px)] left-4 bg-white/95 backdrop-blur-md border border-gray-100 text-[#FF9800] px-4 py-2 rounded-2xl shadow-xl z-[100] active:scale-95 transition-all flex items-center gap-1"
+        onClick={isLastField ? onDone : onNext}
+      >
+        <ChevronRight size={20} strokeWidth={3} />
+        <span className="text-[10px] font-black tracking-tighter uppercase">{isLastField ? "完了" : "次へ"}</span>
+      </motion.button>
+    </Portal>
+  );
+}
+
+export function useNextFieldNavigation(formId: string, isModalOpen: boolean) {
+  const [isLastField, setIsLastField] = useState(false);
+
+  useEffect(() => {
+    const handleFocus = () => {
+      const form = document.getElementById(formId);
+      if (!form) return;
+      
+      const focusable = Array.from(
+        form.querySelectorAll('input:not([type="hidden"]), textarea, button:not([disabled])')
+      ) as HTMLElement[];
+      
+      const activeIndex = focusable.indexOf(document.activeElement as HTMLElement);
+      setIsLastField(activeIndex >= focusable.length - 1);
+    };
+
+    document.addEventListener('focusin', handleFocus);
+    return () => document.removeEventListener('focusin', handleFocus);
+  }, [formId]);
+
+  const focusNextField = () => {
+    const form = document.getElementById(formId);
+    if (!form) return;
+    const focusable = Array.from(
+      form.querySelectorAll('input:not([type="hidden"]), textarea, button:not([disabled])')
+    ) as HTMLElement[];
+    const activeIndex = focusable.indexOf(document.activeElement as HTMLElement);
+    if (activeIndex > -1 && activeIndex < focusable.length - 1) {
+      focusable[activeIndex + 1].focus();
+    } else {
+      // 最後のフィールドの場合、フォームを送信
+      form.requestSubmit();
+    }
+  };
+
+  const focusDone = () => {
+    const form = document.getElementById(formId);
+    if (form) form.requestSubmit();
+  };
+
+  return { NextFieldButton, focusNextField, focusDone, isLastField };
+}
