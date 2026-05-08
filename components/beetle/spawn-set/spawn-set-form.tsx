@@ -92,7 +92,7 @@ export function SpawnSetForm({
     <form
       id={formId}
       ref={formRef}
-      className={`flex flex-col h-full overflow-hidden touch-pan-y ${className || ''}`}
+      className={`flex flex-col h-auto overflow-hidden touch-pan-y ${className || ''}`}
       onSubmit={(event) => {
         event.preventDefault();
         onSubmit(valuesRef.current);
