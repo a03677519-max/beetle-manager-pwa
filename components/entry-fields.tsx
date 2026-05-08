@@ -1,7 +1,7 @@
 "use client";
 
 import { Thermometer, ChevronRight } from "lucide-react";
-import { useMemo, useRef, useEffect, useState } from "react";
+import { useMemo, useRef, useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
 
@@ -88,6 +88,7 @@ function DrumrollPicker<T extends string | number>({ options, value, onChange, i
   return (
     <div
       ref={scrollRef}
+      tabIndex={0}
       id={id}
       onScroll={handleScroll} // Keep scroll handling
       className="flex-1 h-full overflow-y-scroll snap-y snap-mandatory no-scrollbar py-[36px] overscroll-contain touch-pan-y"
@@ -412,12 +413,14 @@ export function BottomSheetInput({
   id?: string; // Add id prop
   inputMode?: "text" | "decimal" | "numeric" | "tel" | "search" | "email" | "url";
 }) {
+  const internalId = useMemo(() => id || `input-${label.replace(/\s+/g, '-')}`, [id, label]);
   const [isOpen, setIsOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (isOpen && inputRef.current) {
-      inputRef.current.focus();
+      // iOSでのフォーカス移動を確実にするため少し遅延させる
+      setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [isOpen]);
 
@@ -434,6 +437,7 @@ export function BottomSheetInput({
       <input
         type="text"
         readOnly
+        id={`${internalId}-trigger`}
         inputMode="none"
         value={value}
         placeholder={placeholder}
@@ -475,7 +479,8 @@ export function BottomSheetInput({
                 {type === "textarea" ? (
                   <textarea
                     ref={inputRef as React.RefObject<HTMLTextAreaElement>}
-                    id={id} // Pass id to textarea
+                    id={internalId} // Pass id to textarea
+                    tabIndex={0} // Explicitly make focusable
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     enterKeyHint={enterKeyHint || "done"}
@@ -486,7 +491,8 @@ export function BottomSheetInput({
                 ) : (
                   <input
                     ref={inputRef as React.RefObject<HTMLInputElement>}
-                    id={id} // Pass id to input
+                    id={internalId} // Pass id to input
+                    tabIndex={0} // Explicitly make focusable
                     type={type}
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
@@ -661,42 +667,143 @@ export const buildGenerationLabel = (value: GenerationValue) =>
 export function useNextFieldNavigation(formId: string, isModalOpen: boolean) {
   const [isLastField, setIsLastField] = useState(false);
 
+  const focusDone = useCallback(() => {
+    (document.activeElement as HTMLElement)?.blur();
+  }, []);
+
+  const focusNextField = useCallback(() => {
+    const form = document.getElementById(formId) as HTMLFormElement | null;
+    if (!form) return;
+    
+    // フォーカス可能な要素を順番に取得
+    const focusable = Array.from(
+      form.querySelectorAll('input:not([type="hidden"]), textarea, button:not([disabled]):not([type="submit"]), div[tabIndex="0"]')
+    ) as HTMLElement[];
+    
+    const activeElement = document.activeElement as HTMLElement;
+    let activeIndex = focusable.indexOf(activeElement);
+
+    // 現在の要素がポータル内（IDに -trigger がない）の場合、トリガー側を探す
+    if (activeIndex === -1 && activeElement?.id) {
+      const triggerId = `${activeElement.id}-trigger`;
+      activeIndex = focusable.findIndex(el => el.id === triggerId);
+    }
+
+    if (activeIndex > -1) {
+      if (activeIndex < focusable.length - 1) {
+        const nextElement = focusable[activeIndex + 1];
+        if (nextElement) {
+          nextElement.focus();
+          // トリガー要素（input readOnly）の場合はクリックイベントを発生させてモーダルを開く
+          if (nextElement.tagName === 'INPUT' && (nextElement as HTMLInputElement).readOnly) {
+            nextElement.click();
+          }
+        }
+      } else {
+        // 最後の項目の場合はキーボードを閉じる
+        focusDone();
+      }
+    }
+  }, [formId, focusDone]);
+
+  const focusPreviousField = useCallback(() => {
+    const form = document.getElementById(formId) as HTMLFormElement | null;
+    if (!form) return;
+
+    const focusable = Array.from(
+      form.querySelectorAll('input:not([type="hidden"]), textarea, button:not([disabled]):not([type="submit"]), div[tabIndex="0"]')
+    ) as HTMLElement[];
+
+    const activeElement = document.activeElement as HTMLElement;
+    let activeIndex = focusable.indexOf(activeElement);
+
+    // Current element might be in a Portal, find its trigger
+    if (activeIndex === -1 && activeElement?.id) {
+      const triggerId = `${activeElement.id}-trigger`;
+      activeIndex = focusable.findIndex(el => el.id === triggerId);
+    }
+
+    if (activeIndex > 0) { // Move to previous, if not the first
+      const prevElement = focusable[activeIndex - 1];
+      if (prevElement) {
+        prevElement.focus();
+        // If previous is a trigger, click it to open its modal
+        if (prevElement.tagName === 'INPUT' && (prevElement as HTMLInputElement).readOnly) {
+          prevElement.click();
+        }
+      }
+    }
+  }, [formId]);
+
   useEffect(() => {
     const handleFocus = () => {
       const form = document.getElementById(formId);
       if (!form) return;
       
       const focusable = Array.from(
-        form.querySelectorAll('input:not([type="hidden"]), textarea, button:not([disabled])')
+        form.querySelectorAll('input:not([type="hidden"]), textarea, button:not([disabled]):not([type="submit"]), div[tabIndex="0"]')
       ) as HTMLElement[];
       
-      const activeIndex = focusable.indexOf(document.activeElement as HTMLElement);
+      const activeElement = document.activeElement as HTMLElement;
+      let activeIndex = focusable.indexOf(activeElement);
+
+      // ポータル内の要素も考慮して判定
+      if (activeIndex === -1 && activeElement?.id) {
+        const triggerId = `${activeElement.id}-trigger`;
+        activeIndex = focusable.findIndex(el => el.id === triggerId);
+      }
+
       setIsLastField(activeIndex >= focusable.length - 1);
     };
 
-    document.addEventListener('focusin', handleFocus);
-    return () => document.removeEventListener('focusin', handleFocus);
-  }, [formId]);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        const target = e.target as HTMLElement;
+        if (target.tagName === 'TEXTAREA') return; // メモ欄での改行は許可
 
-  const focusNextField = () => {
-    const form = document.getElementById(formId) as HTMLFormElement | null;
-    if (!form) return;
-    
-    // フォーカス可能な要素を順番に取得
-    const focusable = Array.from(
-      form.querySelectorAll('input:not([type="hidden"]), textarea, button:not([disabled]):not([type="submit"])')
-    ) as HTMLElement[];
-    
-    const activeIndex = focusable.indexOf(document.activeElement as HTMLElement);
-    if (activeIndex > -1 && activeIndex < focusable.length - 1) {
-      focusable[activeIndex + 1].focus();
+        const form = document.getElementById(formId);
+        if (!form) return;
+
+        // フォーム内またはID紐付けされたポータル入力からのEnterを検知
+        const isInside = form.contains(target);
+        const isPortalInput = target.id && !!document.getElementById(`${target.id}-trigger`);
+
+        if (isInside || isPortalInput) {
+          e.preventDefault();
+          focusNextField();
+        }
+      } else if (e.key === 'ArrowDown') {
+        const form = document.getElementById(formId);
+        if (!form) return;
+        const target = e.target as HTMLElement;
+        const isInside = form.contains(target);
+        const isPortalInput = target.id && !!document.getElementById(`${target.id}-trigger`);
+        if (isModalOpen && (isInside || isPortalInput)) {
+          e.preventDefault();
+          focusNextField();
+        }
+      } else if (e.key === 'ArrowUp') {
+        const form = document.getElementById(formId);
+        if (!form) return;
+        const target = e.target as HTMLElement;
+        const isInside = form.contains(target);
+        const isPortalInput = target.id && !!document.getElementById(`${target.id}-trigger`);
+        if (isModalOpen && (isInside || isPortalInput)) {
+          e.preventDefault();
+          focusPreviousField();
+        }
+      }
+    };
+
+    if (isModalOpen) {
+      window.addEventListener('keydown', handleKeyDown, true);
+      document.addEventListener('focusin', handleFocus);
     }
-  };
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown, true);
+      document.removeEventListener('focusin', handleFocus);
+    };
+  }, [formId, isModalOpen, focusNextField, focusPreviousField]);
 
-  const focusDone = () => {
-    const form = document.getElementById(formId) as HTMLFormElement | null;
-    if (form) (document.activeElement as HTMLElement)?.blur();
-  };
-
-  return { isLastField, focusNextField, focusDone };
+  return { isLastField, focusNextField, focusDone, focusPreviousField };
 }

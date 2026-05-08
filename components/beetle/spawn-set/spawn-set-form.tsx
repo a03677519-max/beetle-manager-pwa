@@ -60,12 +60,6 @@ export function SpawnSetForm({
       id={formId}
       ref={formRef}
       className={`flex flex-col h-full overflow-hidden touch-pan-y ${className || ''}`}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' && (e.target as HTMLElement).tagName !== 'TEXTAREA' && (e.target as HTMLElement).tagName !== 'BUTTON') {
-          e.preventDefault();
-          focusNextField();
-        }
-      }}
       onSubmit={(event) => {
         event.preventDefault();
         onSubmit(values);
