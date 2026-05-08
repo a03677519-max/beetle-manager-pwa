@@ -56,7 +56,7 @@ interface DrumrollPickerProps<T> {
   id?: string; // idプロパティを追加
 }
 
-function DrumrollPicker<T extends string | number>({ options, value, onChange }: DrumrollPickerProps<T>) {
+function DrumrollPicker<T extends string | number>({ options, value, onChange, id }: DrumrollPickerProps<T>) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -88,6 +88,7 @@ function DrumrollPicker<T extends string | number>({ options, value, onChange }:
   return (
     <div
       ref={scrollRef}
+      id={id}
       onScroll={handleScroll} // Keep scroll handling
       className="flex-1 h-full overflow-y-scroll snap-y snap-mandatory no-scrollbar py-[36px] overscroll-contain touch-pan-y"
     >
@@ -120,16 +121,18 @@ export function WheelSelect({
   value,
   options,
   onChange,
+  id,
 }: {
   label: string;
   value: string | number;
   options: readonly (string | number)[];
   onChange: (value: string) => void;
+  id?: string;
 }) {
   return (
     <Field label={label}>
       <PickerContainer>
-        <DrumrollPicker options={options} value={value} onChange={onChange} />
+        <DrumrollPicker options={options} value={value} onChange={onChange} id={id} />
       </PickerContainer>
     </Field>
   );
@@ -138,10 +141,11 @@ export function WheelSelect({
 export function DateRollField({
   label,
   value,
-  onChange, // Keep onChange
+  onChange,
+  id,
 }: {
   label: string;
-  id?: string; // Add id prop
+  id?: string;
   value: string;
   onChange: (value: string) => void;
 }) {
@@ -559,6 +563,7 @@ export function EmergenceTypeField({
 }: {
   value: EmergenceType;
   onChange: (value: EmergenceType) => void;
+  id?: string;
 }) {
   return (
     <div className="field">
@@ -587,6 +592,7 @@ export function GenderField({
 }: {
   value: Gender;
   onChange: (value: Gender) => void;
+  id?: string;
 }) {
   return (
     <WheelSelect
@@ -606,6 +612,7 @@ export function LarvaStageField({
 }: {
   value: LogStage;
   onChange: (value: LogStage) => void;
+  id?: string;
 }) {
   return (
     <WheelSelect
@@ -625,6 +632,7 @@ export function CohabitationField({
 }: {
   value: CohabitationOption;
   onChange: (value: CohabitationOption) => void;
+  id?: string;
 }) {
   return (
     <WheelSelect
