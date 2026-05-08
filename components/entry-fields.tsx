@@ -435,9 +435,20 @@ export function BottomSheetInput({
           inputRef.current?.focus();
         });
       }
-    }, 500); // 300ms から 500ms に増やす
+    }, 500); // 500ms
     
-    return () => clearTimeout(focusTimer);
+    // iOS キーボード展開時のスクロール追従対策
+    const handler = () => {
+      if (window.visualViewport && document.activeElement instanceof HTMLElement) {
+          document.activeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    };
+    window.visualViewport?.addEventListener('resize', handler);
+
+    return () => {
+      clearTimeout(focusTimer);
+      window.visualViewport?.removeEventListener('resize', handler);
+    };
   }, [isOpen]);
 
   const filteredSuggestions = useMemo(() => {
