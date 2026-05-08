@@ -746,7 +746,7 @@ export function useNextFieldNavigation(formId: string, isModalOpen: boolean) {
   }, [formId]);
 
   const focusNextField = () => {
-    const form = document.getElementById(formId);
+    const form = document.getElementById(formId) as HTMLFormElement | null;
     if (!form) return;
     const focusable = Array.from(
       form.querySelectorAll('input:not([type="hidden"]), textarea, button:not([disabled])')
@@ -761,7 +761,7 @@ export function useNextFieldNavigation(formId: string, isModalOpen: boolean) {
   };
 
   const focusDone = () => {
-    const form = document.getElementById(formId);
+    const form = document.getElementById(formId) as HTMLFormElement | null;
     if (form) form.requestSubmit();
   };
 
