@@ -157,7 +157,7 @@ export function BeetleManager() {
   }, [selectedIds, entries]);
 
   const bulkFormId = "bulk-edit-form";
-  const generateUniqueMName = (base: string, currentEntries: BeetleEntry[]) => {
+  const generateUniqueMName = (base: string, sciName: string, currentEntries: BeetleEntry[]) => {
     const trimmedBase = base.trim();
     const namePart = trimmedBase || "個体";
     
@@ -179,7 +179,8 @@ export function BeetleManager() {
     }
 
     // 指定したプレフィックスに合致する既存の数値を集計
-    const existingNumbers = speciesEntries
+    const existingNumbers = currentEntries
+      .filter(e => e.scientificName === sciName)
       .map(e => e.managementName || "")
       .filter(name => name.startsWith(prefix))
       .map(name => {
@@ -188,9 +189,9 @@ export function BeetleManager() {
       })
       .filter((n): n is number => n !== null);
 
-    // startNum 以降で未使用の最小番号を探す
+    // startNum 以折で未使用の最小番号を探す
     let nextNumber = startNum;
-    const sortedExisting = [...new Set(existingNumbers.filter(n => n >= startNum))].sort((a, b) => a - b);
+    const sortedExisting = [...new Set(existingNumbers.filter(n => n >= startNum))].sort((a: number, b: number) => a - b);
     for (const n of sortedExisting) {
       if (n === nextNumber) {
         nextNumber++;

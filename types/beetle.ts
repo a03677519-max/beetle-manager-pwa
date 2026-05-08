@@ -37,7 +37,7 @@ export type BaseBeetle = {
   updatedAt: string;
   managementName?: string;
   entryNumber?: number; // 自動採番用
-  linkedEntryId?: string;
+  linkedEntryIds?: string[];
   memo?: string;
   order?: number; // 並べ替え用
 };
