@@ -17,6 +17,8 @@ export function EntryDetail({
   onFetchTemperature,
   isFetchingTemperature,
   onAddSecondSet,
+  onDeleteSet,
+  onEditSet,
 }: {
   entry: BeetleEntry;
   onClose: () => void;
