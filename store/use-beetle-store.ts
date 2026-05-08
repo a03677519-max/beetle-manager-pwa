@@ -122,8 +122,9 @@ export const useBeetleStore = create<BeetleState>()(
         })),
       addLarva: (input) =>
         set((state) => {
-          const nextNumber = Math.max(0, ...state.entries.filter(e => e.scientificName === input.scientificName
-          ries: [{ id: createId(), ...input, entryNumber: nextNumber, photos: input.photos || [], createdAt: today(), updatedAt: today() }, ...state.entries],
+          const nextNumber = Math.max(0, ...state.entries.filter(e => e.scientificName === input.scientificName).map(e => e.entryNumber || 0)) + 1;
+          return {
+            entries: [{ id: createId(), ...input, entryNumber: nextNumber, photos: input.photos || [], createdAt: today(), updatedAt: today() }, ...state.entries],
             editingId: null,
           };
         }),
@@ -136,7 +137,8 @@ export const useBeetleStore = create<BeetleState>()(
         })),
       addSpawnSet: (input) =>
         set((state) => {
-          const nextNumb
+          const nextNumber = Math.max(0, ...state.entries.filter(e => e.scientificName === input.scientificName).map(e => e.entryNumber || 0)) + 1;
+          return {
             entries: [{ id: createId(), ...input, entryNumber: nextNumber, photos: [], createdAt: today(), updatedAt: today() }, ...state.entries],
             editingId: null,
           };
