@@ -228,7 +228,7 @@ export function EntryDetail({
               <SpawnSetDetail 
                 entry={entry} 
                 onAddSecondSet={onAddSecondSet || (() => {})} 
-                onDeleteSet={onDeleteSet}
+                onDeleteSet={onDeleteSet || (() => {})}
                 onEditSet={onEditSet || (() => {})}
               />
             ) : null}
