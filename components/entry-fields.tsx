@@ -380,6 +380,8 @@ export function BottomSheetInput({
   placeholder,
   type = "text",
   suggestions,
+  enterKeyHint,
+  inputMode,
 }: {
   label: string;
   value: string | number;
