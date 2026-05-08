@@ -219,7 +219,11 @@ export function EntryBaseFields({
                     }}
                   >
                     <span className="text-sm">{e.japaneseName}</span>
-                    <span className="text-[10px] opacity-70">{e.managementName || "管理名なし"} / {e.locality || "産地不明"}</span>
+                    <span className="text-[10px] opacity-70">
+                      {e.managementName || "管理名なし"} / {e.locality || "産地不明"}
+                      {(e.type === "成虫" && (e as any).emergenceDate) && ` / 羽化:${(e as any).emergenceDate}`}
+                      {(e.type === "成虫" && (e as any).gender) && ` / 性別:${(e as any).gender}`}
+                    </span>
                   </button>
                 ))}
               </div>
