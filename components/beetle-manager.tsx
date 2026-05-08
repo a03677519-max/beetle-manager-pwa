@@ -579,7 +579,10 @@ export function BeetleManager() {
         // 管理名と日付の分離（日付パターンを探す）
         const dateIndex = parts.findIndex((p, idx) => idx > 0 && p.match(/\d{4}[^\d]\d{1,2}/));
         if (dateIndex !== -1) {
-          patch.hatchDate = fixOcrDate(parts[dateIndex]);
+          const parsedDate = fixOcrDate(parts[dateIndex]);
+          patch.hatchDate = parsedDate;
+          patch.setDate = parsedDate; // 産卵セット用にも予備保持
+          patch.emergenceDate = parsedDate; // 成虫用にも予備保持
           if (dateIndex > 1) patch.managementName = parts.slice(1, dateIndex).join(" ");
         } else if (parts.length > 1) {
           patch.managementName = parts.slice(1).join(" ");
@@ -611,20 +614,41 @@ export function BeetleManager() {
         patch.emergenceType = eDateMatch[2] === "堀" ? "掘り出し" : eDateMatch[2];
         patch.emergenceDate = patch.actualEmergenceDate;
       }
+
+      // 産卵セット開始日・期間の抽出
+      const sDateMatch = l.match(/^(最新セット期間|セット期間|セット開始日|セット情報)\s*(\d{4}[^\d]\d{1,2}[^\d]\d{1,2})/);
+      if (sDateMatch) {
+        patch.setDate = fixOcrDate(sDateMatch[2]);
+        patch.type = "産卵セット";
+      }
       
       // 後食の抽出
       const fDateMatch = l.match(/(\d{4}[^\d]\d{1,2}[^\d]\d{1,2})\s+後食/);
       if (fDateMatch) {
         patch.feedingDate = fixOcrDate(fDateMatch[1]);
-        patch.type = "成虫";
         if (!patch.emergenceDate) patch.emergenceDate = patch.actualEmergenceDate || "";
       }
-
-      // デフォルト判定
-      if (!patch.type) {
-        patch.type = patch.logs.length > 0 ? "幼虫" : "成虫";
-      }
     });
+
+    // キーワードによる種別判定の強化
+    const hasLarvaKeywords = text.includes("体重") || text.includes("マット") || text.includes("ボトル") || /L[123]/.test(text) || text.includes("割出日") || text.includes("孵化日");
+    const hasSpawnSetKeywords = text.includes("セット期間") || text.includes("セット開始") || text.includes("卵数") || text.includes("幼虫数") || text.includes("回収");
+    const hasAdultKeywords = text.includes("サイズ") || text.includes("後食") || text.includes("羽化") || text.includes("掘り出し") || text.includes("性別") || text.includes("死亡");
+
+    if (patch.logs.length > 0 || hasLarvaKeywords) {
+      patch.type = "幼虫";
+      // 幼虫の場合は累代行の日付を孵化日に割り当て
+      if (patch.setDate && !patch.hatchDate) patch.hatchDate = patch.setDate;
+    } else if (hasSpawnSetKeywords || text.includes("産卵セット")) {
+      patch.type = "産卵セット";
+    } else if (hasAdultKeywords || patch.feedingDate || patch.actualEmergenceDate) {
+      patch.type = "成虫";
+      // 成虫の場合は累代行の日付を羽化日に割り当て
+      if (patch.setDate && !patch.emergenceDate) patch.emergenceDate = patch.setDate;
+    } else {
+      patch.type = "成虫"; // 判定不能な場合のデフォルト
+    }
+
     return patch;
   };
 
@@ -1079,7 +1103,7 @@ export function BeetleManager() {
         {isCreating && !editingEntry && createType === "産卵セット" ? (
           <SpawnSetForm
             id="create-form"
-            initialValues={spawnTemplate ? { ...emptySpawnSetForm, ...spawnTemplate } : getInitialValues("産卵セット", emptySpawnSetForm)}
+            initialValues={pastedData && pastedData.type === "産卵セット" ? { ...emptySpawnSetForm, ...pastedData } : (spawnTemplate ? { ...emptySpawnSetForm, ...spawnTemplate } : getInitialValues("産卵セット", emptySpawnSetForm))}
             allEntries={entries}
             onSubmit={(value) => {
               const mName = generateUniqueMName(value.managementName || "", entries);

@@ -36,12 +36,8 @@ export function SpawnSetForm({
   className?: string;
 }) {
   const [values, setValues] = useState<SpawnSetFormValues>(initialValues);
-  const formId = id || "spawn-set-form";
-  const { 
-    focusNextField, 
-    focusDone, 
-    isLastField 
-  } = useNextFieldNavigation(formId, true);
+  const formId = id || "spawn-set-form"; // Keep formId for onSubmit
+  const { focusNextField } = useNextFieldNavigation(formId, true);
   const formRef = useRef<HTMLFormElement>(null);
 
   // 外部からの初期値変更を同期
@@ -65,20 +61,9 @@ export function SpawnSetForm({
       ref={formRef}
       className={`flex flex-col h-full overflow-hidden touch-pan-y ${className || ''}`}
       onKeyDown={(e) => {
-        if (e.key === 'Enter') {
-          // テキストエリア内でのEnterは改行を優先
-          if ((e.target as HTMLElement).tagName === 'TEXTAREA') return;
-
+        if (e.key === 'Enter' && (e.target as HTMLElement).tagName !== 'TEXTAREA' && (e.target as HTMLElement).tagName !== 'BUTTON') {
           e.preventDefault();
-          const form = formRef.current;
-          if (!form) return;
-          const focusable = Array.from(
-            form.querySelectorAll('input:not([type="hidden"]), textarea, button:not([disabled])')
-          ) as HTMLElement[];
-          const index = focusable.indexOf(e.target as HTMLElement);
-          if (index > -1 && index < focusable.length - 1) {
-            focusable[index + 1].focus();
-          }
+          focusNextField();
         }
       }}
       onSubmit={(event) => {

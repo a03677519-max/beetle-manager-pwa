@@ -318,13 +318,17 @@ export function BottomSheetSelect({
   return (
     <div className="field">
       <span className="text-[11px] font-bold text-[#A67C52] mb-1.5 block tracking-wider uppercase">{label}</span>
-      <button // Keep button
-        type="button"
-        className="w-full bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-sm text-left text-gray-700 min-h-[34px] transition-colors active:bg-gray-50"
+      <input
+        type="text"
+        readOnly
+        inputMode="none"
+        id={id ? `${id}-trigger` : undefined}
+        value={String(value)}
+        placeholder={placeholder}
+        className="w-full bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-sm text-left text-gray-700 min-h-[34px] transition-colors active:bg-gray-50 outline-none cursor-pointer"
+        onFocus={() => setIsOpen(true)}
         onClick={() => setIsOpen(true)}
-      >
-        {value || <span className="text-gray-300">{placeholder}</span>}
-      </button>
+      />
 
       <AnimatePresence>
         {isOpen && (
@@ -425,13 +429,16 @@ export function BottomSheetInput({
   return (
     <div className="field">
       <span className="text-[11px] font-bold text-[#A67C52] mb-1.5 block tracking-wider uppercase">{label}</span>
-      <button // Keep button
-        type="button"
-        className="w-full bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-sm text-left text-gray-700 min-h-[34px] transition-colors active:bg-gray-50"
+      <input
+        type="text"
+        readOnly
+        inputMode="none"
+        value={value}
+        placeholder={placeholder}
+        className="w-full bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-sm text-left text-gray-700 min-h-[34px] transition-colors active:bg-gray-50 outline-none cursor-pointer"
+        onFocus={() => setIsOpen(true)}
         onClick={() => setIsOpen(true)}
-      >
-        {value || <span className="text-gray-300">{placeholder}</span>}
-      </button>
+      />
 
       <AnimatePresence>
         {isOpen && (
@@ -672,9 +679,12 @@ export function useNextFieldNavigation(formId: string, isModalOpen: boolean) {
   const focusNextField = () => {
     const form = document.getElementById(formId) as HTMLFormElement | null;
     if (!form) return;
+    
+    // フォーカス可能な要素を順番に取得
     const focusable = Array.from(
-      form.querySelectorAll('input:not([type="hidden"]), textarea, button:not([disabled])')
+      form.querySelectorAll('input:not([type="hidden"]), textarea, button:not([disabled]):not([type="submit"])')
     ) as HTMLElement[];
+    
     const activeIndex = focusable.indexOf(document.activeElement as HTMLElement);
     if (activeIndex > -1 && activeIndex < focusable.length - 1) {
       focusable[activeIndex + 1].focus();
@@ -683,8 +693,8 @@ export function useNextFieldNavigation(formId: string, isModalOpen: boolean) {
 
   const focusDone = () => {
     const form = document.getElementById(formId) as HTMLFormElement | null;
-    // 自動送信は行わずフォーカスを外すのみ、または保存ボタンへの誘導とする
+    if (form) (document.activeElement as HTMLElement)?.blur();
   };
 
-  return { focusNextField, focusDone, isLastField };
+  return { isLastField, focusNextField, focusDone };
 }

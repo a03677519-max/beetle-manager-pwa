@@ -21,12 +21,8 @@ export function AdultForm({
   className?: string;
 }) {
   const [values, setValues] = useState<AdultFormValues>(initialValues);
-  const formId = id || "adult-form";
-  const { 
-    focusNextField, 
-    focusDone, 
-    isLastField 
-  } = useNextFieldNavigation(formId, true);
+  const formId = id || "adult-form"; // Keep formId for onSubmit
+  const { focusNextField } = useNextFieldNavigation(formId, true);
   const formRef = useRef<HTMLFormElement>(null);
 
   // Effect to synchronize internal form state with external initialValues prop.
@@ -57,20 +53,9 @@ export function AdultForm({
       ref={formRef}
       className={`flex flex-col h-full overflow-hidden ${className || ''}`}
       onKeyDown={(e) => {
-        if (e.key === 'Enter') {
-          // テキストエリア内でのEnterは改行を優先
-          if ((e.target as HTMLElement).tagName === 'TEXTAREA') return;
-
+        if (e.key === 'Enter' && (e.target as HTMLElement).tagName !== 'TEXTAREA' && (e.target as HTMLElement).tagName !== 'BUTTON') {
           e.preventDefault();
-          const form = formRef.current;
-          if (!form) return;
-          const focusable = Array.from(
-            form.querySelectorAll('input:not([type="hidden"]), textarea, button:not([disabled])')
-          ) as HTMLElement[];
-          const index = focusable.indexOf(e.target as HTMLElement);
-          if (index > -1 && index < focusable.length - 1) {
-            focusable[index + 1].focus();
-          }
+          focusNextField();
         }
       }}
       onSubmit={(event) => {
