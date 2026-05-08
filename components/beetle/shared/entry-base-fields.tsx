@@ -12,8 +12,9 @@ export function EntryBaseFields({
   scientificName,
   locality,
   generation,
-  linkedEntryId,
+  linkedEntryIds = [],
   allEntries,
+  generationLabelSuffix,
   onChange,
 }: {
   managementName: string;
@@ -21,7 +22,8 @@ export function EntryBaseFields({
   scientificName: string;
   locality: string;
   generation: AdultFormValues["generation"];
-  linkedEntryId?: string;
+  linkedEntryIds?: string[];
+  generationLabelSuffix?: string;
   allEntries: BeetleEntry[];
   onChange: (patch: {
     managementName?: string;
@@ -29,7 +31,7 @@ export function EntryBaseFields({
     scientificName?: string;
     locality?: string;
     generation?: AdultFormValues["generation"];
-    linkedEntryId?: string;
+    linkedEntryIds?: string[];
   }) => void;
 }) {
   const [isLinkedSelectOpen, setIsLinkedSelectOpen] = useState(false);
@@ -72,7 +74,7 @@ export function EntryBaseFields({
     );
   }, [allEntries, scientificName, searchQuery]);
 
-  const selectedLinkedEntry = useMemo(() => allEntries.find(e => e.id === linkedEntryId), [allEntries, linkedEntryId]);
+  const selectedLinkedEntries = useMemo(() => allEntries.filter(e => linkedEntryIds.includes(e.id)), [allEntries, linkedEntryIds]);
 
   const japaneseToScientificMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -85,10 +87,19 @@ export function EntryBaseFields({
   }, [allEntries]);
 
   const handleJapaneseNameChange = (val: string) => {
-    const patch: { japaneseName: string; scientificName?: string } = { japaneseName: val };
-    if (!scientificName && japaneseToScientificMap.has(val)) {
-      patch.scientificName = japaneseToScientificMap.get(val);
+    const patch: any = { japaneseName: val };
+    
+    const relatedEntries = allEntries.filter(e => e.japaneseName === val);
+    if (!scientificName && relatedEntries.length > 0) {
+      const sciNames = Array.from(new Set(relatedEntries.map(e => e.scientificName).filter(Boolean)));
+      if (sciNames.length === 1) patch.scientificName = sciNames[0];
     }
+
+    if (!locality && relatedEntries.length > 0) {
+      const localities = Array.from(new Set(relatedEntries.map(e => e.locality).filter(Boolean)));
+      if (localities.length === 1) patch.locality = localities[0];
+    }
+
     onChange(patch);
   };
 
@@ -124,6 +135,7 @@ export function EntryBaseFields({
       />
       <GenerationRollField
         value={generation}
+        labelSuffix={generationLabelSuffix}
         onChange={(value) => onChange({ generation: value })}
       />
       <Field label="紐付け個体 (親個体/ペア)">
@@ -133,10 +145,10 @@ export function EntryBaseFields({
           onClick={() => setIsLinkedSelectOpen(true)}
         > {/* Keep button */}
           <div className="flex items-center gap-2 overflow-hidden">
-            <LinkIcon size={14} className={selectedLinkedEntry ? "text-[#FF9800]" : "text-gray-300"} />
-            <span className={`truncate ${selectedLinkedEntry ? "text-gray-800 font-bold" : "text-gray-300"}`}>
-              {selectedLinkedEntry 
-                ? `${selectedLinkedEntry.japaneseName} ${selectedLinkedEntry.managementName ? `[${selectedLinkedEntry.managementName}]` : ""}`
+            <LinkIcon size={14} className={selectedLinkedEntries.length > 0 ? "text-[#FF9800]" : "text-gray-300"} />
+            <span className={`truncate ${selectedLinkedEntries.length > 0 ? "text-gray-800 font-bold" : "text-gray-300"}`}>
+              {selectedLinkedEntries.length > 0 
+                ? selectedLinkedEntries.map(e => `${e.japaneseName}${e.managementName ? `[${e.managementName}]` : ""}`).join(", ")
                 : "タップして個体を選択"}
             </span>
           </div>
@@ -179,8 +191,8 @@ export function EntryBaseFields({
               <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
                 <button
                   type="button"
-                  className={`w-full text-left p-4 rounded-2xl font-bold transition-all ${!linkedEntryId ? "bg-[#FF9800] text-white" : "bg-gray-50 text-gray-500"}`}
-                  onClick={() => { onChange({ linkedEntryId: undefined }); setIsLinkedSelectOpen(false); }} // Keep onClick
+                  className={`w-full text-left p-4 rounded-2xl font-bold transition-all ${linkedEntryIds.length === 0 ? "bg-[#FF9800] text-white" : "bg-gray-50 text-gray-500"}`}
+                  onClick={() => { onChange({ linkedEntryIds: [] }); setIsLinkedSelectOpen(false); }} // Keep onClick
                 >
                   なし (紐付け解除)
                 </button>
@@ -188,13 +200,22 @@ export function EntryBaseFields({
                   <button
                     key={e.id}
                     type="button"
-                    className={`w-full text-left p-4 rounded-2xl font-bold flex flex-col ${linkedEntryId === e.id ? "bg-[#FF9800] text-white" : "bg-gray-50 text-gray-700"}`} // Keep class
+                    className={`w-full text-left p-4 rounded-2xl font-bold flex flex-col ${linkedEntryIds.includes(e.id) ? "bg-[#FF9800] text-white" : "bg-gray-50 text-gray-700"}`} // Keep class
                     onClick={() => {
-                      const nextGen = { ...e.generation };
-                      if (nextGen.primary === "WD") { nextGen.primary = "WF" as any; nextGen.count = "1"; }
-                      else { nextGen.count = String((parseInt(nextGen.count) || 0) + 1); }
-                      onChange({ linkedEntryId: e.id, locality: e.locality, generation: nextGen });
-                      setIsLinkedSelectOpen(false);
+                      const isSelected = linkedEntryIds.includes(e.id);
+                      const nextIds = isSelected 
+                        ? linkedEntryIds.filter(id => id !== e.id)
+                        : [...linkedEntryIds, e.id];
+                      
+                      const patch: any = { linkedEntryIds: nextIds };
+                      if (!isSelected && nextIds.length === 1) {
+                        const nextGen = { ...e.generation };
+                        if (nextGen.primary === "WD") { nextGen.primary = "WF" as any; nextGen.count = "1"; }
+                        else { nextGen.count = String((parseInt(nextGen.count) || 0) + 1); }
+                        patch.locality = e.locality;
+                        patch.generation = nextGen;
+                      }
+                      onChange(patch);
                     }}
                   >
                     <span className="text-sm">{e.japaneseName}</span>

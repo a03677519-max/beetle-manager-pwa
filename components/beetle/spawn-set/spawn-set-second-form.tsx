@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { BottomSheetInput, DateRollField, MoistureField } from "@/components/entry-fields";
 import type { SpawnSetFormValues } from "@/types/beetle";
 import { today } from "@/lib/utils";
@@ -16,8 +16,22 @@ export function SpawnSetSecondForm({
   onCancel: () => void;
   id?: string;
 }) {
-  const [values, setValues] = useState<SpawnSetFormValues>(initialValues);
-  const v = values as any;
+  // 最新のセット終了日を取得して開始日の初期値にする
+  const latestEndDate = useMemo(() => {
+    const entry = initialValues as any;
+    if (entry.sets && entry.sets.length > 0) {
+      const sorted = [...entry.sets].sort((a, b) => (b.setDate || "").localeCompare(a.setDate || ""));
+      return sorted[0].setEndDate || sorted[0].setDate || today();
+    }
+    return entry.setEndDate || entry.setDate || today();
+  }, [initialValues]);
+
+  const [values, setValues] = useState<any>({
+    setDate: latestEndDate,
+    setEndDate: "",
+    eggCount: 0,
+    larvaCount: 0,
+  });
 
   return (
     <form
@@ -31,29 +45,29 @@ export function SpawnSetSecondForm({
       onSubmit={(e) => { e.preventDefault(); onSubmit(values); }}
     >
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        <h3 className="font-bold text-gray-700">2回目以降のセット登録</h3>
+        <h3 className="font-bold text-gray-700">追加のセット登録</h3>
         <div className="grid grid-cols-2 gap-3">
-          <DateRollField label="開始日" value={v.secondSetDate || ""} onChange={(val) => setValues((prev: any) => ({...prev, secondSetDate: val}))} />
-          <DateRollField label="割出日" value={v.secondSetEndDate || ""} onChange={(val) => setValues((prev: any) => ({...prev, secondSetEndDate: val}))} />
+          <DateRollField label="開始日" value={values.setDate || ""} onChange={(val) => setValues((prev: any) => ({...prev, setDate: val}))} />
+          <DateRollField label="割出日" value={values.setEndDate || ""} onChange={(val) => setValues((prev: any) => ({...prev, setEndDate: val}))} />
         </div>
         <label className="flex items-center gap-2 text-xs font-bold text-gray-500">
-          <input type="checkbox" checked={!!v.secondSetEndDate} onChange={(e) => setValues((prev: any) => ({...prev, secondSetEndDate: e.target.checked ? today() : ""}))} />
+          <input type="checkbox" checked={!!values.setEndDate} onChange={(e) => setValues((prev: any) => ({...prev, setEndDate: e.target.checked ? today() : ""}))} />
           産卵を終了する（本日）
         </label>
         <div className="grid grid-cols-2 gap-3">
-          <BottomSheetInput label="卵数" value={v.secondEggCount || ""} onChange={(val) => setValues((prev: any) => ({...prev, secondEggCount: parseInt(val) || 0}))} />
-          <BottomSheetInput label="幼虫数" value={v.secondLarvaCount || ""} onChange={(val) => setValues((prev: any) => ({...prev, secondLarvaCount: parseInt(val) || 0}))} />
+          <BottomSheetInput label="卵数" value={values.eggCount ?? ""} onChange={(val) => setValues((prev: any) => ({...prev, eggCount: parseInt(val) || 0}))} />
+          <BottomSheetInput label="幼虫数" value={values.larvaCount ?? ""} onChange={(val) => setValues((prev: any) => ({...prev, larvaCount: parseInt(val) || 0}))} />
         </div>
         <label className="flex items-center gap-2 text-xs font-bold text-gray-500">
-          <input type="checkbox" checked={!!v.useDifferentMethod} onChange={(e) => setValues((prev: any) => ({...prev, useDifferentMethod: e.target.checked}))} />
+          <input type="checkbox" checked={!!values.useDifferentMethod} onChange={(e) => setValues((prev: any) => ({...prev, useDifferentMethod: e.target.checked}))} />
           前回とセット方法が違う
         </label>
-        {v.useDifferentMethod && (
+        {values.useDifferentMethod && (
           <div className="grid grid-cols-2 gap-3 bg-gray-50 p-2 rounded-lg">
-            <BottomSheetInput label="マット" value={v.secondSubstrate || ""} onChange={(val) => setValues((prev: any) => ({...prev, secondSubstrate: val}))} />
-            <BottomSheetInput label="容器" value={v.secondContainerSize || ""} onChange={(val) => setValues((prev: any) => ({...prev, secondContainerSize: val}))} />
-            <BottomSheetInput label="詰圧" value={v.secondPressure || ""} onChange={(val) => setValues((prev: any) => ({...prev, secondPressure: val}))} />
-            <MoistureField value={v.secondMoisture ?? 3} onChange={(val) => setValues((prev: any) => ({...prev, secondMoisture: val}))} />
+            <BottomSheetInput label="マット" value={values.substrate || ""} onChange={(val) => setValues((prev: any) => ({...prev, substrate: val}))} />
+            <BottomSheetInput label="容器" value={values.containerSize || ""} onChange={(val) => setValues((prev: any) => ({...prev, containerSize: val}))} />
+            <BottomSheetInput label="詰圧" value={values.pressure || ""} onChange={(val) => setValues((prev: any) => ({...prev, pressure: val}))} />
+            <MoistureField value={values.moisture ?? 3} onChange={(val) => setValues((prev: any) => ({...prev, moisture: val}))} />
           </div>
         )}
         <BottomSheetInput

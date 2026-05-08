@@ -98,6 +98,7 @@ export function BeetleManager() {
 
   const [activeTab, setActiveTab] = useState("成虫");
   const [spawnSetFilter, setSpawnSetFilter] = useState<"active" | "finished">("active");
+  const [adultFilter, setAdultFilter] = useState<"active" | "deceased">("active");
   const [query, setQuery] = useState("");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [createType, setCreateType] = useState<EntryType>("幼虫");
@@ -178,7 +179,7 @@ export function BeetleManager() {
     }
 
     // 指定したプレフィックスに合致する既存の数値を集計
-    const existingNumbers = currentEntries
+    const existingNumbers = speciesEntries
       .map(e => e.managementName || "")
       .filter(name => name.startsWith(prefix))
       .map(name => {
@@ -206,14 +207,15 @@ export function BeetleManager() {
     const normalizedQuery = query.trim().toLowerCase();
      const list = entries.filter((entry) => {
        const matchesType = selectedType === "すべて" || entry.type === selectedType;
-       const matchesStatus = entry.type !== "産卵セット" || (spawnSetFilter === "active" ? !isSpawnSetFinished(entry) : isSpawnSetFinished(entry));
+       const matchesSpawnStatus = entry.type !== "産卵セット" || (spawnSetFilter === "active" ? !isSpawnSetFinished(entry) : isSpawnSetFinished(entry));
+       const matchesAdultStatus = entry.type !== "成虫" || (adultFilter === "active" ? !entry.deathDate : !!entry.deathDate);
        const matchesQuery =
          normalizedQuery.length === 0 ||
          [entry.japaneseName, entry.scientificName, entry.locality, formatGeneration(entry.generation), entry.managementName]
            .join(" ")
            .toLowerCase()
            .includes(normalizedQuery);
-       return matchesType && matchesStatus && matchesQuery;
+       return matchesType && matchesSpawnStatus && matchesAdultStatus && matchesQuery;
      });
  
      const getSortVal = (e: BeetleEntry, key: string) => {
@@ -484,9 +486,10 @@ export function BeetleManager() {
   };
 
   const stats = useMemo(() => ({
-    adults: entries.filter(e => e.type === "成虫").length,
+    adults: entries.filter(e => e.type === "成虫" && !e.deathDate).length,
     larvae: entries.filter(e => e.type === "幼虫").length,
     spawnSets: entries.filter(e => e.type === "産卵セット").length,
+    deceased: entries.filter(e => e.type === "成虫" && e.deathDate).length,
   }), [entries]);
 
   const fetchCurrentTemperature = async (setter: (value: string) => void) => {
@@ -526,7 +529,7 @@ export function BeetleManager() {
       scientificName: entry.scientificName,
       locality: entry.locality,
       generation: entry.generation,
-      linkedEntryId: entry.linkedEntryId,
+      linkedEntryIds: entry.linkedEntryIds,
       photos: entry.photos, // 写真を引き継ぐ
       emergenceDate: entry.actualEmergenceDate || today(),
       emergenceType: entry.emergenceType || "羽化",
@@ -605,7 +608,7 @@ export function BeetleManager() {
       scientificName: last.scientificName,
       locality: last.locality,
       generation: { ...last.generation },
-      linkedEntryId: last.linkedEntryId,
+      linkedEntryIds: last.linkedEntryIds ? [...last.linkedEntryIds] : [],
     };
 
     if (type === "成虫") {
@@ -1179,7 +1182,7 @@ export function BeetleManager() {
             id="create-form"
             initialValues={pastedData && pastedData.type === "成虫" ? { ...emptyAdultForm, ...pastedData } : getInitialValues("成虫", emptyAdultForm)}
             onSubmit={(value) => {
-              const mName = generateUniqueMName(value.managementName || "", entries);
+              const mName = generateUniqueMName(value.managementName || "", value.scientificName, entries);
               addAdult({ ...value, managementName: mName });
               setIsCreating(false);
             }}
@@ -1197,10 +1200,10 @@ export function BeetleManager() {
             onSubmit={(values, count) => {
             let currentEntries = [...entries];
               for (let index = 0; index < count; index += 1) {
-              const mName = generateUniqueMName(values.managementName || "", currentEntries);
+              const mName = generateUniqueMName(values.managementName || "", values.scientificName, currentEntries);
               addLarva({ ...values, managementName: mName });
               // 次のループの判定用に管理名だけ仮追加した配列を作る
-              currentEntries.push({ managementName: mName } as any);
+              currentEntries.push({ managementName: mName, scientificName: values.scientificName } as any);
               }
               setIsCreating(false);
             }}
@@ -1213,7 +1216,7 @@ export function BeetleManager() {
             initialValues={pastedData && pastedData.type === "産卵セット" ? { ...emptySpawnSetForm, ...pastedData } : (spawnTemplate ? { ...emptySpawnSetForm, ...spawnTemplate } : getInitialValues("産卵セット", emptySpawnSetForm))}
             allEntries={entries}
             onSubmit={(value) => {
-              const mName = generateUniqueMName(value.managementName || "", entries);
+              const mName = generateUniqueMName(value.managementName || "", value.scientificName, entries);
               addSpawnSet({ ...value, managementName: mName });
               setIsCreating(false);
             }}
@@ -1247,10 +1250,10 @@ export function BeetleManager() {
               if (count > 1) {
                 let currentEntries = [...entries];
                 for (let i = 1; i < count; i++) {
-                  const mName = generateUniqueMName(value.managementName || "", currentEntries);
+                  const mName = generateUniqueMName(value.managementName || "", value.scientificName, currentEntries);
                   const { id, photos, createdAt, ...rest } = value;
                   addLarva({ ...rest as any, managementName: mName, photos: [] });
-                  currentEntries.push({ managementName: mName } as any);
+                  currentEntries.push({ managementName: mName, scientificName: value.scientificName } as any);
                 }
               }
               startEditing(null);
@@ -1422,8 +1425,12 @@ export function BeetleManager() {
         {selectedEntry && selectedEntry.type === "産卵セット" && (
           <SpawnSetSecondForm
             initialValues={{ ...emptySpawnSetForm, ...selectedEntry }}
-            onSubmit={(values) => {
-              updateSpawnSet(selectedEntry.id, { ...selectedEntry, ...values } as any);
+            onSubmit={(newSet) => {
+              const entry = selectedEntry as any;
+              const updatedSets = [...(entry.sets || []), newSet].sort((a, b) => 
+                (a.setDate || "").localeCompare(b.setDate || "")
+              );
+              updateSpawnSet(selectedEntry.id, { ...entry, sets: updatedSets } as any);
               setIsAddingSecondSet(false);
             }}
             onCancel={() => setIsAddingSecondSet(false)}

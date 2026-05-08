@@ -10,13 +10,17 @@ export const createDateOptions = (startYear = 2018, endYear = new Date().getFull
   months: ["-"].concat(
     Array.from({ length: 12 }, (_, index) => String(index + 1).padStart(2, "0")),
   ),
-  days: ["-"].concat(
+  days: ["-", "月"].concat(
     Array.from({ length: 31 }, (_, index) => String(index + 1).padStart(2, "0")),
   ),
 });
 
 export const formatDate = (value: string) => {
   if (!value) return "-";
+  if (value.endsWith("-月")) {
+    const parts = value.split("-");
+    return `${parts[0]}年${parts[1]}月`;
+  }
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return new Intl.DateTimeFormat("ja-JP", {
@@ -27,7 +31,7 @@ export const formatDate = (value: string) => {
 };
 
 export const buildDateFromParts = (year: string, month: string, day: string) => {
-  if ([year, month, day].some((value) => !value || value === "-")) return "";
+  if ([year, month].some((value) => !value || value === "-") || day === "-") return "";
   return `${year}-${month}-${day}`;
 };
 

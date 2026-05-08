@@ -67,6 +67,7 @@ export const emptyLarvaForm: LarvaFormValues = {
   scientificName: "",
   locality: "",
   generation: { ...emptyGeneration },
+  linkedEntryIds: [],
   logs: [],
   plannedEmergenceDate: "",
   actualEmergenceDate: "",
@@ -80,16 +81,9 @@ export const emptySpawnSetForm: SpawnSetFormValues = {
   scientificName: "",
   locality: "",
   generation: { ...emptyGeneration },
-  emergenceDate: "",
-  feedingDate: "",
   setDate: "",
-  substrate: "",
-  containerSize: "",
-  pressure: "3",
-  moisture: 3,
-  temperature: "",
-  cohabitation: COHABITATION_OPTIONS[1],
-} as any;
+  sets: [],
+};
 
 export const useBeetleStore = create<BeetleState>()(
   persist(

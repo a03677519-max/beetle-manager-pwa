@@ -218,16 +218,18 @@ export function DateRollField({
 
 export function GenerationRollField({
   value,
+  labelSuffix = "",
   onChange,
 }: {
   value: GenerationValue;
+  labelSuffix?: string;
   onChange: (value: GenerationValue) => void;
 }) {
   const preview = useMemo(() => buildGenerationLabel(value), [value]);
 
   return (
     <div className="field">
-      <span className="text-[11px] font-bold text-[#A67C52] mb-1.5 block tracking-wider uppercase">累代</span>
+      <span className="text-[11px] font-bold text-[#A67C52] mb-1.5 block tracking-wider uppercase">累代 {labelSuffix}</span>
       <PickerContainer>
         <DrumrollPicker
           options={GENERATION_PRIMARY}
@@ -328,7 +330,11 @@ export function BottomSheetSelect({
         id={id ? `${id}-trigger` : undefined}
         value={String(value)}
         placeholder={placeholder}
-        className="w-full bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-sm text-left text-gray-700 min-h-[34px] transition-colors active:bg-gray-50 outline-none cursor-pointer"
+        className={`w-full bg-white border rounded-xl px-3 py-1.5 text-sm text-left text-gray-700 min-h-[34px] transition-all outline-none cursor-pointer ${
+          isOpen 
+            ? "border-[#FF9800] ring-4 ring-[#FF9800]/10 shadow-sm" 
+            : "border-gray-200 active:bg-gray-50"
+        }`}
         onFocus={() => setIsOpen(true)}
         onClick={() => setIsOpen(true)}
       />
@@ -418,10 +424,18 @@ export function BottomSheetInput({
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    if (isOpen && inputRef.current) {
-      // iOSでのフォーカス移動を確実にするため少し遅延させる
-      setTimeout(() => inputRef.current?.focus(), 100);
-    }
+    const focusTimer = setTimeout(() => {
+      if (isOpen && inputRef.current) {
+        // モーダル表示時に一度現在のフォーカスを強制解除(blur)してから
+        // 内部のinputにフォーカスすることでiOSのキーボード不具合を防ぐ
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
+        }
+        inputRef.current.focus();
+      }
+    }, 150); // アニメーションとの競合を避けるため少し長めに設定
+    
+    return () => clearTimeout(focusTimer);
   }, [isOpen]);
 
   const filteredSuggestions = useMemo(() => {
@@ -441,7 +455,11 @@ export function BottomSheetInput({
         inputMode="none"
         value={value}
         placeholder={placeholder}
-        className="w-full bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-sm text-left text-gray-700 min-h-[34px] transition-colors active:bg-gray-50 outline-none cursor-pointer"
+        className={`w-full bg-white border rounded-xl px-3 py-1.5 text-sm text-left text-gray-700 min-h-[34px] transition-all outline-none cursor-pointer ${
+          isOpen 
+            ? "border-[#FF9800] ring-4 ring-[#FF9800]/10 shadow-sm" 
+            : "border-gray-200 active:bg-gray-50"
+        }`}
         onFocus={() => setIsOpen(true)}
         onClick={() => setIsOpen(true)}
       />
@@ -494,7 +512,7 @@ export function BottomSheetInput({
                     id={internalId} // Pass id to input
                     tabIndex={0} // Explicitly make focusable
                     type={type}
-                    value={value}
+                    value={value !== undefined ? value : ""}
                     onChange={(e) => onChange(e.target.value)}
                     enterKeyHint={enterKeyHint || "next"}
                     inputMode={inputMode}
@@ -544,30 +562,29 @@ export function SwitchBotTemperatureField({
   onChange,
   onFetch,
   isFetching,
+  suggestions,
 }: {
   value: string;
   onChange: (value: string) => void;
   onFetch: () => void;
   id?: string; // Add id prop
   isFetching: boolean;
+  suggestions?: string[];
 }) {
   return (
     <div className="field">
-      <span className="text-[11px] font-bold text-[#A67C52] mb-1 block uppercase tracking-wider">温度 (℃)</span>
-      <div className="relative">
-        <input 
-          id={id} // Pass id to input
-          className="w-full h-[36px] px-3 rounded-xl border border-[#DEE2E6] focus:border-[#FF9800] focus:ring-1 focus:ring-[#FF9800] outline-none text-sm placeholder:text-gray-300"
-          value={value} // Keep value
-          onChange={(event) => onChange(event.target.value)} 
-          inputMode="decimal"
-          enterKeyHint="next"
-          placeholder="例: 22.5 や 21〜23" 
-        />
-        <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-[#FF9800] p-2" onClick={onFetch}>
-          <Thermometer size={18} className={isFetching ? "spin" : undefined} />
-        </button>
-      </div>
+      <BottomSheetInput
+        label="温度 (℃)"
+        value={value}
+        inputMode="decimal"
+        enterKeyHint="next"
+        placeholder="例: 22.5 や 21〜23"
+        suggestions={suggestions}
+        onChange={onChange}
+      />
+      <button type="button" className="relative -mt-9 ml-auto mr-12 block text-[#FF9800] p-2 z-10" onClick={onFetch}>
+        <Thermometer size={18} className={isFetching ? "spin" : undefined} />
+      </button>
     </div>
   );
 }
@@ -672,15 +689,17 @@ export function useNextFieldNavigation(formId: string, isModalOpen: boolean) {
   }, []);
 
   const focusNextField = useCallback(() => {
+    // 移動前に現在のフォーカスを確実に外す（iOSのキーボード位置ずれ対策）
+    const activeElement = document.activeElement as HTMLElement;
+    if (activeElement) activeElement.blur();
+
     const form = document.getElementById(formId) as HTMLFormElement | null;
     if (!form) return;
     
-    // フォーカス可能な要素を順番に取得
     const focusable = Array.from(
       form.querySelectorAll('input:not([type="hidden"]), textarea, button:not([disabled]):not([type="submit"]), div[tabIndex="0"]')
     ) as HTMLElement[];
     
-    const activeElement = document.activeElement as HTMLElement;
     let activeIndex = focusable.indexOf(activeElement);
 
     // 現在の要素がポータル内（IDに -trigger がない）の場合、トリガー側を探す

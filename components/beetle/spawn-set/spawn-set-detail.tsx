@@ -7,34 +7,21 @@ import { formatDate } from "@/lib/utils";
 
 export function SpawnSetDetail({ entry, onAddSecondSet }: { entry: SpawnSet; onAddSecondSet: () => void }) {
   const s = entry as any;
-  const sets = [
+  // 1回目のセットと2回目以降（sets配列）を統合して日付順にソート
+  const allSets = [
     {
       title: "1回目",
-      setDate: s.setDate,
+      setDate: s.setDate || s.createdAt?.slice(0, 10),
       setEndDate: s.setEndDate,
-      eggCount: s.eggCount,
-      larvaCount: s.larvaCount,
+      eggCount: s.eggCount ?? 0,
+      larvaCount: s.larvaCount ?? 0,
       substrate: s.substrate,
       containerSize: s.containerSize,
       pressure: s.pressure,
       moisture: s.moisture,
     },
-    ...(s.secondSetDate
-      ? [
-          {
-            title: "2回目",
-            setDate: s.secondSetDate,
-            setEndDate: s.secondSetEndDate,
-            eggCount: s.secondEggCount,
-            larvaCount: s.secondLarvaCount,
-            substrate: s.secondSubstrate || s.substrate,
-            containerSize: s.secondContainerSize || s.containerSize,
-            pressure: s.secondPressure || s.pressure,
-            moisture: s.secondMoisture ?? s.moisture,
-          },
-        ]
-      : []),
-  ];
+    ...(s.sets || []).map((set: any, i: number) => ({ ...set, title: `${i + 2}回目` }))
+  ].sort((a, b) => (a.setDate || "").localeCompare(b.setDate || ""));
 
   return (
     <div className="space-y-4">
@@ -45,7 +32,7 @@ export function SpawnSetDetail({ entry, onAddSecondSet }: { entry: SpawnSet; onA
         </button>
       </div>
       <div className="flex gap-4 overflow-x-auto touch-pan-x pb-2 no-scrollbar">
-        {sets.map((set, index) => (
+        {allSets.map((set, index) => (
           <div key={index} className="min-w-[85%] bg-white p-4 rounded-3xl border border-gray-100 shadow-sm space-y-3">
             <div className="text-sm font-bold text-gray-700">{set.title}</div>
             <div className="space-y-1">

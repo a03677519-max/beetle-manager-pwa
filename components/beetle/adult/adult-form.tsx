@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { DateRollField, Field, BottomSheetInput, GenderField, useNextFieldNavigation } from "@/components/entry-fields";
 import type { AdultFormValues } from "@/types/beetle";
 import { EntryBaseFields } from "@/components/beetle/shared/entry-base-fields";
@@ -24,6 +24,8 @@ export function AdultForm({
   const formId = id || "adult-form"; // Keep formId for onSubmit
   const { focusNextField } = useNextFieldNavigation(formId, true);
   const formRef = useRef<HTMLFormElement>(null);
+
+  const isDead = useMemo(() => !!values.deathDate, [values.deathDate]);
 
   // Effect to synchronize internal form state with external initialValues prop.
   // This is important if the parent component can change `initialValues`
@@ -63,6 +65,7 @@ export function AdultForm({
           {...values}
           managementName={values.managementName || ""}
           linkedEntryId={values.linkedEntryId}
+          linkedEntryIds={values.linkedEntryIds}
           allEntries={useBeetleStore.getState().entries}
           onChange={(patch) => setValues({ ...values, ...patch })}
         />
@@ -125,11 +128,25 @@ export function AdultForm({
           value={values.feedingDate}
           onChange={(value) => setValues({ ...values, feedingDate: value })}
         />
-        <DateRollField
-          label="死亡日"
-          value={values.deathDate}
-          onChange={(value) => setValues({ ...values, deathDate: value })}
-        />
+
+        <div className="pt-2 border-t border-gray-50">
+          <label className="flex items-center gap-3 py-2 cursor-pointer">
+            <input
+              type="checkbox"
+              className="w-4 h-4 rounded-lg border-gray-300 text-[#FF9800] focus:ring-[#FF9800]"
+              checked={isDead}
+              onChange={(e) => setValues({ ...values, deathDate: e.target.checked ? today() : "" })}
+            />
+            <span className="text-sm font-bold text-gray-700">死亡済みとして登録</span>
+          </label>
+          {isDead && (
+            <DateRollField
+              label="死亡日"
+              value={values.deathDate}
+              onChange={(value) => setValues({ ...values, deathDate: value })}
+            />
+          )}
+        </div>
 
         <div className="space-y-2">
           <div className="flex justify-between items-center">

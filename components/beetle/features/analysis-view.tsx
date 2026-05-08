@@ -210,8 +210,8 @@ export function AnalysisView({
             groups[key].adultSizeRecords.push({ val: s, mName, gender: entry.gender, entryId: entry.id });
 
             // Find linked larval entry for max weight
-            if (entry.linkedEntryId) {
-              const linkedLarva = entries.find(e => e.id === entry.linkedEntryId && e.type === "幼虫") as LarvaBeetle | undefined;
+            if (entry.linkedEntryIds && entry.linkedEntryIds.length > 0) {
+              const linkedLarva = entries.find(e => entry.linkedEntryIds.includes(e.id) && e.type === "幼虫") as LarvaBeetle | undefined;
               if (linkedLarva && linkedLarva.logs.length > 0) {
                 const maxLarvaWeight = Math.max(...linkedLarva.logs.map(log => log.weight).filter(w => w > 0));
                 if (!isNaN(maxLarvaWeight) && maxLarvaWeight > 0) {

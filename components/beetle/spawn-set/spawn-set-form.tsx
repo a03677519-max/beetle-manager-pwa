@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
   CohabitationField,
   DateRollField,
@@ -40,19 +40,32 @@ export function SpawnSetForm({
   const { focusNextField } = useNextFieldNavigation(formId, true);
   const formRef = useRef<HTMLFormElement>(null);
 
+  const suggestions = useMemo(() => {
+    const cSet = new Set<string>();
+    const tSet = new Set<string>();
+    allEntries.forEach((e) => {
+      if (e.type === "産卵セット") {
+        if (e.containerSize) cSet.add(e.containerSize);
+        if (e.temperature) tSet.add(String(e.temperature));
+        (e as any).sets?.forEach((s: any) => {
+          if (s.containerSize) cSet.add(s.containerSize);
+        });
+      }
+    });
+    return {
+      container: Array.from(cSet).sort(),
+      temperature: Array.from(tSet).sort(),
+    };
+  }, [allEntries]);
+
   // 外部からの初期値変更を同期
   useEffect(() => {
     const fmt = (d?: string) => (d ? d.slice(0, 10) : "");
-    const init = initialValues as any;
     setValues({
       ...initialValues,
-      setDate: fmt(init.setDate),
-      setEndDate: fmt(init.setEndDate),
-    } as any);
-    // 再編集時に記録に応じてタイプを推定
-    if (initialValues.setEndDate) {
-      // 必要に応じてロジック追加。デフォルトは割出。
-    }
+      setDate: fmt(initialValues.setDate),
+      setEndDate: fmt(initialValues.setEndDate),
+    });
   }, [initialValues.id, initialValues.setDate, initialValues.setEndDate]);
 
   return (
@@ -71,6 +84,7 @@ export function SpawnSetForm({
           {...values}
           managementName={values.managementName || ""}
           allEntries={allEntries}
+          generationLabelSuffix="(次世代)"
           onChange={(patch) => setValues({ ...values, ...patch })}
         />
 
@@ -98,6 +112,7 @@ export function SpawnSetForm({
             label="容器サイズ"
             value={values.containerSize || ""}
             placeholder="例: 2000cc"
+            suggestions={suggestions.container}
             onChange={(val) => setValues((prev) => ({ ...prev, containerSize: val }))}
           />
         </div>
@@ -113,6 +128,7 @@ export function SpawnSetForm({
         />
       <SwitchBotTemperatureField
         value={values.temperature}
+        suggestions={suggestions.temperature}
         onChange={(value) => setValues({ ...values, temperature: value })}
         onFetch={() =>
           onFetchTemperature((value) =>
@@ -129,79 +145,16 @@ export function SpawnSetForm({
       <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-50">
         <BottomSheetInput
           label="割出卵数"
-          value={values.eggCount || ""}
+          value={values.eggCount ?? ""}
           placeholder="例: 15"
           onChange={(val) => setValues((prev) => ({ ...prev, eggCount: parseInt(val) || 0 }))}
         />
         <BottomSheetInput
           label="割出幼虫数"
-          value={values.larvaCount || ""}
+          value={values.larvaCount ?? ""}
           placeholder="例: 10"
           onChange={(val) => setValues((prev) => ({ ...prev, larvaCount: parseInt(val) || 0 }))}
         />
-      </div>
-      <div className="pt-2 border-t border-gray-50 space-y-2">
-        <h4 className="text-[10px] font-bold text-gray-400">2回目以降のセット</h4>
-        <div className="grid grid-cols-2 gap-3">
-          <DateRollField
-            label="2回目開始日"
-            value={values.secondSetDate || ""}
-            onChange={(value) => setValues((prev) => ({ ...prev, secondSetDate: value }))}
-          />
-          <DateRollField
-            label="2回目割出日"
-            value={values.secondSetEndDate || ""}
-            onChange={(value) => setValues((prev) => ({ ...prev, secondSetEndDate: value }))}
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <BottomSheetInput
-            label="2回目卵数"
-            value={values.secondEggCount || ""}
-            placeholder="例: 5"
-            onChange={(val) => setValues((prev) => ({ ...prev, secondEggCount: parseInt(val) || 0 }))}
-          />
-          <BottomSheetInput
-            label="2回目幼虫数"
-            value={values.secondLarvaCount || ""}
-            placeholder="例: 3"
-            onChange={(val) => setValues((prev) => ({ ...prev, secondLarvaCount: parseInt(val) || 0 }))}
-          />
-        </div>
-        <label className="flex items-center gap-2 text-xs font-bold text-gray-500 mt-2">
-          <input
-            type="checkbox"
-            checked={!!values.useDifferentMethod}
-            onChange={(e) => setValues((prev) => ({ ...prev, useDifferentMethod: e.target.checked }))}
-          />
-          前回とセット方法が違う
-        </label>
-        {values.useDifferentMethod && (
-          <div className="grid grid-cols-2 gap-3 mt-2 bg-gray-50 p-2 rounded-lg">
-            <BottomSheetInput
-              label="2回目マット"
-              value={values.secondSubstrate || ""}
-              placeholder="例: 微粒子マット"
-              onChange={(val) => setValues((prev) => ({ ...prev, secondSubstrate: val }))}
-            />
-            <BottomSheetInput
-              label="2回目容器"
-              value={values.secondContainerSize || ""}
-              placeholder="例: 1500cc"
-              onChange={(val) => setValues((prev) => ({ ...prev, secondContainerSize: val }))}
-            />
-            <BottomSheetInput
-              label="2回目詰圧"
-              value={values.secondPressure || ""}
-              placeholder="例: 3"
-              onChange={(val) => setValues((prev) => ({ ...prev, secondPressure: val }))}
-            />
-            <MoistureField
-              value={values.secondMoisture ?? 3}
-              onChange={(value) => setValues((prev) => ({ ...prev, secondMoisture: value }))}
-            />
-          </div>
-        )}
       </div>
 
       <BottomSheetInput
