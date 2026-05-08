@@ -23,7 +23,6 @@ export function AdultForm({
   const [values, setValues] = useState<AdultFormValues>(initialValues);
   const formId = id || "adult-form";
   const { 
-    NextFieldButton: NavButton, 
     focusNextField, 
     focusDone, 
     isLastField 
@@ -186,14 +185,6 @@ export function AdultForm({
         {/* ナビゲーションバー回避用のスペーサー */}
         <div className="h-32" />
         </div>
-
-        <NavButton 
-          formId={formId}
-          onNext={focusNextField}
-          onDone={focusDone}
-          isLastField={isLastField}
-          isModalOpen={true}
-        />
       </div>
     </form>
   );

@@ -649,84 +649,6 @@ export function CohabitationField({
 export const buildGenerationLabel = (value: GenerationValue) =>
   value.primary !== "-" ? `${value.primary}${value.count || ""}` : "-";
 
-
-interface NextFieldButtonProps {
-  formId: string;
-  onNext: () => void;
-  onDone: () => void;
-  isLastField: boolean;
-  isModalOpen: boolean;
-}
-
-export function NextFieldButton({ formId, onNext, onDone, isLastField, isModalOpen }: NextFieldButtonProps) {
-  const [isVisible, setIsVisible] = useState(false);
-  const [activeElement, setActiveElement] = useState<HTMLElement | null>(null);
-
-  useEffect(() => {
-    const handleFocusIn = () => {
-      setActiveElement(document.activeElement as HTMLElement);
-    };
-
-    const handleFocusOut = () => {
-      setActiveElement(null);
-    };
-
-    document.addEventListener('focusin', handleFocusIn);
-    document.addEventListener('focusout', handleFocusOut);
-
-    return () => {
-      document.removeEventListener('focusin', handleFocusIn);
-      document.removeEventListener('focusout', handleFocusOut);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!isModalOpen) {
-      setIsVisible(false);
-      return;
-    }
-
-    const form = document.getElementById(formId);
-    if (!form || !activeElement) {
-      setIsVisible(false);
-      return;
-    }
-
-    // フォーム内にあるか、もしくはポータル内の入力フィールドを判定
-    const isInput = activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA';
-    const isInsideForm = form.contains(activeElement);
-    const isNavigable = isInput || (activeElement.tagName === 'BUTTON' && isInsideForm);
-    
-    // テキストエリアの場合は表示しない（改行を優先するため）
-    if (activeElement.tagName === 'TEXTAREA') {
-      setIsVisible(false);
-      return;
-    }
-
-    setIsVisible(isNavigable);
-  }, [activeElement, formId, isModalOpen]);
-
-  if (!isVisible) return null;
-
-  return (
-    <Portal>
-      <motion.button
-        type="button"
-        initial={{ y: 100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: 100, opacity: 0 }}
-        transition={{ type: "spring", damping: 20, stiffness: 200 }}
-        className="fixed bottom-[calc(env(safe-area-inset-bottom,16px)+64px)] left-4 bg-white/95 backdrop-blur-md border border-gray-100 text-[#FF9800] px-4 py-2 rounded-2xl shadow-xl z-[100] active:scale-95 transition-all flex items-center gap-1"
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={isLastField ? onDone : onNext}
-      >
-        <ChevronRight size={20} strokeWidth={3} />
-        <span className="text-[10px] font-black tracking-tighter uppercase">{isLastField ? "完了" : "次へ"}</span>
-      </motion.button>
-    </Portal>
-  );
-}
-
 export function useNextFieldNavigation(formId: string, isModalOpen: boolean) {
   const [isLastField, setIsLastField] = useState(false);
 
@@ -756,16 +678,13 @@ export function useNextFieldNavigation(formId: string, isModalOpen: boolean) {
     const activeIndex = focusable.indexOf(document.activeElement as HTMLElement);
     if (activeIndex > -1 && activeIndex < focusable.length - 1) {
       focusable[activeIndex + 1].focus();
-    } else {
-      // 最後のフィールドの場合、フォームを送信
-      form.requestSubmit();
     }
   };
 
   const focusDone = () => {
     const form = document.getElementById(formId) as HTMLFormElement | null;
-    if (form) form.requestSubmit();
+    // 自動送信は行わずフォーカスを外すのみ、または保存ボタンへの誘導とする
   };
 
-  return { NextFieldButton, focusNextField, focusDone, isLastField };
+  return { focusNextField, focusDone, isLastField };
 }

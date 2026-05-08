@@ -38,7 +38,6 @@ export function SpawnSetForm({
   const [values, setValues] = useState<SpawnSetFormValues>(initialValues);
   const formId = id || "spawn-set-form";
   const { 
-    NextFieldButton: NavButton, 
     focusNextField, 
     focusDone, 
     isLastField 
@@ -237,14 +236,6 @@ export function SpawnSetForm({
         {/* ナビゲーションバー回避用のスペーサー */}
         <div className="h-32" />
         </div>
-
-        <NavButton 
-          formId={formId}
-          onNext={focusNextField}
-          onDone={focusDone}
-          isLastField={isLastField}
-          isModalOpen={true}
-        />
       </div>
     </form>
   );

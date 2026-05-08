@@ -35,7 +35,6 @@ export function LarvaForm({
   const [setEndDate, setSetEndDate] = useState(today());
   const formId = id || "larva-form";
   const { 
-    NextFieldButton: NavButton, 
     focusNextField, 
     focusDone, 
     isLastField 
