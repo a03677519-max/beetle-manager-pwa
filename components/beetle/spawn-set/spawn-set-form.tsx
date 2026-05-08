@@ -64,6 +64,7 @@ export function SpawnSetForm({
     
     // 最新の産卵セットの終了日を取得
     const latestSpawnSet = allEntries
+      .map(e => e as any)
       .filter((e) => e.type === "産卵セット" && e.setEndDate)
       .sort((a, b) => new Date(b.setDate || 0).getTime() - new Date(a.setDate || 0).getTime())[0];
 
