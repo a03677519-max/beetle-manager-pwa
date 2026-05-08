@@ -299,12 +299,14 @@ export function BottomSheetSelect({
   options,
   onChange,
   placeholder,
+  id,
 }: {
   label: string;
   value: string;
   options: string[];
   onChange: (val: string) => void;
   placeholder?: string;
+  id?: string;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const selectedRef = useRef<HTMLButtonElement>(null);
