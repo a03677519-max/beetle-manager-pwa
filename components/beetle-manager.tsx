@@ -1294,10 +1294,10 @@ export function BeetleManager() {
               if (count > 1) {
                 let currentEntries = [...entries];
                 for (let i = 1; i < count; i++) {
-                  const mName = generateUniqueMName(value.managementName || "", value.scientificName, currentEntries);
+                  const mName = generateUniqueMName(value.managementName || "", value.scientificName, currentEntries, "幼虫");
                   const { id, photos, createdAt, ...rest } = value;
                   addLarva({ ...rest as any, managementName: mName, photos: [] });
-                  currentEntries.push({ managementName: mName, scientificName: value.scientificName } as any);
+                  currentEntries.push({ managementName: mName, scientificName: value.scientificName, type: "幼虫" } as any);
                 }
               }
               startEditing(null);
