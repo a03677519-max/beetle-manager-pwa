@@ -1101,6 +1101,7 @@ export function BeetleManager() {
 
       <Modal
         isOpen={isCreating || !!editingEntry}
+        centered={!!editingEntry && editingEntry.type === '産卵セット'}
         onClose={() => {
           setIsCreating(false);
           startEditing(null);
