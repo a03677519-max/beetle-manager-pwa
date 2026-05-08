@@ -124,6 +124,7 @@ export type BeetleEntry = AdultBeetle | LarvaBeetle | SpawnSet;
 export type AdultFormValues = Omit<AdultBeetle, "id" | "photos" | "createdAt" | "updatedAt"> & {
   id?: string;
   photos?: string[];
+  linkedEntryIds?: string[];
 };
 export type LarvaFormValues = Omit<LarvaBeetle, "id" | "photos" | "createdAt" | "updatedAt"> & {
   id?: string;

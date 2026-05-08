@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import { DateRollField, Field, BottomSheetInput, GenderField, useNextFieldNavigation } from "@/components/entry-fields";
+import { today } from "@/lib/utils";
 import type { AdultFormValues } from "@/types/beetle";
 import { EntryBaseFields } from "@/components/beetle/shared/entry-base-fields";
 import { useBeetleStore } from "@/store/use-beetle-store";
@@ -64,7 +65,6 @@ export function AdultForm({
         <EntryBaseFields
           {...values}
           managementName={values.managementName || ""}
-          linkedEntryId={values.linkedEntryId}
           linkedEntryIds={values.linkedEntryIds}
           allEntries={useBeetleStore.getState().entries}
           onChange={(patch) => setValues({ ...values, ...patch })}
