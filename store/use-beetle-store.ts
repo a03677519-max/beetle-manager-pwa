@@ -69,7 +69,7 @@ export const emptyLarvaForm: LarvaFormValues = {
   scientificName: "",
   locality: "",
   generation: { ...emptyGeneration },
-  linkedEntryId: undefined,
+  linkedEntryIds: [],
   logs: [],
   plannedEmergenceDate: "",
   actualEmergenceDate: "",

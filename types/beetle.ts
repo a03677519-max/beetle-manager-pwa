@@ -129,6 +129,7 @@ export type AdultFormValues = Omit<AdultBeetle, "id" | "photos" | "createdAt" | 
 export type LarvaFormValues = Omit<LarvaBeetle, "id" | "photos" | "createdAt" | "updatedAt"> & {
   id?: string;
   photos?: string[];
+  linkedEntryIds?: string[];
   hatchDate?: string;
   createdAt?: string;
 };
