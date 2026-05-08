@@ -1,5 +1,11 @@
 export const today = () => new Date().toISOString().slice(0, 10);
 
+export const addDays = (date: string, days: number) => {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+};
+
 export const createId = () =>
   `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 

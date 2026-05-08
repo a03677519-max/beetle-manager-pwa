@@ -11,6 +11,7 @@ import {
 } from "@/components/entry-fields";
 import type { BeetleEntry, SpawnSetFormValues } from "@/types/beetle";
 import { EntryBaseFields } from "@/components/beetle/shared/entry-base-fields";
+import { today, addDays } from "@/lib/utils";
 
 export function SpawnSetForm({
   initialValues,
@@ -68,11 +69,15 @@ export function SpawnSetForm({
       .filter((e) => e.type === "産卵セット" && e.managementName === initialValues.managementName && e.scientificName === initialValues.scientificName && e.id !== initialValues.id)
       .sort((a, b) => new Date(b.setDate || 0).getTime() - new Date(a.setDate || 0).getTime())[0];
 
-    const initialSetEndDate = initialValues.setEndDate || (latestSpawnSet?.setEndDate ? fmt(latestSpawnSet.setEndDate) : "");
+    const latestEndDate = latestSpawnSet?.setEndDate || latestSpawnSet?.setDate || today();
+    
+    // 初回登録時（initialValues.setDate が空）のみ自動計算
+    const initialSetDate = initialValues.setDate || latestEndDate;
+    const initialSetEndDate = initialValues.setEndDate || addDays(initialSetDate, 30);
 
     setValues(prev => ({
       ...initialValues,
-      setDate: prev.setDate || fmt(initialValues.setDate),
+      setDate: prev.setDate || fmt(initialSetDate),
       setEndDate: prev.setEndDate || fmt(initialSetEndDate),
     }));
   }, [initialValues.id, initialValues.setDate, initialValues.setEndDate, allEntries]);
