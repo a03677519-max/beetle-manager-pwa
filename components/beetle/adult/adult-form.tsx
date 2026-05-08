@@ -91,6 +91,8 @@ export function AdultForm({
             label="サイズ (mm)"
             value={values.size || ""}
             placeholder="例: 75.5"
+            inputMode="decimal"
+            enterKeyHint="next"
             onChange={(val) => setValues({ ...values, size: val })}
           />
         </div>
@@ -98,6 +100,7 @@ export function AdultForm({
           label="状態"
           value={values.status || ""}
           placeholder="例: 未後食 / 完品"
+          enterKeyHint="next"
           onChange={(val) => setValues({ ...values, status: val })}
         />
 
@@ -158,6 +161,7 @@ export function AdultForm({
             value={values.larvaMemo}
             onChange={(e) => setValues({ ...values, larvaMemo: e.target.value })}
             placeholder="幼虫時の詳細な履歴など"
+            enterKeyHint="next"
             rows={4}
             className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3 text-sm focus:bg-white focus:border-[#FF9800] outline-none transition-all"
           />
@@ -167,6 +171,7 @@ export function AdultForm({
           label="メモ / 備考"
           value={values.memo || ""}
           type="textarea"
+          enterKeyHint="done"
           placeholder="管理上のメモなど"
           onChange={(val) => setValues({ ...values, memo: val })}
         />

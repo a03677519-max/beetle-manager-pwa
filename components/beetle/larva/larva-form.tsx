@@ -214,6 +214,7 @@ export function LarvaForm({
             value={values.memo || ""}
             type="textarea"
             placeholder="一括適用するメモ・備考"
+            enterKeyHint="next"
             onChange={(val) => setValues({ ...values, memo: val })}
           />
 
@@ -343,6 +344,8 @@ export function LarvaForm({
                     type="number"
                     step="0.1" // Keep step
                     value={record.weight}
+                    inputMode="decimal"
+                    enterKeyHint="next"
                       className="w-full bg-white/80 border border-gray-200 rounded-xl px-2 py-1.5 text-sm font-bold focus:border-[#FF9800] focus:ring-2 focus:ring-[#FF9800]/20 outline-none"
                     onChange={(e) => {
                       const newLogs = [...(values.logs || [])];
@@ -438,6 +441,8 @@ export function LarvaForm({
                 <BottomSheetInput
                   label="温度 (℃)"
                     value={record.temperature}
+                    inputMode="decimal"
+                    enterKeyHint="next"
                     placeholder="温度"
                     onChange={(val) => {
                       const newLogs = [...(values.logs || [])];

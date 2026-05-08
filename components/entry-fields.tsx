@@ -71,7 +71,7 @@ function DrumrollPicker<T extends string | number>({ options, value, onChange }:
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     // スクロール干渉を抑えるため、スクロールが止まってから値を確定させる
     if (timerRef.current) clearTimeout(timerRef.current);
-    
+
     const container = e.currentTarget;
     timerRef.current = setTimeout(() => {
       const index = Math.round(container.scrollTop / 28);
@@ -81,28 +81,11 @@ function DrumrollPicker<T extends string | number>({ options, value, onChange }:
     }, 80); // 80ms に短縮してレスポンスを向上
   };
 
-  // スクロールエリア外でのタッチによるスクロール干渉を抑制
-  const stopPropagation = (e: React.TouchEvent) => {
-    if (scrollRef.current) {
-      const isScrollable = scrollRef.current.scrollHeight > scrollRef.current.clientHeight;
-      const container = scrollRef.current;
-      const isAtTop = container.scrollTop <= 0;
-      const isAtBottom = container.scrollTop + container.clientHeight >= container.scrollHeight;
-      
-      // 端に達していない時のみイベントを止めることで、ページ全体のスクロールと共存させる
-      if (!isAtTop && !isAtBottom) {
-        e.stopPropagation();
-      }
-    }
-  };
-
   return (
     <div
       ref={scrollRef}
       onScroll={handleScroll} // Keep scroll handling
-      onTouchStart={stopPropagation}
-      onTouchMove={stopPropagation}
-      className="flex-1 h-full overflow-y-scroll snap-y snap-mandatory no-scrollbar py-[36px]"
+      className="flex-1 h-full overflow-y-scroll snap-y snap-mandatory no-scrollbar py-[36px] overscroll-contain touch-pan-y"
     >
       {options.map((option) => (
         <div key={option} className="h-7 flex items-center justify-center snap-center text-sm font-bold text-gray-700">
@@ -404,6 +387,8 @@ export function BottomSheetInput({
   placeholder?: string;
   type?: "text" | "textarea" | "password";
   suggestions?: string[];
+  enterKeyHint?: "next" | "done" | "send" | "search" | "go";
+  inputMode?: "text" | "decimal" | "numeric" | "tel" | "search" | "email" | "url";
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
@@ -466,6 +451,7 @@ export function BottomSheetInput({
                     ref={inputRef as React.RefObject<HTMLTextAreaElement>}
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
+                    enterKeyHint={enterKeyHint || "done"}
                     placeholder={placeholder} // Keep placeholder
                     rows={5}
                     className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3 text-[16px] focus:bg-white focus:border-[#FF9800] outline-none transition-all"
@@ -476,6 +462,8 @@ export function BottomSheetInput({
                     type={type}
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
+                    enterKeyHint={enterKeyHint || "next"}
+                    inputMode={inputMode}
                     placeholder={placeholder} // Keep placeholder
                     className="w-full h-12 bg-gray-50 border border-gray-100 rounded-2xl px-4 py-2 text-[16px] focus:bg-white focus:border-[#FF9800] outline-none transition-all"
                   />
@@ -535,6 +523,8 @@ export function SwitchBotTemperatureField({
           className="w-full h-[36px] px-3 rounded-xl border border-[#DEE2E6] focus:border-[#FF9800] focus:ring-1 focus:ring-[#FF9800] outline-none text-sm placeholder:text-gray-300"
           value={value} // Keep value
           onChange={(event) => onChange(event.target.value)} 
+          inputMode="decimal"
+          enterKeyHint="next"
           placeholder="例: 22.5 や 21〜23" 
         />
         <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-[#FF9800] p-2" onClick={onFetch}>

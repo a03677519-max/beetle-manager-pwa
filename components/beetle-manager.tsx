@@ -157,16 +157,21 @@ export function BeetleManager() {
 
   const bulkFormId = "bulk-edit-form";
   const generateUniqueMName = (base: string, currentEntries: BeetleEntry[]) => {
-    const namePart = base.trim() || "個体";
+    const trimmedBase = base.trim();
+    const namePart = trimmedBase || "個体";
     
-    // 名前を「接頭辞」と「開始番号」に分解を試みる (例: "P-24-01" -> prefix: "P-24-", startNum: 1)
-    const match = namePart.match(/^(.*?)-(\d+)$/);
+    // 末尾の数値部分とその前のテキストを分離（ハイフンはあってもなくても良い）
+    const match = namePart.match(/^(.*?)(\d+)$/);
     let prefix: string;
     let startNum: number;
 
     if (match) {
-      prefix = match[1] + "-";
-      startNum = parseInt(match[2], 10);
+      prefix = match[1];
+      // プレフィックスがハイフンで終わっていない場合はハイフンを付与
+      if (prefix && !prefix.endsWith("-")) {
+        prefix += "-";
+      }
+      startNum = Math.max(1, parseInt(match[2], 10));
     } else {
       prefix = namePart.endsWith("-") ? namePart : `${namePart}-`;
       startNum = 1;
@@ -184,11 +189,12 @@ export function BeetleManager() {
 
     // startNum 以降で未使用の最小番号を探す
     let nextNumber = startNum;
-    if (existingNumbers.length > 0) {
-      const max = Math.max(...existingNumbers);
-      // 入力された番号が既存の最大値以下の場合は、最大値+1を割り当てる
-      if (max >= startNum) {
-        nextNumber = max + 1;
+    const sortedExisting = [...new Set(existingNumbers.filter(n => n >= startNum))].sort((a, b) => a - b);
+    for (const n of sortedExisting) {
+      if (n === nextNumber) {
+        nextNumber++;
+      } else if (n > nextNumber) {
+        break;
       }
     }
 
