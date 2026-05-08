@@ -30,11 +30,6 @@ export function EntryDetail({
 }) {
   const startEditing = useBeetleStore((state) => state.startEditing);
   const deleteEntry = useBeetleStore((state) => state.deleteEntry);
-  const modalRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    modalRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, []);
 
   const copyToClipboard = () => {
     const e = entry as any;
@@ -162,7 +157,6 @@ export function EntryDetail({
         onClick={onClose} 
       />
       <motion.div 
-        ref={modalRef}
         initial={{ y: "100%" }}
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
