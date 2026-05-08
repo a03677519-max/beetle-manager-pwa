@@ -711,11 +711,13 @@ export function NextFieldButton({ formId, onNext, onDone, isLastField, isModalOp
   return (
     <Portal>
       <motion.button
+        type="button"
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 100, opacity: 0 }}
         transition={{ type: "spring", damping: 20, stiffness: 200 }}
         className="fixed bottom-[calc(env(safe-area-inset-bottom,16px)+64px)] left-4 bg-white/95 backdrop-blur-md border border-gray-100 text-[#FF9800] px-4 py-2 rounded-2xl shadow-xl z-[100] active:scale-95 transition-all flex items-center gap-1"
+        onMouseDown={(e) => e.preventDefault()}
         onClick={isLastField ? onDone : onNext}
       >
         <ChevronRight size={20} strokeWidth={3} />
