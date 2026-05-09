@@ -151,7 +151,10 @@ export function DateRollField({
   onChange: (value: string) => void;
 }) {
   const parts = useMemo(() => splitDate(value), [value]);
-  const currentParts = useMemo(() => splitDate(today()), []);
+  const currentParts = useMemo(() => {
+    const p = splitDate(today());
+    return { ...p, day: "上" };
+  }, []);
 
   // 初期表示時に値が空、または不完全（"-"が含まれる）なら、
   // 現在の年月日を初期値として親に反映させて保存漏れを防ぐ

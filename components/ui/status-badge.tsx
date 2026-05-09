@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type Stage = "卵" | "初令" | "2令" | "3令" | "蛹" | "成虫" | "幼虫";
+export type Stage = "卵" | "初令" | "2令" | "3令" | "蛹" | "成虫" | "幼虫" | "死亡";
 
 const STAGE_CONFIG: Record<Stage, { icon: string, bg: string, text: string }> = {
   "卵": { icon: "🥚", bg: "bg-[#F8F9FA]", text: "text-[#6C757D]" },
@@ -10,6 +10,7 @@ const STAGE_CONFIG: Record<Stage, { icon: string, bg: string, text: string }> = 
   "蛹": { icon: "📦", bg: "bg-[#FFF4E5]", text: "text-[#E67E22]" },
   "成虫": { icon: "🪲", bg: "bg-[#EBFBEE]", text: "text-[#2D5A27]" },
   "幼虫": { icon: "🐛", bg: "bg-[#E0F2F1]", text: "text-[#00695C]" },
+  "死亡": { icon: "☠️", bg: "bg-red-50", text: "text-red-600" },
 };
 
 export function StatusBadge({ stage, className = "" }: { stage: Stage, className?: string }) {

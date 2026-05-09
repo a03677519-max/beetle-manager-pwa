@@ -1,7 +1,12 @@
-export const today = () => new Date().toISOString().slice(0, 10);
+export const today = () => {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  return `${y}-${m}-上`;
+};
 
 export const addDays = (date: string, days: number) => {
-  const d = new Date(date);
+  const d = parseAmbiguousDate(date) || new Date();
   d.setDate(d.getDate() + days);
   return d.toISOString().slice(0, 10);
 };
@@ -16,16 +21,45 @@ export const createDateOptions = (startYear = 2018, endYear = new Date().getFull
   months: ["-"].concat(
     Array.from({ length: 12 }, (_, index) => String(index + 1).padStart(2, "0")),
   ),
-  days: ["-", "月"].concat(
+  days: ["-", "月", "上", "中", "下"].concat(
     Array.from({ length: 31 }, (_, index) => String(index + 1).padStart(2, "0")),
   ),
 });
 
+/**
+ * 曖昧な日付（2024-05-上など）を計算用のDateオブジェクトに変換します。
+ * 上旬→5日、中旬・月→15日、下旬→25日として近似値を返します。
+ */
+export const parseAmbiguousDate = (value: string): Date | null => {
+  if (!value) return null;
+  // ISO形式の場合は日付部分のみ抽出
+  const datePart = value.includes("T") ? value.split("T")[0] : value;
+  const parts = datePart.split("-");
+
+  if (parts.length === 3) {
+    const [year, month, day] = parts;
+    if (year !== "-" && month !== "-") {
+      let resolvedDay = day;
+      if (day === "上") resolvedDay = "05";
+      else if (day === "中" || day === "月" || day === "-") resolvedDay = "15";
+      else if (day === "下") resolvedDay = "25";
+      
+      const d = new Date(parseInt(year), parseInt(month) - 1, parseInt(resolvedDay));
+      if (!Number.isNaN(d.getTime())) return d;
+    }
+  }
+
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+};
+
 export const formatDate = (value: string) => {
   if (!value) return "-";
-  if (value.endsWith("-月")) {
-    const parts = value.split("-");
-    return `${parts[0]}年${parts[1]}月`;
+  const datePart = value.includes("T") ? value.split("T")[0] : value;
+  const parts = datePart.split("-");
+  if (parts.length === 3) {
+    if (parts[2] === "月") return `${parts[0]}年${parts[1]}月`;
+    if (["上", "中", "下"].includes(parts[2])) return `${parts[0]}年${parts[1]}月${parts[2]}旬`;
   }
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
@@ -69,10 +103,32 @@ export const toBase64 = (file: File) =>
 
 export const daysBetween = (start: string, end: string) => {
   if (!start || !end) return null;
-  const startDate = new Date(start);
-  const endDate = new Date(end);
-  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) return null;
+  const startDate = parseAmbiguousDate(start);
+  const endDate = parseAmbiguousDate(end);
+  if (!startDate || !endDate) return null;
   return Math.ceil((endDate.getTime() - startDate.getTime()) / 86400000);
+};
+
+/**
+ * 2つの日付間の最小日数と最大日数を計算します。
+ */
+export const getDaysRange = (startStr: string, endStr: string) => {
+  const startRange = getAmbiguousDateRange(startStr);
+  const endRange = getAmbiguousDateRange(endStr);
+  if (!startRange || !endRange) return null;
+
+  /**
+   * 通知や分析において「最悪のケース（最長）」を想定できるよう
+   * 最小と最大の期間をミリ秒単位で計算して日数に変換します。
+   * 期間 = 終了日(end) - 開始日(start)
+   */
+  const maxMs = endRange.end.getTime() - startRange.start.getTime();
+  const minMs = endRange.start.getTime() - startRange.end.getTime();
+
+  return {
+    min: Math.max(0, Math.ceil(minMs / 86400000)),
+    max: Math.max(0, Math.ceil(maxMs / 86400000)),
+  };
 };
 
 export function debounce<T extends (...args: unknown[]) => void>(

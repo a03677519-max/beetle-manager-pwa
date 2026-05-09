@@ -4,7 +4,7 @@ import { StatusBadge, Stage } from "@/components/ui/status-badge";
 import { GrowthBar } from "@/components/ui/growth-bar";
 import { buildGenerationLabel } from "@/components/entry-fields";
 import type { BeetleEntry } from "@/types/beetle";
-import { daysBetween, today, getLarvaDateInfo, getSpawnSetDateInfo } from "@/lib/utils";
+import { getDaysRange, today, getLarvaDateInfo, getSpawnSetDateInfo } from "@/lib/utils";
 import Image from "next/image";
 import { Trash2 } from "lucide-react";
 
@@ -30,16 +30,20 @@ export function EntryCard({
 
   // エサ交換アラート（信号機）
   const lastLogDate = logs.length > 0 ? logs[0].date : entry.createdAt;
-  const diffDays = daysBetween(lastLogDate, today()) ?? 0;
+  const range = getDaysRange(lastLogDate, today());
+  
+  // 曖昧な日付の場合は「最大日数（最も時間が経過している可能性）」を基準に色を決定し
+  // メンテナンスの遅れ（通知の見逃し）を防ぎます。
+  const diffDays = range?.max ?? 0;
 
   let dateColor = "text-[#FF9800]"; // 明るいオレンジ (既に暖色)
-
   if (diffDays >= 90) dateColor = "text-[#E74C3C]"; // 赤
   else if (diffDays >= 60) dateColor = "text-[#F1C40F]"; // 黄
 
 
+  const isDeceased = !!entry.deathDate;
   const stageMap: Record<string, Stage> = { "成虫": "成虫", "幼虫": "幼虫", "産卵セット": "卵" };
-  const stage = stageMap[entry.type] || "卵";
+  const stage = isDeceased ? "死亡" : (stageMap[entry.type] || "卵");
 
   if (viewMode === "grid") {
     return (
@@ -120,10 +124,11 @@ export function EntryCard({
         <div className="flex justify-between items-end mt-3">
           <dl className="text-[13px] text-[#8B7D7B] space-y-1">
             {entry.type === "成虫" && (
-              <div className="text-[11px] font-bold text-gray-600 space-y-0.5">
+              <div className="text-[11px] font-bold text-gray-600 space-y-0.5 mb-1">
                 {entry.size && <div><span className="text-muted">サイズ:</span> {entry.size}mm</div>}
                 {entry.emergenceDate && <div><span className="text-muted">羽化日:</span> {entry.emergenceDate.replace(/-/g, "/")}</div>}
                 {entry.feedingDate && <div><span className="text-muted">後食日:</span> {entry.feedingDate.replace(/-/g, "/")}</div>}
+                {entry.deathDate && <div className="text-red-500"><span className="text-muted">死亡日:</span> {entry.deathDate.replace(/-/g, "/")}</div>}
               </div>
             )}
             {entry.type === "幼虫" && logs[0] && (
@@ -135,6 +140,11 @@ export function EntryCard({
                 <div className="text-[9px] text-gray-400 font-normal">
                   水:{logs[0].moisture} 圧:{logs[0].pressure} 温:{logs[0].temperature || "-"}℃ ステージ:{logs[0].stage}
                 </div>
+              </div>
+            )}
+            {entry.type === "幼虫" && entry.deathDate && (
+              <div className="text-[11px] font-bold text-red-500 mb-1">
+                <span className="text-muted">死亡日:</span> {entry.deathDate.replace(/-/g, "/")}
               </div>
             )}
             <div>
@@ -154,7 +164,9 @@ export function EntryCard({
               </div>
             )}
             <div className={`text-[11px] font-bold mt-1 ${dateColor}`}>
-              {diffDays > 0 ? `${diffDays}日前に交換` : "今日交換"}
+              {range 
+                ? (range.min === range.max ? `${range.min}日前に交換` : `${range.min}〜${range.max}日前に交換`)
+                : "今日交換"}
             </div>
           </dl>
           

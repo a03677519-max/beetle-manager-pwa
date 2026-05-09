@@ -99,7 +99,6 @@ export function BeetleManager() {
 
   const [activeTab, setActiveTab] = useState("成虫");
   const [spawnSetFilter, setSpawnSetFilter] = useState<"active" | "finished">("active");
-  const [adultFilter, setAdultFilter] = useState<"active" | "deceased">("active");
   const [query, setQuery] = useState("");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [createType, setCreateType] = useState<EntryType>("幼虫");
@@ -208,16 +207,28 @@ export function BeetleManager() {
   const filteredEntries = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
      const list = entries.filter((entry) => {
-       const matchesType = selectedType === "すべて" || entry.type === selectedType;
+       // 死亡タブの表示ロジック
+       if (activeTab === "死亡") {
+         if (!entry.deathDate) return false;
+
+         const matchesType = selectedType === "すべて" || entry.type === selectedType;
+         if (!matchesType) return false;
+       } else {
+         // 各種別タブ（成虫・幼虫等）からは死亡個体を除外して「死亡」タブへ移動させる
+         if (entry.deathDate) return false;
+
+         const matchesType = selectedType === "すべて" || entry.type === selectedType;
+         if (!matchesType) return false;
+       }
+
        const matchesSpawnStatus = entry.type !== "産卵セット" || (spawnSetFilter === "active" ? !isSpawnSetFinished(entry) : isSpawnSetFinished(entry));
-       const matchesAdultStatus = entry.type !== "成虫" || (adultFilter === "active" ? !entry.deathDate : !!entry.deathDate);
        const matchesQuery =
          normalizedQuery.length === 0 ||
          [entry.japaneseName, entry.scientificName, entry.locality, formatGeneration(entry.generation), entry.managementName]
            .join(" ")
            .toLowerCase()
            .includes(normalizedQuery);
-       return matchesType && matchesSpawnStatus && matchesAdultStatus && matchesQuery;
+       return matchesSpawnStatus && matchesQuery;
      });
  
      const getSortVal = (e: BeetleEntry, key: string) => {
@@ -489,9 +500,9 @@ export function BeetleManager() {
 
   const stats = useMemo(() => ({
     adults: entries.filter(e => e.type === "成虫" && !e.deathDate).length,
-    larvae: entries.filter(e => e.type === "幼虫").length,
-    spawnSets: entries.filter(e => e.type === "産卵セット").length,
-    deceased: entries.filter(e => e.type === "成虫" && e.deathDate).length,
+    larvae: entries.filter(e => e.type === "幼虫" && !e.deathDate).length,
+    spawnSets: entries.filter(e => e.type === "産卵セット" && !e.deathDate).length,
+    deceased: entries.filter(e => !!e.deathDate).length,
   }), [entries]);
 
   const fetchCurrentTemperature = async (setter: (value: string) => void) => {
@@ -1054,6 +1065,13 @@ export function BeetleManager() {
               {type}
             </button>
           ))}
+          <button
+            type="button"
+            className={`px-4 py-1.5 rounded-full text-[12px] font-bold transition-all whitespace-nowrap ${activeTab === "死亡" ? "bg-[#F4511E] text-white shadow-md" : "bg-white/40 text-[#8B7D7B] border border-white/40"}`}
+            onClick={() => { setActiveTab("死亡"); setSelectedType("すべて"); }}
+          >
+            死亡一覧 ({stats.deceased})
+          </button>
         </div>
       </section>
 

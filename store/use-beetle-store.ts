@@ -74,6 +74,7 @@ export const emptyLarvaForm: LarvaFormValues = {
   plannedEmergenceDate: "",
   actualEmergenceDate: "",
   emergenceType: "羽化",
+  deathDate: "",
   hatchDate: today(),
 };
 

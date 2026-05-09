@@ -12,7 +12,7 @@ import {
   YAxis,
 } from "recharts";
 
-import { daysBetween, formatDate, getLarvaDateInfo, today } from "@/lib/utils";
+import { formatDate, getLarvaDateInfo, today, parseAmbiguousDate, getDaysRange } from "@/lib/utils";
 import { useBeetleStore } from "@/store/use-beetle-store";
 import type { LarvaBeetle } from "@/types/beetle";
 import { LarvaLogForm } from "./larva-log-form";
@@ -32,8 +32,11 @@ export function LarvaDetail({
   const deleteLarvaLog = useBeetleStore((state) => state.deleteLarvaLog);
 
   const chartData = [...entry.logs]
-    .slice()
-    .reverse()
+    .sort((a, b) => {
+      const dA = parseAmbiguousDate(a.date)?.getTime() || 0;
+      const dB = parseAmbiguousDate(b.date)?.getTime() || 0;
+      return dA - dB;
+    })
     .map((log) => {
       const tempStr = String(log.temperature || "").trim();
       let tempVal = 0;
@@ -93,6 +96,12 @@ export function LarvaDetail({
           <div className="text-xs text-gray-500">羽化日 ({entry.emergenceType})</div>
           <div className="font-bold text-gray-800 truncate">{entry.actualEmergenceDate ? formatDate(entry.actualEmergenceDate) : "未定"}</div>
         </div>
+        {entry.deathDate && (
+          <div className="bg-red-50 p-4 rounded-2xl col-span-2 border border-red-100">
+            <div className="text-xs text-red-500 font-bold uppercase tracking-wider">死亡日</div>
+            <div className="font-bold text-red-700">{formatDate(entry.deathDate)}</div>
+          </div>
+        )}
         <div className="bg-[#F1F3F5] p-4 rounded-2xl border border-gray-100">
           <div className="text-[10px] font-black text-[#8B5A2B] uppercase tracking-widest">総ログ数</div>
           <div className="text-xl font-bold text-[#212529]">{entry.logs.length}件</div>
@@ -104,10 +113,15 @@ export function LarvaDetail({
         <div className="bg-gray-50 p-4 rounded-2xl">
           <div className="text-xs text-gray-500">育成日数</div>
           <div className="font-bold text-gray-800 truncate">
-            {/* hatchDate（孵化日）または extractionDate（割出日）を優先して計算に使用 */}
-            {entry.actualEmergenceDate 
-              ? `${daysBetween(entry.hatchDate || entry.extractionDate || entry.createdAt, entry.actualEmergenceDate)}日`
-              : `現在 ${daysBetween(entry.hatchDate || entry.extractionDate || entry.createdAt, today())}日目`}
+            {(() => {
+              const start = entry.hatchDate || entry.extractionDate || entry.createdAt;
+              const end = entry.actualEmergenceDate || today();
+              const range = getDaysRange(start, end);
+              if (!range) return "-";
+              const suffix = entry.actualEmergenceDate ? "日" : "日目";
+              const prefix = entry.actualEmergenceDate ? "" : "現在 ";
+              return range.min === range.max ? `${prefix}${range.min}${suffix}` : `${prefix}${range.min} 〜 ${range.max}${suffix}`;
+            })()}
           </div>
         </div>
         {entry.memo && (
