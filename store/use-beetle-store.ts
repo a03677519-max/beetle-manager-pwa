@@ -76,7 +76,7 @@ export const emptyLarvaForm: LarvaFormValues = {
   emergenceType: "羽化",
   deathDate: "",
   hatchDate: today(),
-};
+} as any;
 
 export const emptySpawnSetForm: SpawnSetFormValues = {
   type: "産卵セット",
