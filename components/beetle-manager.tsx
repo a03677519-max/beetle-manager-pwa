@@ -1485,20 +1485,26 @@ export function BeetleManager() {
           />
         )}
       </AnimatePresence>
-      <Modal isOpen={isAddingSecondSet} onClose={() => setIsAddingSecondSet(false)} title="2回目セット登録">
-        {selectedEntry && selectedEntry.type === "産卵セット" && (
+      <Modal 
+        isOpen={isAddingSecondSet} 
+        onClose={() => { setIsAddingSecondSet(false); setEditingChildSet(null); }} 
+        title={editingChildSet ? "履歴の編集" : "追加のセット登録"}
+      >
+        {(selectedEntry || editingChildSet) && (
           <SpawnSetSecondForm
             initialValues={editingChildSet ? editingChildSet : { 
               ...emptySpawnSetForm, 
               // 親のIDを渡さない（新規登録であることを明示）
               id: undefined,
               // 日付計算用に親の情報を渡す
-              sets: (selectedEntry as any).sets,
-              setDate: (selectedEntry as any).setDate,
-              setEndDate: (selectedEntry as any).setEndDate
+              sets: (selectedEntry as any)?.sets,
+              setDate: (selectedEntry as any)?.setDate,
+              setEndDate: (selectedEntry as any)?.setEndDate
             }}
+            allEntries={entries}
             onSubmit={(submittedSet) => {
-              const parentEntryId = editingChildSet ? editingChildSet.parentId : selectedEntry.id;
+              const parentEntryId = editingChildSet ? editingChildSet.parentId : selectedEntry?.id;
+              if (!parentEntryId) return;
               const entry = entries.find(e => e.id === parentEntryId) as any;
               if (!entry) return;
 

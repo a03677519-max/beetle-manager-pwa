@@ -132,8 +132,7 @@ export function SpawnSetSecondForm({
         <div className="h-20" />
       </div>
       <div className="p-4 border-t border-gray-100 bg-white">
-        <button type="submit" className="w-full py-3 bg-[#2D5A27] text-white rounded-xl font-black">登録</button>
-      </div>
+        <button type="submit" className="w-full py-3 bg-[#2D5A27] text-white rounded-xl font-black">
     </form>
   );
 }
