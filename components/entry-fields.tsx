@@ -407,6 +407,7 @@ export function BottomSheetInput({
   suggestions,
   enterKeyHint,
   id,
+  onNext,
   inputMode,
 }: {
   label: string;
@@ -416,6 +417,7 @@ export function BottomSheetInput({
   type?: "text" | "textarea" | "password";
   suggestions?: string[];
   enterKeyHint?: "next" | "done" | "send" | "search" | "go";
+  onNext?: () => void;
   id?: string; // Add id prop
   inputMode?: "text" | "decimal" | "numeric" | "tel" | "search" | "email" | "url";
 }) {
@@ -431,11 +433,9 @@ export function BottomSheetInput({
         if (document.activeElement instanceof HTMLElement) {
           document.activeElement.blur();
         }
-        requestAnimationFrame(() => {
-          inputRef.current?.focus();
-        });
+        inputRef.current?.focus();
       }
-    }, 500); // 500ms
+    }, 150); // アニメーション終了に合わせる
     
     // iOS キーボード展開時のスクロール追従対策
     const handler = () => {
@@ -503,10 +503,14 @@ export function BottomSheetInput({
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-[11px] font-bold text-[#A67C52] uppercase tracking-wider">{label}</span>
                   <button
-                    id={`${id}-done-button`} // Add id to done button
+                    id={id ? `${id}-done-button` : undefined} // Add id to done button
                     type="button"
                     className="bg-[#FF9800] text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-sm"
-                    onClick={() => setIsOpen(false)}
+                    onClick={() => {
+                      setIsOpen(false);
+                      // モーダルを閉じた後に必要なら次へ
+                      if (onNext) setTimeout(onNext, 300);
+                    }}
                   >
                     完了
                   </button>
@@ -550,6 +554,7 @@ export function BottomSheetInput({
                           onClick={() => {
                         onChange(suggestion);
                         setIsOpen(false);
+                        if (onNext) setTimeout(onNext, 300);
                       }}
                         >
                           {suggestion}
@@ -709,10 +714,7 @@ export function useNextFieldNavigation(formId: string, isModalOpen: boolean) {
   }, []);
 
   const focusNextField = useCallback(() => {
-    // 移動前に現在のフォーカスを確実に外す（iOSのキーボード位置ずれ対策）
     const activeElement = document.activeElement as HTMLElement;
-    if (activeElement) activeElement.blur();
-
     const form = document.getElementById(formId) as HTMLFormElement | null;
     if (!form) return;
     
@@ -722,6 +724,11 @@ export function useNextFieldNavigation(formId: string, isModalOpen: boolean) {
     
     let activeIndex = focusable.indexOf(activeElement);
 
+    // 移動前に現在のフォーカスを確実に外す（iOSのキーボード位置ずれ対策）
+    if (activeElement instanceof HTMLElement) {
+      activeElement.blur();
+    }
+
     // 現在の要素がポータル内（IDに -trigger がない）の場合、トリガー側を探す
     if (activeIndex === -1 && activeElement?.id) {
       const triggerId = `${activeElement.id}-trigger`;
@@ -730,14 +737,16 @@ export function useNextFieldNavigation(formId: string, isModalOpen: boolean) {
 
     if (activeIndex > -1) {
       if (activeIndex < focusable.length - 1) {
-        const nextElement = focusable[activeIndex + 1];
-        if (nextElement) {
-          nextElement.focus();
-          // トリガー要素（input readOnly）の場合はクリックイベントを発生させてモーダルを開く
-          if (nextElement.tagName === 'INPUT' && (nextElement as HTMLInputElement).readOnly) {
-            nextElement.click();
-          }
-        }
+        const nextElement = focusable[activeIndex + 1] as HTMLElement;
+        // iOSのキーボードレイアウト崩れを防ぐために微小な遅延を入れる
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            nextElement.focus();
+            if (nextElement.tagName === 'INPUT' && (nextElement as HTMLInputElement).readOnly) {
+              nextElement.click();
+            }
+          }, 10);
+        });
       } else {
         // 最後の項目の場合はキーボードを閉じる
         focusDone();

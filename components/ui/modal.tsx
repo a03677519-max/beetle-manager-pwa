@@ -9,6 +9,7 @@ export function Modal({ isOpen, onClose, title, children, centered = false }: { 
           const modal = document.getElementById('modal-container');
           if (modal) {
             modal.style.height = `${window.visualViewport.height}px`;
+            modal.style.top = `${window.visualViewport.offsetTop}px`;
           }
         }
       };
@@ -23,12 +24,16 @@ export function Modal({ isOpen, onClose, title, children, centered = false }: { 
   if (!isOpen) return null;
   return (
     <div 
-      className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex ${centered ? 'items-center' : 'items-end'} justify-center z-50`}
+      className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex ${centered ? 'items-center' : 'items-end'} justify-center z-50 touch-none`}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div id="modal-container" className={`flex flex-col bg-white/90 backdrop-blur-lg ${centered ? 'rounded-3xl' : 'rounded-t-3xl'} shadow-2xl border border-white/50 w-full max-w-md max-h-[85dvh] overflow-hidden overscroll-contain`}>
+      <div 
+        id="modal-container" 
+        className={`flex flex-col bg-white/90 backdrop-blur-lg ${centered ? 'rounded-3xl' : 'rounded-t-3xl'} shadow-2xl border border-white/50 w-full max-w-md max-h-[85dvh] overflow-hidden overscroll-contain fixed`}
+        style={{ bottom: 0 }}
+      >
         <div className="flex justify-between items-center p-6 shrink-0">
           <h2 className="text-xl font-bold text-gray-800">{title}</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-800">閉じる</button>

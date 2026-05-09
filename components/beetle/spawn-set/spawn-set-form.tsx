@@ -133,6 +133,7 @@ export function SpawnSetForm({
             value={values.containerSize || ""}
             placeholder="例: 2000cc"
             suggestions={suggestions.container}
+            onNext={focusNextField}
             onChange={(val) => setValues((prev) => ({ ...prev, containerSize: val }))}
           />
         </div>
@@ -140,6 +141,7 @@ export function SpawnSetForm({
           label="詰圧"
           value={values.pressure || ""}
           placeholder="例: 硬め / 3"
+          onNext={focusNextField}
           onChange={(val) => setValues((prev) => ({ ...prev, pressure: val }))}
         />
         <MoistureField

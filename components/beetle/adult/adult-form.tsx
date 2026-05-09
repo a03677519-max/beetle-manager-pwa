@@ -86,6 +86,7 @@ export function AdultForm({
             value={values.size || ""}
             placeholder="例: 75.5"
             inputMode="decimal"
+            onNext={focusNextField}
             enterKeyHint="next"
             onChange={(val) => setValues({ ...values, size: val })}
           />
@@ -94,6 +95,7 @@ export function AdultForm({
           label="状態"
           value={values.status || ""}
           placeholder="例: 未後食 / 完品"
+          onNext={focusNextField}
           enterKeyHint="next"
           onChange={(val) => setValues({ ...values, status: val })}
         />

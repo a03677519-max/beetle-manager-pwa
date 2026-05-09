@@ -22,7 +22,7 @@ export function SpawnSetSecondForm({
   const latestEndDate = useMemo(() => {
     const entry = initialValues as any;
     if (entry.sets && entry.sets.length > 0) {
-      const sorted = [...entry.sets].sort((a, b) => (a.setDate || "").localeCompare(b.setDate || "")); // 昇順でソート
+      const sorted = [...entry.sets].sort((a, b) => (b.setDate || "").localeCompare(a.setDate || "")); // 降順（最新順）にソート
       return sorted[0].setEndDate || sorted[0].setDate || today();
     }
     return entry.setEndDate || entry.setDate || today();
