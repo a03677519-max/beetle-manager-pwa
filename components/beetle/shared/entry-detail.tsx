@@ -196,7 +196,7 @@ export function EntryDetail({
             <button 
               type="button" 
               className="p-2 bg-gray-50 rounded-full text-gray-400 hover:text-[#FF9800] transition-colors" 
-              onClick={() => { onClose(); startEditing(entry.id); }}
+              onClick={() => { startEditing(entry.id); }}
             >
               <Edit2 size={18} />
             </button>

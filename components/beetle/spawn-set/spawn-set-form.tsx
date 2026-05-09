@@ -127,6 +127,7 @@ export function SpawnSetForm({
             label="使用マット"
             value={values.substrate || ""}
             placeholder="例: クヌギマット"
+            suggestions={suggestions.container}
             onNext={focusNextField}
             onChange={(val) => setValues((prev) => ({ ...prev, substrate: val }))}
           />

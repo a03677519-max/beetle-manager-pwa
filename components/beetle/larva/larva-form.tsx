@@ -94,12 +94,14 @@ export function LarvaForm({
   const suggestions = useMemo(() => {
     const sSet = new Set<string>();
     const bSet = new Set<string>();
+    const tSet = new Set<string>();
 
     allEntries.forEach((entry) => {
       if (entry.type === "幼虫") {
         entry.logs.forEach((log) => {
           if (log.substrate) sSet.add(log.substrate);
           if (log.bottleSize) bSet.add(log.bottleSize);
+          if (log.temperature) tSet.add(String(log.temperature));
         });
       }
     });
@@ -107,6 +109,7 @@ export function LarvaForm({
     return {
       substrate: Array.from(sSet).sort(),
       bottleSize: Array.from(bSet).sort(),
+      temperature: Array.from(tSet).sort(),
     };
   }, [allEntries]);
 
@@ -438,6 +441,7 @@ export function LarvaForm({
                     inputMode="decimal"
                     enterKeyHint="next"
                     placeholder="温度"
+                    suggestions={suggestions.temperature}
                     onChange={(val) => {
                       const newLogs = [...(values.logs || [])];
                       newLogs[index] = { ...record, temperature: val };

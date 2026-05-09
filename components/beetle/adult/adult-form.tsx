@@ -34,6 +34,15 @@ export function AdultForm({
 
   const isDead = useMemo(() => !!values.deathDate, [values.deathDate]);
 
+  const suggestions = useMemo(() => {
+    const sSet = new Set<string>();
+    const entries = useBeetleStore.getState().entries;
+    entries.forEach((e) => {
+      if (e.type === "成虫" && e.status) sSet.add(e.status);
+    });
+    return Array.from(sSet).sort();
+  }, []);
+
   // Effect to synchronize internal form state with external initialValues prop.
   // This is important if the parent component can change `initialValues`
   // while this component is still mounted (e.g., for editing different entries).
@@ -96,6 +105,7 @@ export function AdultForm({
           label="状態"
           value={values.status || ""}
           placeholder="例: 未後食 / 完品"
+          suggestions={suggestions}
           onNext={focusNextField}
           enterKeyHint="next"
           onChange={(val) => setValues({ ...values, status: val })}

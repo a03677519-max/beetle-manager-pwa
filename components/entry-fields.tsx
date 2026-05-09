@@ -159,10 +159,12 @@ export function DateRollField({
   // 初期表示時に値が空、または不完全（"-"が含まれる）なら、
   // 現在の年月日を初期値として親に反映させて保存漏れを防ぐ
   useEffect(() => {
-    // 値が空（""）の場合、または不完全な場合（"-"が含まれる場合）、
-    // UIに表示されているデフォルト値（currentParts）で補完して同期する。
-    // これにより「見た目とステートの乖離」を防ぎ、未操作でも値が反映されるようにする。
-    if (value === "" || parts.year === "-" || parts.month === "-" || parts.day === "-") {
+    // 値が完全に空（""）の場合は、意図的な未設定（継続中など）として扱い、勝手に補完しない。
+    // これにより「産卵終了」チェックボックス解除などの挙動を正常化する。
+    if (value === "") return;
+
+    // 日付の一部のみが入力されている（"-"が含まれる）場合は、残りを現在のデフォルト値で補完する。
+    if (parts.year === "-" || parts.month === "-" || parts.day === "-") {
       const completedDate = buildDateFromParts(
         parts.year !== "-" ? parts.year : currentParts.year, // Use existing part, or current year
         parts.month !== "-" ? parts.month : currentParts.month, // Use existing part, or current month

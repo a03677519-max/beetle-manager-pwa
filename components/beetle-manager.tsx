@@ -584,12 +584,10 @@ export function BeetleManager() {
     // 1回目のセットを編集する場合
     if (set.id === "primary") {
       startEditing(entryId); // メインの編集フォームを開く
-      setSelectedEntry(null); // 詳細モーダルを閉じる
     } else {
       // 2回目以降のセットを編集する場合
       setEditingChildSet({ ...set, id: set.id, parentId: entryId }); // 明示的にIDを保持
       setIsAddingSecondSet(true); // 2回目セット用のモーダルを再利用
-      setSelectedEntry(null); // 詳細モーダルを閉じる
     }
   };
 
