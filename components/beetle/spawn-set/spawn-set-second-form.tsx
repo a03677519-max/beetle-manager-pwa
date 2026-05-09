@@ -34,7 +34,7 @@ export function SpawnSetSecondForm({
       return sorted[0].setEndDate || sorted[0].setDate || today();
     }
     return s.setEndDate || s.setDate || today();
-  }, [initialValues]);
+  }, [initialValues, allEntries]);
 
   const [values, setValues] = useState<any>({
     id: initialValues.id, // 編集用にIDを保持
@@ -50,8 +50,8 @@ export function SpawnSetSecondForm({
     const isEdit = !!initialValues.id;
     setValues({
       id: initialValues.id,
-      setDate: initialValues.setDate || latestEndDate,
-      setEndDate: initialValues.setEndDate || "",
+      setDate: isEdit ? initialValues.setDate : latestEndDate,
+      setEndDate: isEdit ? (initialValues.setEndDate || "") : "",
       eggCount: initialValues.eggCount ?? 0,
       larvaCount: initialValues.larvaCount ?? 0,
       substrate: initialValues.substrate || "",

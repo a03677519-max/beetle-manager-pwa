@@ -34,8 +34,31 @@ export function SpawnSetDetail({
     ...(s.sets || []).map((set: any, i: number) => ({ ...set, title: `${i + 2}回目` })) // sets配列の各要素にtitleを追加
   ].sort((a, b) => (b.setDate || "").localeCompare(a.setDate || "")); // 日付の降順（新しいものが左）
 
+  // 全回転の合計を計算
+  const totals = allSets.reduce(
+    (acc, set) => {
+      acc.eggs += Number(set.eggCount || 0);
+      acc.larvae += Number(set.larvaCount || 0);
+      return acc;
+    },
+    { eggs: 0, larvae: 0 }
+  );
+
   return (
     <div className="space-y-4">
+      {/* 合計成績のサマリー */}
+      <div className="bg-[#FF9800]/5 border border-[#FF9800]/10 rounded-2xl p-4 flex justify-around items-center shadow-sm">
+        <div className="text-center">
+          <div className="text-[10px] font-black text-[#EF6C00] uppercase tracking-widest mb-1">合計卵数</div>
+          <div className="text-2xl font-black text-[#EF6C00]">{totals.eggs}<span className="text-xs ml-0.5">個</span></div>
+        </div>
+        <div className="w-px h-8 bg-[#FF9800]/20" />
+        <div className="text-center">
+          <div className="text-[10px] font-black text-[#EF6C00] uppercase tracking-widest mb-1">合計幼虫数</div>
+          <div className="text-2xl font-black text-[#EF6C00]">{totals.larvae}<span className="text-xs ml-0.5">頭</span></div>
+        </div>
+      </div>
+
       <div className="flex items-center justify-between px-1">
         <h3 className="font-black text-gray-700">産卵セット履歴</h3>
         <button onClick={onAddSecondSet} className="bg-[#FF9800] text-white p-1 rounded-full shadow-lg active:scale-95 transition-all">
