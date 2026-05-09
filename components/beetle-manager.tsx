@@ -587,7 +587,7 @@ export function BeetleManager() {
       setSelectedEntry(null); // 詳細モーダルを閉じる
     } else {
       // 2回目以降のセットを編集する場合
-      setEditingChildSet({ ...set, parentId: entryId }); // 親のIDも渡す
+      setEditingChildSet({ ...set, id: set.id, parentId: entryId }); // 明示的にIDを保持
       setIsAddingSecondSet(true); // 2回目セット用のモーダルを再利用
       setSelectedEntry(null); // 詳細モーダルを閉じる
     }
@@ -1488,30 +1488,44 @@ export function BeetleManager() {
       <Modal isOpen={isAddingSecondSet} onClose={() => setIsAddingSecondSet(false)} title="2回目セット登録">
         {selectedEntry && selectedEntry.type === "産卵セット" && (
           <SpawnSetSecondForm
-            initialValues={editingChildSet ? editingChildSet : { ...emptySpawnSetForm, ...selectedEntry }}
+            initialValues={editingChildSet ? editingChildSet : { 
+              ...emptySpawnSetForm, 
+              // 親のIDを渡さない（新規登録であることを明示）
+              id: undefined,
+              // 日付計算用に親の情報を渡す
+              sets: (selectedEntry as any).sets,
+              setDate: (selectedEntry as any).setDate,
+              setEndDate: (selectedEntry as any).setEndDate
+            }}
             onSubmit={(submittedSet) => {
               const parentEntryId = editingChildSet ? editingChildSet.parentId : selectedEntry.id;
               const entry = entries.find(e => e.id === parentEntryId) as any;
               if (!entry) return;
 
               let updatedSets;
+              // 保存するデータのクリーンアップ（再帰的なデータ混入を防止）
+              const { parentId, sets, ...cleanSet } = submittedSet as any;
+
               if (editingChildSet) {
                 // 編集の場合
                 updatedSets = (entry.sets || []).map((s: any) => 
-                  s.id === submittedSet.id ? { ...submittedSet, id: s.id } : s
+                  s.id === submittedSet.id ? { ...cleanSet, id: s.id } : s
                 );
               } else {
                 // 新規追加の場合
-                updatedSets = [...(entry.sets || []), { ...submittedSet, id: createId() }];
+                updatedSets = [...(entry.sets || []), { ...cleanSet, id: createId() }];
               }
               
               // 日付でソート
               updatedSets.sort((a: any, b: any) => (a.setDate || "").localeCompare(b.setDate || ""));
               updateSpawnSet(parentEntryId, { ...entry, sets: updatedSets } as any);
               setIsAddingSecondSet(false);
-              setEditingChildSet(null); // 編集状態をリセット
+              setEditingChildSet(null);
             }}
-            onCancel={() => setIsAddingSecondSet(false)}
+            onCancel={() => {
+              setIsAddingSecondSet(false);
+              setEditingChildSet(null);
+            }}
           />
         )}
       </Modal>

@@ -24,12 +24,16 @@ export function SpawnSetSecondForm({
 
   // 最新のセット終了日を取得して開始日の初期値にする
   const latestEndDate = useMemo(() => {
-    const entry = initialValues as any;
-    if (entry.sets && entry.sets.length > 0) {
-      const sorted = [...entry.sets].sort((a, b) => (b.setDate || "").localeCompare(a.setDate || "")); // 降順（最新順）にソート
+    // 1. initialValuesそのものにsetsがある場合（親を渡された場合）
+    // 2. allEntriesから親を探して取得する場合
+    const parent = allEntries?.find(e => (e as any).sets?.some((s: any) => s.id === initialValues.id)) || initialValues;
+    const s = parent as any;
+
+    if (s.sets && s.sets.length > 0) {
+      const sorted = [...s.sets].sort((a, b) => (b.setDate || "").localeCompare(a.setDate || "")); // 降順
       return sorted[0].setEndDate || sorted[0].setDate || today();
     }
-    return entry.setEndDate || entry.setDate || today();
+    return s.setEndDate || s.setDate || today();
   }, [initialValues]);
 
   const [values, setValues] = useState<any>({
@@ -43,23 +47,22 @@ export function SpawnSetSecondForm({
 
   // initialValuesが変更されたらstateを更新 (編集モード用)
   useEffect(() => {
-    if (initialValues.id) {
-      setValues({
-        id: initialValues.id,
-        setDate: initialValues.setDate || latestEndDate,
-        setEndDate: initialValues.setEndDate || "",
-        eggCount: initialValues.eggCount ?? 0,
-        larvaCount: initialValues.larvaCount ?? 0,
-        substrate: initialValues.substrate || "",
-        containerSize: initialValues.containerSize || "",
-        pressure: initialValues.pressure || "",
-        moisture: initialValues.moisture ?? 3,
-        temperature: initialValues.temperature || "",
-        cohabitation: initialValues.cohabitation || "なし",
-        memo: initialValues.memo || "",
-        useDifferentMethod: initialValues.useDifferentMethod || false,
-      });
-    }
+    const isEdit = !!initialValues.id;
+    setValues({
+      id: initialValues.id,
+      setDate: initialValues.setDate || latestEndDate,
+      setEndDate: initialValues.setEndDate || "",
+      eggCount: initialValues.eggCount ?? 0,
+      larvaCount: initialValues.larvaCount ?? 0,
+      substrate: initialValues.substrate || "",
+      containerSize: initialValues.containerSize || "",
+      pressure: initialValues.pressure || "",
+      moisture: initialValues.moisture ?? 3,
+      temperature: initialValues.temperature || "",
+      cohabitation: initialValues.cohabitation || "なし",
+      memo: initialValues.memo || "",
+      useDifferentMethod: initialValues.useDifferentMethod || (isEdit && !!initialValues.substrate),
+    });
   }, [initialValues, latestEndDate]);
 
   const suggestions = useMemo(() => {
