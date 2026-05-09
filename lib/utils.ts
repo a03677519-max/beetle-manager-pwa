@@ -27,6 +27,32 @@ export const createDateOptions = (startYear = 2018, endYear = new Date().getFull
 });
 
 /**
+ * 曖昧な日付（2024-05-上など）から、その期間の開始日と終了日のDateオブジェクトを返します。
+ */
+export const getAmbiguousDateRange = (value: string): { start: Date; end: Date } | null => {
+  if (!value) return null;
+  const datePart = value.includes("T") ? value.split("T")[0] : value;
+  const parts = datePart.split("-");
+  if (parts.length !== 3 || parts[0] === "-" || parts[1] === "-") return null;
+
+  const y = parseInt(parts[0]);
+  const m = parseInt(parts[1]);
+  const d = parts[2];
+
+  const firstDay = new Date(y, m - 1, 1);
+  const lastDay = new Date(y, m, 0);
+
+  if (d === "月" || d === "-") return { start: firstDay, end: lastDay };
+  if (d === "上") return { start: firstDay, end: new Date(y, m - 1, 10) };
+  if (d === "中") return { start: new Date(y, m - 1, 11), end: new Date(y, m - 1, 20) };
+  if (d === "下") return { start: new Date(y, m - 1, 21), end: lastDay };
+
+  const exact = new Date(y, m - 1, parseInt(d));
+  if (isNaN(exact.getTime())) return null;
+  return { start: exact, end: exact };
+};
+
+/**
  * 曖昧な日付（2024-05-上など）を計算用のDateオブジェクトに変換します。
  * 上旬→5日、中旬・月→15日、下旬→25日として近似値を返します。
  */
