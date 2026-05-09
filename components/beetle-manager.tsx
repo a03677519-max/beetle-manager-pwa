@@ -209,13 +209,13 @@ export function BeetleManager() {
      const list = entries.filter((entry) => {
        // 死亡タブの表示ロジック
        if (activeTab === "死亡") {
-         if (!entry.deathDate) return false;
+         if (!(entry as any).deathDate) return false;
 
          const matchesType = selectedType === "すべて" || entry.type === selectedType;
          if (!matchesType) return false;
        } else {
          // 各種別タブ（成虫・幼虫等）からは死亡個体を除外して「死亡」タブへ移動させる
-         if (entry.deathDate) return false;
+         if ((entry as any).deathDate) return false;
 
          const matchesType = selectedType === "すべて" || entry.type === selectedType;
          if (!matchesType) return false;
@@ -499,10 +499,10 @@ export function BeetleManager() {
   };
 
   const stats = useMemo(() => ({
-    adults: entries.filter(e => e.type === "成虫" && !e.deathDate).length,
-    larvae: entries.filter(e => e.type === "幼虫" && !e.deathDate).length,
-    spawnSets: entries.filter(e => e.type === "産卵セット" && !e.deathDate).length,
-    deceased: entries.filter(e => !!e.deathDate).length,
+    adults: entries.filter(e => e.type === "成虫" && !(e as any).deathDate).length,
+    larvae: entries.filter(e => e.type === "幼虫" && !(e as any).deathDate).length,
+    spawnSets: entries.filter(e => e.type === "産卵セット" && !(e as any).deathDate).length,
+    deceased: entries.filter(e => !!(e as any).deathDate).length,
   }), [entries]);
 
   const fetchCurrentTemperature = async (setter: (value: string) => void) => {

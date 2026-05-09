@@ -96,10 +96,10 @@ export function LarvaDetail({
           <div className="text-xs text-gray-500">羽化日 ({entry.emergenceType})</div>
           <div className="font-bold text-gray-800 truncate">{entry.actualEmergenceDate ? formatDate(entry.actualEmergenceDate) : "未定"}</div>
         </div>
-        {entry.deathDate && (
+        {(entry as any).deathDate && (
           <div className="bg-red-50 p-4 rounded-2xl col-span-2 border border-red-100">
             <div className="text-xs text-red-500 font-bold uppercase tracking-wider">死亡日</div>
-            <div className="font-bold text-red-700">{formatDate(entry.deathDate)}</div>
+            <div className="font-bold text-red-700">{formatDate((entry as any).deathDate)}</div>
           </div>
         )}
         <div className="bg-[#F1F3F5] p-4 rounded-2xl border border-gray-100">
