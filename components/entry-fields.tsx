@@ -303,21 +303,37 @@ export function BottomSheetSelect({
   onChange,
   placeholder,
   id,
+  onNext,
 }: {
   label: string;
   value: string;
   options: string[];
   onChange: (val: string) => void;
+  onNext?: () => void;
   placeholder?: string;
   id?: string;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const selectedRef = useRef<HTMLButtonElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen && selectedRef.current) {
       selectedRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
+
+    const handleViewport = () => {
+      if (!window.visualViewport || !isOpen || !containerRef.current) return;
+      containerRef.current.style.height = `${window.visualViewport.height}px`;
+      containerRef.current.style.top = `${window.visualViewport.offsetTop}px`;
+    };
+
+    window.visualViewport?.addEventListener('resize', handleViewport);
+    window.visualViewport?.addEventListener('scroll', handleViewport);
+    return () => {
+      window.visualViewport?.removeEventListener('resize', handleViewport);
+      window.visualViewport?.removeEventListener('scroll', handleViewport);
+    };
   }, [isOpen]);
 
   return (
@@ -342,7 +358,10 @@ export function BottomSheetSelect({
       <AnimatePresence>
         {isOpen && (
           <Portal>
-            <div className="fixed inset-0 z-[100] flex items-end justify-center pointer-events-none">
+            <div 
+              ref={containerRef}
+              className="fixed inset-0 z-[100] flex items-end justify-center pointer-events-none overscroll-none"
+            >
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -382,6 +401,7 @@ export function BottomSheetSelect({
                       onClick={() => {
                         onChange(option);
                         setIsOpen(false);
+                        if (onNext) setTimeout(onNext, 300);
                       }}
                     >
                       {option}
@@ -424,6 +444,7 @@ export function BottomSheetInput({
   const internalId = useMemo(() => id || `input-${label.replace(/\s+/g, '-')}`, [id, label]);
   const [isOpen, setIsOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const focusTimer = setTimeout(() => {
@@ -433,25 +454,37 @@ export function BottomSheetInput({
         if (document.activeElement instanceof HTMLElement) {
           document.activeElement.blur();
         }
-        inputRef.current?.focus();
+        requestAnimationFrame(() => {
+          inputRef.current?.focus();
+          // フォーカス後に中央へスクロール
+          inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
       }
-    }, 150); // アニメーション終了に合わせる
+    }, 300); // アニメーションとiOSのフォーカス挙動を待つ
     
-    // iOS キーボード展開時のスクロール追従対策
-    const handler = () => {
-      if (window.visualViewport) {
-        setTimeout(() => {
-          if (document.activeElement instanceof HTMLElement) {
-            document.activeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }
-        }, 300);
+    // iOS キーボード展開時のスクロール追従・中央配置
+    const handleViewport = () => {
+      if (!window.visualViewport || !isOpen) return;
+      
+      if (containerRef.current) {
+        containerRef.current.style.height = `${window.visualViewport.height}px`;
+        containerRef.current.style.top = `${window.visualViewport.offsetTop}px`;
+      }
+
+      if (document.activeElement === inputRef.current) {
+        requestAnimationFrame(() => {
+          inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
       }
     };
-    window.visualViewport?.addEventListener('resize', handler);
+
+    window.visualViewport?.addEventListener('resize', handleViewport);
+    window.visualViewport?.addEventListener('scroll', handleViewport);
 
     return () => {
       clearTimeout(focusTimer);
-      window.visualViewport?.removeEventListener('resize', handler);
+      window.visualViewport?.removeEventListener('resize', handleViewport);
+      window.visualViewport?.removeEventListener('scroll', handleViewport);
     };
   }, [isOpen]);
 
@@ -484,7 +517,10 @@ export function BottomSheetInput({
       <AnimatePresence>
         {isOpen && (
           <Portal>
-            <div className="fixed inset-0 z-[100] flex items-end justify-center pointer-events-none">
+            <div 
+              ref={containerRef}
+              className="fixed inset-0 z-[100] flex items-end justify-center pointer-events-none overscroll-none"
+            >
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -737,15 +773,17 @@ export function useNextFieldNavigation(formId: string, isModalOpen: boolean) {
 
     if (activeIndex > -1) {
       if (activeIndex < focusable.length - 1) {
-        const nextElement = focusable[activeIndex + 1] as HTMLElement;
+        const nextElement = focusable[activeIndex + 1];
         // iOSのキーボードレイアウト崩れを防ぐために微小な遅延を入れる
         requestAnimationFrame(() => {
           setTimeout(() => {
-            nextElement.focus();
-            if (nextElement.tagName === 'INPUT' && (nextElement as HTMLInputElement).readOnly) {
-              nextElement.click();
+            if (nextElement instanceof HTMLElement) {
+              nextElement.focus();
+              if (nextElement.tagName === 'INPUT' && (nextElement as HTMLInputElement).readOnly) {
+                nextElement.click();
+              }
             }
-          }, 10);
+          }, 50);
         });
       } else {
         // 最後の項目の場合はキーボードを閉じる

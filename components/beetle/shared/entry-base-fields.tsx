@@ -15,6 +15,7 @@ export function EntryBaseFields({
   linkedEntryIds = [],
   allEntries,
   generationLabelSuffix,
+  onNext,
   onChange,
 }: {
   managementName: string;
@@ -24,6 +25,7 @@ export function EntryBaseFields({
   generation: AdultFormValues["generation"];
   linkedEntryIds?: string[];
   generationLabelSuffix?: string;
+  onNext?: () => void;
   allEntries: BeetleEntry[];
   onChange: (patch: {
     managementName?: string;
@@ -110,6 +112,7 @@ export function EntryBaseFields({
         value={managementName || ""}
         placeholder="例: P-01 / L-24-01"
         suggestions={suggestions.management}
+        onNext={onNext}
         onChange={(val) => onChange({ managementName: val })}
       />
       <BottomSheetInput
@@ -117,6 +120,7 @@ export function EntryBaseFields({
         value={japaneseName}
         placeholder="和名を入力"
         suggestions={suggestions.japanese}
+        onNext={onNext}
         onChange={handleJapaneseNameChange}
       />
       <BottomSheetInput
@@ -124,6 +128,7 @@ export function EntryBaseFields({
         value={scientificName}
         placeholder="学名を入力"
         suggestions={suggestions.scientific}
+        onNext={onNext}
         onChange={(val) => onChange({ scientificName: val })}
       />
       <BottomSheetInput
@@ -131,6 +136,7 @@ export function EntryBaseFields({
         value={locality}
         placeholder="産地を入力"
         suggestions={suggestions.locality}
+        onNext={onNext}
         onChange={(val) => onChange({ locality: val })}
       />
       <GenerationRollField

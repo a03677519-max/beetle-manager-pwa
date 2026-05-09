@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import { BottomSheetInput, DateRollField, MoistureField } from "@/components/entry-fields";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { BottomSheetInput, DateRollField, MoistureField, useNextFieldNavigation } from "@/components/entry-fields";
 import type { SpawnSetFormValues } from "@/types/beetle";
 import { today } from "@/lib/utils";
 
@@ -18,6 +18,10 @@ export function SpawnSetSecondForm({
   id?: string;
   allEntries?: any[]; // サジェスト用に追加
 }) {
+  const formId = id || "spawn-set-second-form";
+  const { focusNextField } = useNextFieldNavigation(formId, true);
+  const formRef = useRef<HTMLFormElement>(null);
+
   // 最新のセット終了日を取得して開始日の初期値にする
   const latestEndDate = useMemo(() => {
     const entry = initialValues as any;
@@ -78,7 +82,8 @@ export function SpawnSetSecondForm({
 
   return (
     <form
-      id={id}
+      id={formId}
+      ref={formRef}
       className="flex flex-col h-[70dvh] overflow-hidden"
       onKeyDown={(e) => { // テキストエリアでのEnterキーによる改行は許可
         if (e.key === 'Enter' && (e.target as HTMLElement).tagName !== 'TEXTAREA') {
@@ -98,8 +103,8 @@ export function SpawnSetSecondForm({
           産卵を終了する（本日）
         </label>
         <div className="grid grid-cols-2 gap-3">
-          <BottomSheetInput label="卵数" value={values.eggCount ?? ""} onChange={(val) => setValues((prev: any) => ({...prev, eggCount: parseInt(val) || 0}))} />
-          <BottomSheetInput label="幼虫数" value={values.larvaCount ?? ""} onChange={(val) => setValues((prev: any) => ({...prev, larvaCount: parseInt(val) || 0}))} />
+          <BottomSheetInput label="卵数" value={values.eggCount ?? ""} onNext={focusNextField} onChange={(val) => setValues((prev: any) => ({...prev, eggCount: parseInt(val) || 0}))} />
+          <BottomSheetInput label="幼虫数" value={values.larvaCount ?? ""} onNext={focusNextField} onChange={(val) => setValues((prev: any) => ({...prev, larvaCount: parseInt(val) || 0}))} />
         </div>
         <label className="flex items-center gap-2 text-xs font-bold text-gray-500">
           <input type="checkbox" checked={!!values.useDifferentMethod} onChange={(e) => setValues((prev: any) => ({...prev, useDifferentMethod: e.target.checked}))} />
@@ -107,9 +112,9 @@ export function SpawnSetSecondForm({
         </label>
         {values.useDifferentMethod && (
           <div className="grid grid-cols-2 gap-3 bg-gray-50 p-2 rounded-lg">
-            <BottomSheetInput label="マット" value={values.substrate || ""} onChange={(val) => setValues((prev: any) => ({...prev, substrate: val}))} suggestions={suggestions.container} />
-            <BottomSheetInput label="容器" value={values.containerSize || ""} onChange={(val) => setValues((prev: any) => ({...prev, containerSize: val}))} suggestions={suggestions.container} />
-            <BottomSheetInput label="詰圧" value={values.pressure || ""} onChange={(val) => setValues((prev: any) => ({...prev, pressure: val}))} />
+            <BottomSheetInput label="マット" value={values.substrate || ""} onNext={focusNextField} onChange={(val) => setValues((prev: any) => ({...prev, substrate: val}))} suggestions={suggestions.container} />
+            <BottomSheetInput label="容器" value={values.containerSize || ""} onNext={focusNextField} onChange={(val) => setValues((prev: any) => ({...prev, containerSize: val}))} suggestions={suggestions.container} />
+            <BottomSheetInput label="詰圧" value={values.pressure || ""} onNext={focusNextField} onChange={(val) => setValues((prev: any) => ({...prev, pressure: val}))} />
             <MoistureField value={values.moisture ?? 3} onChange={(val) => setValues((prev: any) => ({...prev, moisture: val}))} /> {/* suggestions.temperature は温度用なので注意 */}
           </div>
         )}
@@ -118,6 +123,7 @@ export function SpawnSetSecondForm({
           value={values.memo || ""}
           type="textarea"
           placeholder="2回目セットの様子など"
+          onNext={focusNextField}
           onChange={(v) => setValues({...values, memo: v})}
         />
         <div className="h-20" />

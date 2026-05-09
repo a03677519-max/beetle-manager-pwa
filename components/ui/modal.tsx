@@ -13,10 +13,25 @@ export function Modal({ isOpen, onClose, title, children, centered = false }: { 
           }
         }
       };
+
+      // 入力フィールドにフォーカスした際に中央へスクロール
+      const handleFocusIn = (e: FocusEvent) => {
+        const target = e.target as HTMLElement;
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+          // キーボードのせり上がりを待ってから中央へスクロール
+          setTimeout(() => {
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 300);
+        }
+      };
+
       window.visualViewport?.addEventListener('resize', handler);
+      window.addEventListener('focusin', handleFocusIn);
+
       return () => {
         document.body.style.overflow = "";
         window.visualViewport?.removeEventListener('resize', handler);
+        window.removeEventListener('focusin', handleFocusIn);
       };
     }
   }, [isOpen]);

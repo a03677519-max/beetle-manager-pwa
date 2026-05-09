@@ -73,6 +73,7 @@ export function AdultForm({
           managementName={values.managementName || ""}
           linkedEntryIds={values.linkedEntryIds}
           allEntries={useBeetleStore.getState().entries}
+          onNext={focusNextField}
           onChange={(patch) => setValues({ ...values, ...patch })}
         />
 
@@ -182,6 +183,7 @@ export function AdultForm({
           value={values.memo || ""}
           type="textarea"
           enterKeyHint="done"
+          onNext={focusNextField}
           placeholder="管理上のメモなど"
           onChange={(val) => setValues({ ...values, memo: val })}
         />

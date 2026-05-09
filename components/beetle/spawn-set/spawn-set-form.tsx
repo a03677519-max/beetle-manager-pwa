@@ -105,6 +105,7 @@ export function SpawnSetForm({
           managementName={values.managementName || ""}
           allEntries={allEntries}
           generationLabelSuffix="(次世代)"
+          onNext={focusNextField}
           onChange={(patch) => setValues({ ...values, ...patch })}
         />
 
@@ -126,6 +127,7 @@ export function SpawnSetForm({
             label="使用マット"
             value={values.substrate || ""}
             placeholder="例: クヌギマット"
+            onNext={focusNextField}
             onChange={(val) => setValues((prev) => ({ ...prev, substrate: val }))}
           />
           <BottomSheetInput
@@ -169,12 +171,14 @@ export function SpawnSetForm({
           label="割出卵数"
           value={values.eggCount ?? ""}
           placeholder="例: 15"
+          onNext={focusNextField}
           onChange={(val) => setValues((prev) => ({ ...prev, eggCount: parseInt(val) || 0 }))}
         />
         <BottomSheetInput
           label="割出幼虫数"
           value={values.larvaCount ?? ""}
           placeholder="例: 10"
+          onNext={focusNextField}
           onChange={(val) => setValues((prev) => ({ ...prev, larvaCount: parseInt(val) || 0 }))}
         />
       </div>
@@ -184,6 +188,7 @@ export function SpawnSetForm({
         value={values.memo || ""}
         type="textarea"
         placeholder="セットの様子や親個体の状態など"
+        onNext={focusNextField}
         onChange={(val) => setValues({ ...values, memo: val })}
       />
 
