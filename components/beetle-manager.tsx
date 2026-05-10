@@ -127,6 +127,16 @@ export function BeetleManager() {
     }
   }, [editingEntry, editingEntry?.id]);
   
+  // フォームが閉じられた時に残っている入力ボトムシートをすべて強制終了する
+  useEffect(() => {
+    const isAnyFormOpen = isCreating || !!editingId || isAddingSecondSet || !!selectedEntry;
+    if (!isAnyFormOpen) {
+      window.dispatchEvent(new CustomEvent('app:close-all-sheets'));
+      // syncイベント経由でも念のため
+      window.dispatchEvent(new CustomEvent('app:close-bottom-sheets', { detail: { forceClose: true } }));
+    }
+  }, [isCreating, editingId, isAddingSecondSet, selectedEntry]);
+
   // 一括操作用のステート
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);

@@ -349,19 +349,24 @@ export function BottomSheetSelect({
     };
 
     const handleSync = (e: any) => {
-      if (e.detail.sourceId !== internalId) {
+      if (e.detail.sourceId !== internalId || e.detail.forceClose) {
         setIsOpen(false);
       }
     };
 
     window.dispatchEvent(new CustomEvent('app:close-bottom-sheets', { detail: { sourceId: internalId } }));
     window.addEventListener('app:close-bottom-sheets', handleSync);
+    // フォーム全体が閉じられた時のためのグローバルクリーンアップ
+    const handleGlobalClose = () => setIsOpen(false);
+    window.addEventListener('app:close-all-sheets', handleGlobalClose);
+
     window.visualViewport?.addEventListener('resize', handleViewport);
     window.visualViewport?.addEventListener('scroll', handleViewport);
     document.addEventListener('focusout', handleFocusOut);
 
     return () => {
       window.removeEventListener('app:close-bottom-sheets', handleSync);
+      window.removeEventListener('app:close-all-sheets', handleGlobalClose);
       window.visualViewport?.removeEventListener('resize', handleViewport);
       window.visualViewport?.removeEventListener('scroll', handleViewport);
       document.removeEventListener('focusout', handleFocusOut);
@@ -377,6 +382,7 @@ export function BottomSheetSelect({
         inputMode="none"
         id={`${internalId}-trigger`}
         value={String(value)}
+        autoComplete="off"
         placeholder={placeholder}
         className={`w-full bg-white border rounded-xl px-3 py-1.5 text-sm text-left text-gray-700 min-h-[34px] transition-all outline-none cursor-pointer ${
           isOpen 
@@ -384,7 +390,10 @@ export function BottomSheetSelect({
             : "border-gray-200 active:bg-gray-50"
         }`}
         onFocus={() => setIsOpen(true)}
-        onClick={() => setIsOpen(true)}
+        onClick={() => {
+          window.dispatchEvent(new CustomEvent('app:close-bottom-sheets', { detail: { sourceId: internalId } }));
+          setIsOpen(true);
+        }}
       />
 
       <AnimatePresence>
@@ -430,10 +439,15 @@ export function BottomSheetSelect({
                       className={`w-full text-left px-4 py-3 rounded-2xl font-bold ${ // Keep button
                         value === option ? "bg-[#FF9800] text-white" : "bg-gray-50 text-gray-700"
                       }`}
-                      onClick={() => {
+                      onMouseDown={(e) => e.preventDefault()} // フォーカス移動を防いでキーボードを維持
+                      onClick={(e) => {
+                        e.preventDefault();
                         onChange(option);
-                        setIsOpen(false);
-                        if (onNext) setTimeout(onNext, 300);
+                        if (onNext) {
+                          onNext(); // 次の項目へ（syncイベントで自分は閉じる）
+                        } else {
+                          setIsOpen(false);
+                        }
                       }}
                     >
                       {option}
@@ -511,7 +525,7 @@ export function BottomSheetInput({
     };
 
     const handleSync = (e: any) => {
-      if (e.detail.sourceId !== internalId) {
+      if (e.detail.sourceId !== internalId || e.detail.forceClose) {
         setIsOpen(false);
       }
     };
@@ -539,6 +553,10 @@ export function BottomSheetInput({
     }
 
     window.addEventListener('app:close-bottom-sheets', handleSync);
+    // フォーム全体が閉じられた時のためのグローバルクリーンアップ
+    const handleGlobalClose = () => setIsOpen(false);
+    window.addEventListener('app:close-all-sheets', handleGlobalClose);
+
     window.visualViewport?.addEventListener('resize', handleViewport);
     window.visualViewport?.addEventListener('scroll', handleViewport);
     document.addEventListener('focusout', handleFocusOut);
@@ -546,6 +564,7 @@ export function BottomSheetInput({
     return () => {
       clearTimeout(focusTimer);
       window.removeEventListener('app:close-bottom-sheets', handleSync);
+      window.removeEventListener('app:close-all-sheets', handleGlobalClose);
       window.visualViewport?.removeEventListener('resize', handleViewport);
       window.visualViewport?.removeEventListener('scroll', handleViewport);
       document.removeEventListener('focusout', handleFocusOut);
@@ -574,8 +593,14 @@ export function BottomSheetInput({
             ? "border-[#FF9800] ring-4 ring-[#FF9800]/10 shadow-sm" 
             : "border-gray-200 active:bg-gray-50"
         }`}
-        onFocus={() => setIsOpen(true)}
-        onClick={() => setIsOpen(true)}
+        onFocus={() => {
+          window.dispatchEvent(new CustomEvent('app:close-bottom-sheets', { detail: { sourceId: internalId } }));
+          setIsOpen(true);
+        }}
+        onClick={() => {
+          window.dispatchEvent(new CustomEvent('app:close-bottom-sheets', { detail: { sourceId: internalId } }));
+          setIsOpen(true);
+        }}
       />
 
       <AnimatePresence>
@@ -662,11 +687,15 @@ export function BottomSheetInput({
                           key={suggestion} // Keep key
                           type="button"
                           className="px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-full text-xs font-bold text-gray-600 active:bg-[#FF9800] active:text-white transition-all"
+                          onMouseDown={(e) => e.preventDefault()} // フォーカス移動を防いでキーボードを維持
                           onClick={() => {
-                        onChange(suggestion);
-                        setIsOpen(false);
-                        if (onNext) setTimeout(onNext, 300);
-                      }}
+                            onChange(suggestion);
+                            if (onNext) {
+                              onNext(); // 次の項目へ（syncイベントで自分は閉じる）
+                            } else {
+                              setIsOpen(false);
+                            }
+                          }}
                         >
                           {suggestion}
                         </button>
