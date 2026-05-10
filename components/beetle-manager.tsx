@@ -915,6 +915,22 @@ export function BeetleManager() {
 
   return (
     <div className="app-container font-cute bg-[#F5F0EB] min-h-screen pb-[calc(120px+env(safe-area-inset-bottom,16px))] leading-[1.7]">
+      <Navbar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        onTabChange={(tab) => {
+          // モーダルや詳細画面が開いていればすべて閉じる
+          setIsCreating(false);
+          startEditing(null);
+          setSelectedEntry(null);
+          setIsSettingsOpen(false);
+
+          if (tab === "設定") { setIsSettingsOpen(true); return; }
+          if (ENTRY_TYPES.includes(tab as EntryType)) setSelectedType(tab as EntryType);
+        }}
+        onAdd={() => setIsCreating(true)}
+        showAddButton={!isCreating && !editingId && !selectedEntry && !isSettingsOpen}
+      />
       {/* 固定ヘッダーセクション */}
       <section className="sticky top-0 z-30 bg-white/80 backdrop-blur-md pt-4 pb-2 px-6 border-b border-gray-100 mb-4">
         <div className="flex justify-between items-center mb-2">
@@ -1545,22 +1561,6 @@ export function BeetleManager() {
         )}
       </Modal>
       {isSettingsOpen && <SettingsView onClose={() => setIsSettingsOpen(false)} />}
-      <Navbar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        onTabChange={(tab) => {
-          // モーダルや詳細画面が開いていればすべて閉じる
-          setIsCreating(false);
-          startEditing(null);
-          setSelectedEntry(null);
-          setIsSettingsOpen(false);
-
-          if (tab === "設定") { setIsSettingsOpen(true); return; }
-          if (ENTRY_TYPES.includes(tab as EntryType)) setSelectedType(tab as EntryType);
-        }}
-        onAdd={() => setIsCreating(true)}
-        showAddButton={!isCreating && !editingId && !selectedEntry && !isSettingsOpen}
-      />
     </div>
   );
 }

@@ -9,6 +9,7 @@ import {
   MoistureField,
   PressureField,
   SwitchBotTemperatureField,
+  useNextFieldNavigation,
 } from "@/components/entry-fields";
 import { today } from "@/lib/utils";
 import { useBeetleStore } from "@/store/use-beetle-store";
@@ -54,6 +55,9 @@ export function LarvaLogForm({
     temperature: initialLogValues?.temperature?.toString() || "",
   });
 
+  const formId = "larva-log-form-inner";
+  const { focusNextField } = useNextFieldNavigation(formId, true);
+
   const allEntries = useBeetleStore((state) => state.entries);
 
   // 過去のログからマット名とボトルサイズの履歴を抽出（オートコンプリート用）
@@ -95,6 +99,7 @@ export function LarvaLogForm({
 
   return (
     <form
+      id={formId}
       className="bg-white/50 backdrop-blur-sm p-4 rounded-3xl border border-white/60 space-y-4"
       onKeyDown={(e) => { // テキストエリアでのEnterキーによる改行は許可
         if (e.key === 'Enter' && (e.target as HTMLElement).tagName !== 'TEXTAREA') {
@@ -133,6 +138,7 @@ export function LarvaLogForm({
           label="マット名"
           value={values.substrate}
           placeholder="マットの種類"
+          onNext={focusNextField}
           suggestions={suggestions.substrate}
           onChange={(val) => setValues({ ...values, substrate: val })}
         />
@@ -140,23 +146,26 @@ export function LarvaLogForm({
           label="ボトルサイズ"
           value={values.bottleSize}
           placeholder="例: 800cc"
+          onNext={focusNextField}
           suggestions={suggestions.bottleSize}
           onChange={(val) => setValues({ ...values, bottleSize: val })}
         />
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <PressureField value={values.pressure} onChange={(value) => setValues({ ...values, pressure: value })} />
-        <MoistureField value={values.moisture} onChange={(value) => setValues({ ...values, moisture: value })} />
+        <PressureField value={values.pressure} onNext={focusNextField} onChange={(value) => setValues({ ...values, pressure: value })} />
+        <MoistureField value={values.moisture} onNext={focusNextField} onChange={(value) => setValues({ ...values, moisture: value })} />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <BottomSheetInput
           label="体重 (g)"
           value={values.weight}
           placeholder="0.0"
+          onNext={focusNextField}
           onChange={(val) => setValues({ ...values, weight: val })}
         />
         <SwitchBotTemperatureField
           value={values.temperature}
+          onNext={focusNextField}
           onChange={(value) => setValues((current) => ({ ...current, temperature: value }))}
           onFetch={() => onFetchTemperature((value) => setValues((current) => ({ ...current, temperature: value })))}
           isFetching={isFetchingTemperature}

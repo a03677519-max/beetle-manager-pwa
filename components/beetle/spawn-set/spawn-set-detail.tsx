@@ -77,7 +77,7 @@ export function SpawnSetDetail({
 
       <div className="flex items-center justify-between px-1">
         <h3 className="font-black text-gray-700">産卵セット履歴</h3>
-        <button onClick={onAddSecondSet} className="bg-[#FF9800] text-white p-1 rounded-full shadow-lg active:scale-95 transition-all">
+        <button onClick={onAddSecondSet} className="relative z-0 bg-[#FF9800] text-white p-1 rounded-full shadow-lg active:scale-95 transition-all">
           <Plus size={20} />
         </button>
       </div>

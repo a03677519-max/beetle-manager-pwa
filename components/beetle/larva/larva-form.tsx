@@ -183,6 +183,7 @@ export function LarvaForm({
           {...values}
           managementName={values.managementName || ""}
           allEntries={allEntries}
+          onNext={focusNextField}
           onChange={(patch) => setValues({ ...values, ...patch })}
         />
 
@@ -212,6 +213,7 @@ export function LarvaForm({
             type="textarea"
             placeholder="一括適用するメモ・備考"
             enterKeyHint="next"
+            onNext={focusNextField}
             onChange={(val) => setValues({ ...values, memo: val })}
           />
 
@@ -329,6 +331,7 @@ export function LarvaForm({
               <div className="grid grid-cols-2 gap-4">
                 <DateRollField
                   label="計測日"
+                  id={`log-${index}-date`}
                   value={record.date}
                   onChange={(val) => {
                     const newLogs = [...(values.logs || [])];
@@ -343,6 +346,7 @@ export function LarvaForm({
                     value={record.weight}
                     inputMode="decimal"
                     enterKeyHint="next"
+                    onKeyDown={(e) => e.key === 'Enter' && focusNextField()}
                       className="w-full bg-white/80 border border-gray-200 rounded-xl px-2 py-1.5 text-sm font-bold focus:border-[#FF9800] focus:ring-2 focus:ring-[#FF9800]/20 outline-none"
                     onChange={(e) => {
                       const newLogs = [...(values.logs || [])];
@@ -395,10 +399,12 @@ export function LarvaForm({
               <div className="space-y-3 pt-2 border-t border-gray-50">
                 <div className="grid grid-cols-2 gap-4">
                   <BottomSheetInput
+                    id={`log-${index}-substrate`}
                     label="マット名"
                     value={record.substrate}
                     placeholder="マットの種類"
                     suggestions={suggestions.substrate}
+                    onNext={focusNextField}
                     onChange={(val) => {
                       const newLogs = [...(values.logs || [])];
                       newLogs[index] = { ...record, substrate: val };
@@ -406,10 +412,12 @@ export function LarvaForm({
                     }}
                   />
                   <BottomSheetInput
+                    id={`log-${index}-bottle`}
                     label="ボトルサイズ"
                     value={record.bottleSize}
                     placeholder="例: 800cc"
                     suggestions={suggestions.bottleSize}
+                    onNext={focusNextField}
                     onChange={(val) => {
                       const newLogs = [...(values.logs || [])];
                       newLogs[index] = { ...record, bottleSize: val };
@@ -420,6 +428,7 @@ export function LarvaForm({
                 <div className="grid grid-cols-2 gap-4">
                   <MoistureField
                     value={record.moisture}
+                    onNext={focusNextField}
                     onChange={(val) => {
                       const newLogs = [...(values.logs || [])];
                       newLogs[index] = { ...record, moisture: val };
@@ -428,6 +437,7 @@ export function LarvaForm({
                   />
                   <PressureField
                     value={record.pressure}
+                    onNext={focusNextField}
                     onChange={(val) => {
                       const newLogs = [...(values.logs || [])];
                       newLogs[index] = { ...record, pressure: val };
@@ -436,10 +446,12 @@ export function LarvaForm({
                   />
                 </div>
                 <BottomSheetInput
+                  id={`log-${index}-temp`}
                   label="温度 (℃)"
                     value={record.temperature}
                     inputMode="decimal"
                     enterKeyHint="next"
+                    onNext={focusNextField}
                     placeholder="温度"
                     suggestions={suggestions.temperature}
                     onChange={(val) => {

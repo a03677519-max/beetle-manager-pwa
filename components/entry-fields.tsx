@@ -273,11 +273,13 @@ export function LevelButtonGroup({
   value,
   values,
   onChange,
+  onNext,
 }: {
   label: string;
   value: number;
   values: readonly number[];
   onChange: (value: number) => void;
+  onNext?: () => void;
 }) {
   return (
     <div className="field">
@@ -289,7 +291,12 @@ export function LevelButtonGroup({
             type="button"
             style={{ width: `${100 / values.length}%` }}
             className={`py-1 text-sm font-bold rounded-lg transition-all ${option === value ? "bg-[#FF9800] text-white shadow-sm" : "text-gray-500"}`}
-            onClick={() => onChange(option)}
+            onClick={() => {
+              onChange(option);
+              if (onNext) {
+                setTimeout(onNext, 10);
+              }
+            }}
           >
             {option}
           </button>
@@ -500,7 +507,7 @@ export function BottomSheetInput({
         // フォーカス後に中央へスクロール
         inputRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
-    }, 150); // アニメーション開始直後にフォーカスを当てる
+    }, 50); // アニメーション開始直後にフォーカスを当てる
     
     // iOS キーボード展開時のスクロール追従・中央配置
     const handleViewport = () => {
@@ -628,7 +635,7 @@ export function BottomSheetInput({
                     onClick={() => {
                       setIsOpen(false);
                       // モーダルを閉じた後に必要なら次へ
-                      if (onNext) setTimeout(onNext, 300);
+                      if (onNext) setTimeout(onNext, 50);
                     }}
                   >
                     完了
@@ -707,12 +714,12 @@ export function BottomSheetInput({
   );
 }
 
-export function MoistureField(props: { value: number; onChange: (value: number) => void }) {
-  return <LevelButtonGroup label="水分量" values={MOISTURE_LEVELS} value={props.value} onChange={props.onChange} />;
+export function MoistureField(props: { value: number; onChange: (value: number) => void; onNext?: () => void }) {
+  return <LevelButtonGroup label="水分量" values={MOISTURE_LEVELS} value={props.value} onChange={props.onChange} onNext={props.onNext} />;
 }
 
-export function PressureField(props: { value: number; onChange: (value: number) => void }) {
-  return <LevelButtonGroup label="詰圧" values={PRESSURE_LEVELS} value={props.value} onChange={props.onChange} />;
+export function PressureField(props: { value: number; onChange: (value: number) => void; onNext?: () => void }) {
+  return <LevelButtonGroup label="詰圧" values={PRESSURE_LEVELS} value={props.value} onChange={props.onChange} onNext={props.onNext} />;
 }
 
 export function SwitchBotTemperatureField({
@@ -722,6 +729,7 @@ export function SwitchBotTemperatureField({
   onFetch,
   isFetching,
   suggestions,
+  onNext,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -729,6 +737,7 @@ export function SwitchBotTemperatureField({
   id?: string; // Add id prop
   isFetching: boolean;
   suggestions?: string[];
+  onNext?: () => void;
 }) {
   return (
     <div className="field">
@@ -739,6 +748,7 @@ export function SwitchBotTemperatureField({
         enterKeyHint="next"
         placeholder="例: 22.5 や 21〜23"
         suggestions={suggestions}
+        onNext={onNext}
         onChange={onChange}
       />
       <button type="button" className="relative -mt-9 ml-auto mr-12 block text-[#FF9800] p-2 z-10" onClick={onFetch}>
@@ -866,6 +876,9 @@ export function useNextFieldNavigation(formId: string, isModalOpen: boolean) {
 
     if (activeIndex > -1) {
       if (activeIndex < focusable.length - 1) {
+        // ボトムシート内からの遷移、または次の項目への移動時に既存のシートをすべて閉じる
+        window.dispatchEvent(new CustomEvent('app:close-bottom-sheets', { detail: { sourceId: 'navigation', forceClose: true } }));
+
         const nextElement = focusable[activeIndex + 1];
         // iOSのキーボードレイアウト崩れを防ぐために微小な遅延を入れる
         requestAnimationFrame(() => {
@@ -876,7 +889,7 @@ export function useNextFieldNavigation(formId: string, isModalOpen: boolean) {
                 nextElement.click();
               }
             }
-          }, 50);
+          }, 10);
         });
       } else {
         // 最後の項目の場合はキーボードを閉じる

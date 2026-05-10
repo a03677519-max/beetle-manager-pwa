@@ -135,8 +135,8 @@ export function SpawnSetForm({
             label="容器サイズ"
             value={values.containerSize || ""}
             placeholder="例: 2000cc"
-            suggestions={suggestions.container}
             onNext={focusNextField}
+            suggestions={suggestions.container}
             onChange={(val) => setValues((prev) => ({ ...prev, containerSize: val }))}
           />
         </div>
@@ -149,12 +149,14 @@ export function SpawnSetForm({
         />
         <MoistureField
           value={values.moisture || 3}
+          onNext={focusNextField}
           onChange={(value) => setValues((prev) => ({ ...prev, moisture: value }))}
         />
       <SwitchBotTemperatureField
         value={values.temperature}
         suggestions={suggestions.temperature}
         onChange={(value) => setValues({ ...values, temperature: value })}
+        onNext={focusNextField}
         onFetch={() =>
           onFetchTemperature((value) =>
             setValues((current) => ({ ...current, temperature: value }))
@@ -164,6 +166,7 @@ export function SpawnSetForm({
       />
       <CohabitationField
         value={values.cohabitation}
+        onNext={focusNextField}
         onChange={(value) => setValues({ ...values, cohabitation: value })}
       />
 
