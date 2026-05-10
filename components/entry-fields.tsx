@@ -316,12 +316,15 @@ export function BottomSheetSelect({
   placeholder?: string;
   id?: string;
 }) {
+  const internalId = useMemo(() => id || `select-${label.replace(/\s+/g, '-')}`, [id, label]);
   const [isOpen, setIsOpen] = useState(false);
   const selectedRef = useRef<HTMLButtonElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (isOpen && selectedRef.current) {
+    if (!isOpen) return;
+
+    if (selectedRef.current) {
       selectedRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
@@ -331,13 +334,39 @@ export function BottomSheetSelect({
       containerRef.current.style.top = `${window.visualViewport.offsetTop}px`;
     };
 
+    const handleFocusOut = (e: FocusEvent) => {
+      setTimeout(() => {
+        const nextFocus = document.activeElement;
+        const trigger = document.getElementById(`${internalId}-trigger`);
+        if (
+          containerRef.current && 
+          !containerRef.current.contains(nextFocus) && 
+          nextFocus !== trigger
+        ) {
+          setIsOpen(false);
+        }
+      }, 100);
+    };
+
+    const handleSync = (e: any) => {
+      if (e.detail.sourceId !== internalId) {
+        setIsOpen(false);
+      }
+    };
+
+    window.dispatchEvent(new CustomEvent('app:close-bottom-sheets', { detail: { sourceId: internalId } }));
+    window.addEventListener('app:close-bottom-sheets', handleSync);
     window.visualViewport?.addEventListener('resize', handleViewport);
     window.visualViewport?.addEventListener('scroll', handleViewport);
+    document.addEventListener('focusout', handleFocusOut);
+
     return () => {
+      window.removeEventListener('app:close-bottom-sheets', handleSync);
       window.visualViewport?.removeEventListener('resize', handleViewport);
       window.visualViewport?.removeEventListener('scroll', handleViewport);
+      document.removeEventListener('focusout', handleFocusOut);
     };
-  }, [isOpen]);
+  }, [isOpen, internalId]);
 
   return (
     <div className="field">
@@ -346,7 +375,7 @@ export function BottomSheetSelect({
         type="text"
         readOnly
         inputMode="none"
-        id={id ? `${id}-trigger` : undefined}
+        id={`${internalId}-trigger`}
         value={String(value)}
         placeholder={placeholder}
         className={`w-full bg-white border rounded-xl px-3 py-1.5 text-sm text-left text-gray-700 min-h-[34px] transition-all outline-none cursor-pointer ${
@@ -481,15 +510,47 @@ export function BottomSheetInput({
       }
     };
 
+    const handleSync = (e: any) => {
+      if (e.detail.sourceId !== internalId) {
+        setIsOpen(false);
+      }
+    };
+
+    const handleFocusOut = (e: FocusEvent) => {
+      if (!isOpen) return;
+      // モーダル外（かつトリガー以外）にフォーカスが移った場合にモーダルを閉じる
+      // これにより、キーボードの「次へ」「完了」での遷移時や、
+      // キーボードを閉じた際にモーダルが残留するのを防ぐ
+      setTimeout(() => {
+        const nextFocus = document.activeElement;
+        const trigger = document.getElementById(`${internalId}-trigger`);
+        if (
+          containerRef.current && 
+          !containerRef.current.contains(nextFocus) && 
+          nextFocus !== trigger
+        ) {
+          setIsOpen(false);
+        }
+      }, 100);
+    };
+
+    if (isOpen) {
+      window.dispatchEvent(new CustomEvent('app:close-bottom-sheets', { detail: { sourceId: internalId } }));
+    }
+
+    window.addEventListener('app:close-bottom-sheets', handleSync);
     window.visualViewport?.addEventListener('resize', handleViewport);
     window.visualViewport?.addEventListener('scroll', handleViewport);
+    document.addEventListener('focusout', handleFocusOut);
 
     return () => {
       clearTimeout(focusTimer);
+      window.removeEventListener('app:close-bottom-sheets', handleSync);
       window.visualViewport?.removeEventListener('resize', handleViewport);
       window.visualViewport?.removeEventListener('scroll', handleViewport);
+      document.removeEventListener('focusout', handleFocusOut);
     };
-  }, [isOpen]);
+  }, [isOpen, internalId]);
 
   const filteredSuggestions = useMemo(() => {
     if (!suggestions) return [];
@@ -560,6 +621,8 @@ export function BottomSheetInput({
                     id={internalId} // Pass id to textarea
                     tabIndex={0} // Explicitly make focusable
                     value={value}
+                    autoComplete="off"
+                    autoCorrect="off"
                     onChange={(e) => onChange(e.target.value)}
                     enterKeyHint={enterKeyHint || "done"}
                     placeholder={placeholder} // Keep placeholder
@@ -573,7 +636,16 @@ export function BottomSheetInput({
                     tabIndex={0} // Explicitly make focusable
                     type={type}
                     value={value !== undefined ? value : ""}
+                    autoComplete="off"
+                    autoCorrect="off"
                     onChange={(e) => onChange(e.target.value)}
+                    onKeyDown={(e) => {
+                      // Enterキー（次へ/完了）が押されたらモーダルを閉じる
+                      // その後、useNextFieldNavigation がフォーカス移動を処理する
+                      if (e.key === 'Enter') {
+                        setIsOpen(false);
+                      }
+                    }}
                     enterKeyHint={enterKeyHint || "next"}
                     inputMode={inputMode}
                     placeholder={placeholder} // Keep placeholder
