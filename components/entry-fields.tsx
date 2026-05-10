@@ -123,12 +123,14 @@ export function WheelSelect({
   options,
   onChange,
   id,
+  onNext,
 }: {
   label: string;
   value: string | number;
   options: readonly (string | number)[];
   onChange: (value: string) => void;
   id?: string;
+  onNext?: () => void;
 }) {
   return (
     <Field label={label}>
@@ -791,16 +793,19 @@ export function GenderField({
   value,
   onChange,
   id, // Add id prop
+  onNext,
 }: {
   value: Gender;
   onChange: (value: Gender) => void;
   id?: string;
+  onNext?: () => void;
 }) {
   return (
     <WheelSelect
       label="雌雄"
       id={id} // Pass id to WheelSelect
       value={value}
+      onNext={onNext}
       options={GENDERS}
       onChange={(value) => onChange(value as Gender)}
     />
@@ -811,16 +816,19 @@ export function LarvaStageField({
   value,
   onChange,
   id, // Add id prop
+  onNext,
 }: {
   value: LogStage;
   onChange: (value: LogStage) => void;
   id?: string;
+  onNext?: () => void;
 }) {
   return (
     <WheelSelect
       label="加齢状況"
       id={id} // Pass id to WheelSelect
       value={value}
+      onNext={onNext}
       options={LOG_STAGES}
       onChange={(value) => onChange(value as LogStage)}
     />
@@ -831,16 +839,19 @@ export function CohabitationField({
   value,
   onChange,
   id, // Add id prop
+  onNext,
 }: {
   value: CohabitationOption;
   onChange: (value: CohabitationOption) => void;
   id?: string;
+  onNext?: () => void;
 }) {
   return (
     <WheelSelect
       label="同居の有無"
       id={id} // Pass id to WheelSelect
       value={value}
+      onNext={onNext}
       options={COHABITATION_OPTIONS}
       onChange={(value) => onChange(value as CohabitationOption)}
     />
