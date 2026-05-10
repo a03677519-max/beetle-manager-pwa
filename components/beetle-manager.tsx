@@ -1116,6 +1116,20 @@ export function BeetleManager() {
         </div>
       </Modal>
 
+      <AnimatePresence>
+        {selectedEntry && (
+          <EntryDetail
+            entry={entries.find((item) => item.id === selectedEntry.id) ?? selectedEntry}
+            onClose={() => setSelectedEntry(null)}
+            onFetchTemperature={fetchCurrentTemperature}
+            isFetchingTemperature={isFetching}
+            onAddSecondSet={() => setIsAddingSecondSet(true)}
+            onDeleteSet={(setId) => handleDeleteSet(selectedEntry.id, setId)}
+            onEditSet={(set) => handleEditSet(selectedEntry.id, set)}
+          />
+        )}
+      </AnimatePresence>
+
       <Modal
         isOpen={isCreating || !!editingEntry}
         centered={!!editingEntry && editingEntry.type === '産卵セット'}
@@ -1470,19 +1484,6 @@ export function BeetleManager() {
         ) : null}
       </section>
 
-      <AnimatePresence>
-        {selectedEntry && (
-          <EntryDetail
-            entry={entries.find((item) => item.id === selectedEntry.id) ?? selectedEntry}
-            onClose={() => setSelectedEntry(null)}
-            onFetchTemperature={fetchCurrentTemperature}
-            isFetchingTemperature={isFetching}
-            onAddSecondSet={() => setIsAddingSecondSet(true)}
-            onDeleteSet={(setId) => handleDeleteSet(selectedEntry.id, setId)}
-            onEditSet={(set) => handleEditSet(selectedEntry.id, set)}
-          />
-        )}
-      </AnimatePresence>
       <Modal 
         isOpen={isAddingSecondSet} 
         onClose={() => { setIsAddingSecondSet(false); setEditingChildSet(null); }} 

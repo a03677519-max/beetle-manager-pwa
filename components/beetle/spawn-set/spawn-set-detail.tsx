@@ -17,8 +17,8 @@ export function SpawnSetDetail({
   onEditSet: (set: any) => void;
 }) {
   const s = entry as any;
-  // 1回目のセットと2回目以降（sets配列）を統合して日付順にソート
-  const allSets = [
+  // 1回目のセットと2回目以降（sets配列）を統合
+  const rawSets = [
     {
       id: "primary",
       title: "1回目",
@@ -32,7 +32,23 @@ export function SpawnSetDetail({
       moisture: s.moisture,
     },
     ...(s.sets || []).map((set: any, i: number) => ({ ...set, title: `${i + 2}回目` })) // sets配列の各要素にtitleを追加
-  ].sort((a, b) => (b.setDate || "").localeCompare(a.setDate || "")); // 日付の降順（新しいものが左）
+  ].sort((a, b) => (a.setDate || "").localeCompare(b.setDate || "")); // 日付の昇順（古い順）
+
+  // 前回のセット方法を引き継ぐ処理
+  const allSets: any[] = [];
+  let lastSetup = { substrate: "", containerSize: "", pressure: "", moisture: 3 };
+
+  rawSets.forEach((set) => {
+    const processedSet = { ...set };
+    if (!processedSet.substrate) processedSet.substrate = lastSetup.substrate; else lastSetup.substrate = processedSet.substrate;
+    if (!processedSet.containerSize) processedSet.containerSize = lastSetup.containerSize; else lastSetup.containerSize = processedSet.containerSize;
+    if (processedSet.pressure === undefined || processedSet.pressure === "") processedSet.pressure = lastSetup.pressure; else lastSetup.pressure = processedSet.pressure;
+    if (processedSet.moisture === undefined || processedSet.moisture === "") processedSet.moisture = lastSetup.moisture; else lastSetup.moisture = processedSet.moisture;
+    allSets.push(processedSet);
+  });
+
+  // 表示用に日付の降順（新しい順）にソート
+  allSets.sort((a, b) => (b.setDate || "").localeCompare(a.setDate || ""));
 
   // 全回転の合計を計算
   const totals = allSets.reduce(
