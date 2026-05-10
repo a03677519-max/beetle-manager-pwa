@@ -495,18 +495,12 @@ export function BottomSheetInput({
   useEffect(() => {
     const focusTimer = setTimeout(() => {
       if (isOpen && inputRef.current) {
-        // モーダル表示時に一度現在のフォーカスを強制解除(blur)してから
-        // 内部のinputにフォーカスすることでiOSのキーボード不具合を防ぐ
-        if (document.activeElement instanceof HTMLElement) {
-          document.activeElement.blur();
-        }
-        requestAnimationFrame(() => {
-          inputRef.current?.focus();
-          // フォーカス後に中央へスクロール
-          inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        });
+        // 入力欄にフォーカスを当てる
+        inputRef.current.focus();
+        // フォーカス後に中央へスクロール
+        inputRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
-    }, 300); // アニメーションとiOSのフォーカス挙動を待つ
+    }, 150); // アニメーション開始直後にフォーカスを当てる
     
     // iOS キーボード展開時のスクロール追従・中央配置
     const handleViewport = () => {
@@ -863,11 +857,6 @@ export function useNextFieldNavigation(formId: string, isModalOpen: boolean) {
     ) as HTMLElement[];
     
     let activeIndex = focusable.indexOf(activeElement);
-
-    // 移動前に現在のフォーカスを確実に外す（iOSのキーボード位置ずれ対策）
-    if (activeElement instanceof HTMLElement) {
-      activeElement.blur();
-    }
 
     // 現在の要素がポータル内（IDに -trigger がない）の場合、トリガー側を探す
     if (activeIndex === -1 && activeElement?.id) {
