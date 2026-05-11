@@ -247,7 +247,7 @@ export function LarvaForm({
               <input
                 type="checkbox"
                 className="w-4 h-4 rounded-lg border-gray-300 text-[#FF9800] focus:ring-[#FF9800]"
-                checked={!!values.soldDate || (values as any).status === "販売済み"}
+                checked={!!(values as any).soldDate || (values as any).status === "販売済み"}
                 onChange={(e) => setValues({ 
                   ...values, 
                   soldDate: e.target.checked ? today() : "",
@@ -256,11 +256,11 @@ export function LarvaForm({
               />
               <span className="text-sm font-bold text-gray-700">販売済みとして登録</span>
             </label>
-            {(!!values.soldDate || (values as any).status === "販売済み") && (
+            {(!!(values as any).soldDate || (values as any).status === "販売済み") && (
               <DateRollField
                 label="販売日"
-                value={values.soldDate || ""}
-                onChange={(val) => setValues({ ...values, soldDate: val })}
+                value={(values as any).soldDate || ""}
+                onChange={(val) => setValues({ ...values, soldDate: val } as any)}
               />
             )}
 
