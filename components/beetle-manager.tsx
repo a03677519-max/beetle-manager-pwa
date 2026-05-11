@@ -262,7 +262,7 @@ export function BeetleManager() {
            .join(" ")
            .toLowerCase()
            .includes(normalizedQuery);
-       return matchesSpawnStatus && matchesQuery;
+       return matchesType && matchesQuery;
      });
 
      const getSortVal = (e: BeetleEntry, key: string) => {
