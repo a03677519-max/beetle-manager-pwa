@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Trash2, Download, Edit2 } from "lucide-react";
+import { Trash2, Download, Edit2, ExternalLink } from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -30,6 +30,19 @@ export function LarvaDetail({
 }) {
   const [editingLog, setEditingLog] = useState<LarvaBeetle['logs'][0] | null>(null);
   const deleteLarvaLog = useBeetleStore((state) => state.deleteLarvaLog);
+  const allEntries = useBeetleStore((state) => state.entries);
+
+  // 紐付けられた成虫データを検索（IDまたは管理名+学名の組み合わせ）
+  const linkedAdult = allEntries.find((e) => 
+    e.type === "成虫" && (
+      entry.linkedEntryIds?.includes(e.id) || 
+      (entry.managementName && e.managementName === entry.managementName && e.scientificName === entry.scientificName)
+    )
+  );
+
+  const handleNavigate = (id: string) => {
+    window.dispatchEvent(new CustomEvent('app:navigate-entry', { detail: { id } }));
+  };
 
   const chartData = [...entry.logs]
     .sort((a, b) => {
@@ -101,6 +114,15 @@ export function LarvaDetail({
             <div className="text-xs text-red-500 font-bold uppercase tracking-wider">死亡日</div>
             <div className="font-bold text-red-700">{formatDate((entry as any).deathDate)}</div>
           </div>
+        )}
+        {linkedAdult && (
+          <button
+            onClick={() => handleNavigate(linkedAdult.id)}
+            className="col-span-2 flex items-center justify-center gap-2 py-4 bg-[#795548]/10 text-[#795548] rounded-2xl text-sm font-black border border-[#795548]/20 active:scale-95 transition-all"
+          >
+            <ExternalLink size={18} />
+            成虫データを確認する
+          </button>
         )}
         <div className="bg-[#F1F3F5] p-4 rounded-2xl border border-gray-100">
           <div className="text-[10px] font-black text-[#8B5A2B] uppercase tracking-widest">総ログ数</div>

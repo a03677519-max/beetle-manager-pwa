@@ -294,8 +294,14 @@ export function LarvaForm({
                             }, { adultId: adult.id, larvaMemo: memo });
                           }}
                         >
-                          <div className="text-sm font-bold text-gray-800">{adult.japaneseName}</div>
-                          <div className="text-[10px] text-gray-500">既存成虫に幼虫時データを追加</div>
+                          <div className="flex justify-between items-start">
+                            <div className="text-sm font-bold text-gray-800">{adult.japaneseName}</div>
+                            <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">{adult.gender}</span>
+                          </div>
+                          <div className="text-[10px] text-gray-400">
+                            羽化: {adult.emergenceDate || "不明"} {adult.managementName ? `/ ${adult.managementName}` : ""}
+                          </div>
+                          <div className="text-[10px] text-[#FF9800] mt-1 font-bold">この個体に幼虫データを統合</div>
                         </button>
                       ))}
                     </div>

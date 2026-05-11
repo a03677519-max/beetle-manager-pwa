@@ -137,6 +137,16 @@ export function BeetleManager() {
     }
   }, [isCreating, editingId, isAddingSecondSet, selectedEntry]);
 
+  // 詳細画面などからの個体遷移（ジャンプ）用リスナー
+  useEffect(() => {
+    const handleNavigate = (e: any) => {
+      const target = entries.find((item) => item.id === e.detail.id);
+      if (target) setSelectedEntry(target);
+    };
+    window.addEventListener('app:navigate-entry', handleNavigate);
+    return () => window.removeEventListener('app:navigate-entry', handleNavigate);
+  }, [entries]);
+
   // 一括操作用のステート
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -223,9 +233,16 @@ export function BeetleManager() {
 
          const matchesType = selectedType === "すべて" || entry.type === selectedType;
          if (!matchesType) return false;
+       } else if (activeTab === "羽化済み") {
+         if ((entry as any).deathDate) return false;
+         // 幼虫かつ羽化日が入っているものを抽出
+         if (entry.type !== "幼虫" || !(entry as any).actualEmergenceDate) return false;
        } else {
          // 各種別タブ（成虫・幼虫等）からは死亡個体を除外して「死亡」タブへ移動させる
          if ((entry as any).deathDate) return false;
+
+         // 通常の幼虫タブからは羽化済み個体を除外する
+         if (activeTab === "幼虫" && (entry as any).actualEmergenceDate) return false;
 
          const matchesType = selectedType === "すべて" || entry.type === selectedType;
          if (!matchesType) return false;
@@ -510,7 +527,8 @@ export function BeetleManager() {
 
   const stats = useMemo(() => ({
     adults: entries.filter(e => e.type === "成虫" && !(e as any).deathDate).length,
-    larvae: entries.filter(e => e.type === "幼虫" && !(e as any).deathDate).length,
+    larvae: entries.filter(e => e.type === "幼虫" && !(e as any).deathDate && !(e as any).actualEmergenceDate).length,
+    emerged: entries.filter(e => e.type === "幼虫" && !(e as any).deathDate && !!(e as any).actualEmergenceDate).length,
     spawnSets: entries.filter(e => e.type === "産卵セット" && !(e as any).deathDate).length,
     deceased: entries.filter(e => !!(e as any).deathDate).length,
   }), [entries]);
@@ -1089,6 +1107,13 @@ export function BeetleManager() {
               {type}
             </button>
           ))}
+          <button
+            type="button"
+            className={`px-4 py-1.5 rounded-full text-[12px] font-bold transition-all whitespace-nowrap ${activeTab === "羽化済み" ? "bg-[#795548] text-white shadow-md" : "bg-white/40 text-[#8B7D7B] border border-white/40"}`}
+            onClick={() => { setActiveTab("羽化済み"); setSelectedType("幼虫"); }}
+          >
+            羽化済み ({stats.emerged})
+          </button>
           <button
             type="button"
             className={`px-4 py-1.5 rounded-full text-[12px] font-bold transition-all whitespace-nowrap ${activeTab === "死亡" ? "bg-[#F4511E] text-white shadow-md" : "bg-white/40 text-[#8B7D7B] border border-white/40"}`}

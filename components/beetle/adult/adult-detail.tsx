@@ -3,10 +3,27 @@
 import { buildGenerationLabel } from "@/components/entry-fields";
 import type { AdultBeetle } from "@/types/beetle";
 import { formatDate } from "@/lib/utils";
+import { useBeetleStore } from "@/store/use-beetle-store";
+import { ExternalLink } from "lucide-react";
 
 export function AdultDetail({ entry }: { entry: AdultBeetle }) {
+  const allEntries = useBeetleStore((state) => state.entries);
+
+  // 紐付けられた幼虫データを検索（IDまたは管理名+学名の組み合わせ）
+  const linkedLarva = allEntries.find((e) => 
+    e.type === "幼虫" && (
+      entry.linkedEntryIds?.includes(e.id) || 
+      (entry.managementName && e.managementName === entry.managementName && e.scientificName === entry.scientificName)
+    )
+  );
+
+  const handleNavigate = (id: string) => {
+    window.dispatchEvent(new CustomEvent('app:navigate-entry', { detail: { id } }));
+  };
+
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3">
       <div className="bg-gray-50 p-4 rounded-2xl">
         <div className="text-xs text-gray-500">和名</div>
         <div className="font-bold text-gray-800 truncate">{entry.japaneseName}</div>
@@ -50,6 +67,17 @@ export function AdultDetail({ entry }: { entry: AdultBeetle }) {
           <div className="text-xs text-gray-500">幼虫時データ</div>
           <div className="text-sm text-gray-800 whitespace-pre-wrap mt-1">{entry.larvaMemo}</div>
         </div>
+      )}
+      </div>
+
+      {linkedLarva && (
+        <button
+          onClick={() => handleNavigate(linkedLarva.id)}
+          className="w-full flex items-center justify-center gap-2 py-4 bg-[#FF9800]/10 text-[#FF9800] rounded-2xl text-sm font-black border border-[#FF9800]/20 active:scale-95 transition-all"
+        >
+          <ExternalLink size={18} />
+          幼虫時のデータを確認する
+        </button>
       )}
     </div>
   );
