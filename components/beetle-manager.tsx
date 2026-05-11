@@ -100,7 +100,7 @@ export function BeetleManager() {
   const [activeTab, setActiveTab] = useState("成虫");
   const [spawnSetFilter, setSpawnSetFilter] = useState<"active" | "finished">("active");
   const [larvaFilter, setLarvaFilter] = useState<"active" | "emerged" | "deceased" | "sold">("active");
-  const [adultFilter, setAdultFilter] = useState<"active" | "finished">("active");
+  const [adultFilter, setAdultFilter] = useState<"active" | "finished" | "deceased" | "sold">("active");
   const [query, setQuery] = useState("");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [createType, setCreateType] = useState<EntryType>("幼虫");
@@ -245,9 +245,14 @@ export function BeetleManager() {
          if (larvaFilter === "active") return !isEmerged;
        } else if (activeTab === "成虫") {
          if (entry.type !== "成虫") return false;
-         const isFinished = !!(entry as any).deathDate || !!(entry as any).soldDate || (entry as any).status === "販売済み";
-         if (adultFilter === "active" && isFinished) return false;
-         if (adultFilter === "finished" && !isFinished) return false;
+         const isDeceased = !!(entry as any).deathDate;
+         const isSold = !!(entry as any).soldDate || (entry as any).status === "販売済み";
+         const isFinished = isDeceased || isSold;
+
+         if (adultFilter === "deceased") return isDeceased;
+         if (adultFilter === "sold") return isSold && !isDeceased;
+         if (adultFilter === "active") return !isFinished;
+         if (adultFilter === "finished") return isFinished;
        } else if (activeTab === "産卵セット") {
          if (entry.type !== "産卵セット") return false;
          const isFinished = isSpawnSetFinished(entry);
@@ -540,6 +545,8 @@ export function BeetleManager() {
     return {
       adults: adults.length,
       adultsActive: adults.filter(e => !(e as any).deathDate && !(e as any).soldDate && (e as any).status !== "販売済み").length,
+      adultsDeceased: adults.filter(e => !!(e as any).deathDate).length,
+      adultsSold: adults.filter(e => ((e as any).soldDate || (e as any).status === "販売済み") && !(e as any).deathDate).length,
       larvae: larvae.length,
       larvaeActive: larvae.filter(e => !(e as any).deathDate && !(e as any).soldDate && !(e as any).actualEmergenceDate && (e as any).status !== "販売済み").length,
       larvaeEmerged: larvae.filter(e => !(e as any).deathDate && !(e as any).soldDate && !!(e as any).actualEmergenceDate && (e as any).status !== "販売済み").length,
@@ -1140,12 +1147,24 @@ export function BeetleManager() {
           )}
 
           {activeTab === "成虫" && (
-            <div className="flex gap-2">
+            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
               <button 
                 onClick={() => setAdultFilter("active")}
                 className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${adultFilter === "active" ? "bg-[#FF9800] text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}
               >
                 飼育中 ({stats.adultsActive})
+              </button>
+              <button 
+                onClick={() => setAdultFilter("deceased")}
+                className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${adultFilter === "deceased" ? "bg-[#F4511E] text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}
+              >
+                死亡 ({stats.adultsDeceased})
+              </button>
+              <button 
+                onClick={() => setAdultFilter("sold")}
+                className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${adultFilter === "sold" ? "bg-blue-500 text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}
+              >
+                販売済み ({stats.adultsSold})
               </button>
               <button 
                 onClick={() => setAdultFilter("finished")}
@@ -1524,16 +1543,19 @@ export function BeetleManager() {
                   <AnimatePresence>
                     {isExpanded && (
                       <Reorder.Group 
-                        axis="y" 
+                        axis="x" // 横方向のスクロールと、もしドラッグリオーダーが有効な場合は横方向の並べ替えに対応
                         values={group} 
                         onReorder={(newOrder) => handleReorder(newOrder, sciName)}
-                        className="space-y-3"
+                        // Flexboxを使ってカードを横並びにし、オーバーフロー時に横スクロールを有効化
+                        // -mx-6 px-6 でスクロールエリアを画面端まで広げ、pb-4 でスクロールバーのスペースを確保
+                        className="flex gap-3 overflow-x-auto pb-4 no-scrollbar -mx-6 px-6"
                       >
                         {group.map((entry) => (
                           <Reorder.Item 
                             key={entry.id} 
                             value={entry}
                             dragListener={false} // スクロール時のカードのスライド（動き）を完全に防止
+                            className="flex-shrink-0 w-[calc(100vw-48px)] max-w-sm" // 各カードの幅を定義し、縮小しないように設定
                           >
                           <EntryCard
                             entry={entry}
