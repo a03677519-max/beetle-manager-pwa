@@ -100,7 +100,7 @@ export function BeetleManager() {
   const [activeTab, setActiveTab] = useState("成虫");
   const [spawnSetFilter, setSpawnSetFilter] = useState<"active" | "finished">("active");
   const [larvaFilter, setLarvaFilter] = useState<"active" | "emerged" | "deceased" | "sold">("active");
-  const [adultFilter, setAdultFilter] = useState<"active" | "finished" | "deceased" | "sold">("active");
+  const [adultFilter, setAdultFilter] = useState<"active" | "deceased" | "sold">("active");
   const [query, setQuery] = useState("");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [createType, setCreateType] = useState<EntryType>("幼虫");
@@ -252,7 +252,6 @@ export function BeetleManager() {
          if (adultFilter === "deceased") return isDeceased;
          if (adultFilter === "sold") return isSold && !isDeceased;
          if (adultFilter === "active") return !isFinished;
-         if (adultFilter === "finished") return isFinished;
        } else if (activeTab === "産卵セット") {
          if (entry.type !== "産卵セット") return false;
          const isFinished = isSpawnSetFinished(entry);
@@ -1165,12 +1164,6 @@ export function BeetleManager() {
                 className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${adultFilter === "sold" ? "bg-blue-500 text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}
               >
                 販売済み ({stats.adultsSold})
-              </button>
-              <button 
-                onClick={() => setAdultFilter("finished")}
-                className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${adultFilter === "finished" ? "bg-gray-500 text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}
-              >
-                終了 ({stats.adults - stats.adultsActive})
               </button>
             </div>
           )}
