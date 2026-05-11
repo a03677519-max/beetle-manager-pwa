@@ -99,6 +99,8 @@ export function BeetleManager() {
 
   const [activeTab, setActiveTab] = useState("成虫");
   const [spawnSetFilter, setSpawnSetFilter] = useState<"active" | "finished">("active");
+  const [larvaFilter, setLarvaFilter] = useState<"active" | "emerged">("active");
+  const [adultFilter, setAdultFilter] = useState<"active" | "finished">("active");
   const [query, setQuery] = useState("");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [createType, setCreateType] = useState<EntryType>("幼虫");
@@ -230,23 +232,23 @@ export function BeetleManager() {
        // 死亡タブの表示ロジック
        if (activeTab === "死亡") {
          if (!(entry as any).deathDate) return false;
-
-         const matchesType = selectedType === "すべて" || entry.type === selectedType;
-         if (!matchesType) return false;
-       } else if (activeTab === "羽化済み") {
-         if ((entry as any).deathDate) return false;
-         // 幼虫かつ羽化日が入っているものを抽出
-         if (entry.type !== "幼虫" || !(entry as any).actualEmergenceDate) return false;
-       } else {
-         // 各種別タブ（成虫・幼虫等）からは死亡個体を除外して「死亡」タブへ移動させる
-         if ((entry as any).deathDate) return false;
-
-         // 通常の幼虫タブからは羽化済み個体を除外する
-         if (activeTab === "幼虫" && (entry as any).actualEmergenceDate) return false;
-
-         const matchesType = selectedType === "すべて" || entry.type === selectedType;
-         if (!matchesType) return false;
+       } else if (activeTab === "幼虫") {
+         if (entry.type !== "幼虫" || (entry as any).deathDate) return false;
+         if (larvaFilter === "active" && (entry as any).actualEmergenceDate) return false;
+         if (larvaFilter === "emerged" && !(entry as any).actualEmergenceDate) return false;
+       } else if (activeTab === "成虫") {
+         if (entry.type !== "成虫") return false;
+         if (adultFilter === "active" && (entry as any).deathDate) return false;
+         if (adultFilter === "finished" && !(entry as any).deathDate) return false;
+       } else if (activeTab === "産卵セット") {
+         if (entry.type !== "産卵セット" || (entry as any).deathDate) return false;
+         const isFinished = isSpawnSetFinished(entry);
+         if (spawnSetFilter === "active" && isFinished) return false;
+         if (spawnSetFilter === "finished" && !isFinished) return false;
        }
+
+       const matchesType = selectedType === "すべて" || entry.type === selectedType;
+       if (!matchesType && activeTab === "死亡") return false;
 
        const matchesSpawnStatus = entry.type !== "産卵セット" || (spawnSetFilter === "active" ? !isSpawnSetFinished(entry) : isSpawnSetFinished(entry));
        const matchesQuery =
@@ -257,7 +259,7 @@ export function BeetleManager() {
            .includes(normalizedQuery);
        return matchesSpawnStatus && matchesQuery;
      });
- 
+
      const getSortVal = (e: BeetleEntry, key: string) => {
        if (key === "date") return (e as any).hatchDate || (e as any).setDate || (e as any).actualEmergenceDate || (e as any).emergenceDate || e.createdAt || "";
        if (key === "managementName") return e.managementName || e.japaneseName;
@@ -274,7 +276,7 @@ export function BeetleManager() {
        if (v1 !== 0) return v1;
        return compare(sortConfig.secondary.key, sortConfig.secondary.direction);
      });
-   }, [entries, query, selectedType, sortConfig]);
+   }, [entries, query, selectedType, sortConfig, activeTab, spawnSetFilter, larvaFilter, adultFilter]);
 
   // 並べ替え（ドラッグ）完了時の処理
   const handleReorder = (newOrder: BeetleEntry[], sciName: string) => {
@@ -526,9 +528,10 @@ export function BeetleManager() {
   };
 
   const stats = useMemo(() => ({
-    adults: entries.filter(e => e.type === "成虫" && !(e as any).deathDate).length,
-    larvae: entries.filter(e => e.type === "幼虫" && !(e as any).deathDate && !(e as any).actualEmergenceDate).length,
-    emerged: entries.filter(e => e.type === "幼虫" && !(e as any).deathDate && !!(e as any).actualEmergenceDate).length,
+    adults: entries.filter(e => e.type === "成虫").length,
+    adultsActive: entries.filter(e => e.type === "成虫" && !(e as any).deathDate).length,
+    larvae: entries.filter(e => e.type === "幼虫").length,
+    larvaeActive: entries.filter(e => e.type === "幼虫" && !(e as any).deathDate && !(e as any).actualEmergenceDate).length,
     spawnSets: entries.filter(e => e.type === "産卵セット" && !(e as any).deathDate).length,
     deceased: entries.filter(e => !!(e as any).deathDate).length,
   }), [entries]);
@@ -1109,18 +1112,48 @@ export function BeetleManager() {
           ))}
           <button
             type="button"
-            className={`px-4 py-1.5 rounded-full text-[12px] font-bold transition-all whitespace-nowrap ${activeTab === "羽化済み" ? "bg-[#795548] text-white shadow-md" : "bg-white/40 text-[#8B7D7B] border border-white/40"}`}
-            onClick={() => { setActiveTab("羽化済み"); setSelectedType("幼虫"); }}
-          >
-            羽化済み ({stats.emerged})
-          </button>
-          <button
-            type="button"
             className={`px-4 py-1.5 rounded-full text-[12px] font-bold transition-all whitespace-nowrap ${activeTab === "死亡" ? "bg-[#F4511E] text-white shadow-md" : "bg-white/40 text-[#8B7D7B] border border-white/40"}`}
             onClick={() => { setActiveTab("死亡"); setSelectedType("すべて"); }}
           >
             死亡一覧 ({stats.deceased})
           </button>
+        </div>
+
+        {/* 種別ごとのサブフィルター */}
+        <div className="mt-4">
+          {activeTab === "幼虫" && (
+            <div className="flex gap-2">
+              <button 
+                onClick={() => setLarvaFilter("active")}
+                className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${larvaFilter === "active" ? "bg-[#FF9800] text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}
+              >
+                飼育中 ({stats.larvaeActive})
+              </button>
+              <button 
+                onClick={() => setLarvaFilter("emerged")}
+                className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${larvaFilter === "emerged" ? "bg-[#795548] text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}
+              >
+                羽化済み ({stats.larvae - stats.larvaeActive})
+              </button>
+            </div>
+          )}
+
+          {activeTab === "成虫" && (
+            <div className="flex gap-2">
+              <button 
+                onClick={() => setAdultFilter("active")}
+                className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${adultFilter === "active" ? "bg-[#FF9800] text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}
+              >
+                飼育中 ({stats.adultsActive})
+              </button>
+              <button 
+                onClick={() => setAdultFilter("finished")}
+                className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${adultFilter === "finished" ? "bg-gray-500 text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}
+              >
+                終了 (死亡・販売等) ({stats.adults - stats.adultsActive})
+              </button>
+            </div>
+          )}
         </div>
       </section>
 

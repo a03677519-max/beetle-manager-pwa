@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { CountRollField, Field, DateRollField, BottomSheetInput, MoistureField, PressureField, useNextFieldNavigation } from "@/components/entry-fields";
+import { CountRollField, Field, DateRollField, BottomSheetInput, MoistureField, PressureField, GenderField, useNextFieldNavigation } from "@/components/entry-fields";
 import type { BeetleEntry, AdultBeetle, LarvaFormValues, LarvaLog, LogStage, Gender } from "@/types/beetle";
 import { EntryBaseFields } from "@/components/beetle/shared/entry-base-fields";
 import { today, daysBetween } from "@/lib/utils";
@@ -255,6 +255,20 @@ export function LarvaForm({
                 setValues({ ...values, actualEmergenceDate: value })
               }
             />
+            {/* 羽化時の性別選択を追加 */}
+            <GenderField
+              value={values.logs?.[0]?.gender || "不明"}
+              onChange={(g) => {
+                const newLogs = [...(values.logs || [])];
+                if (newLogs.length > 0) {
+                  newLogs[0] = { ...newLogs[0], gender: g };
+                } else {
+                  // ログがない場合は最小限の構成で作成
+                  newLogs.push({ id: 'temp', gender: g, date: today(), weight: 0, substrate: "", pressure: 3, moisture: 3, bottleSize: "", stage: "L3", temperature: "" });
+                }
+                setValues({ ...values, logs: newLogs });
+              }}
+            />
             {daysUntilEmergence !== null && (
               <div className="flex items-baseline gap-2 px-3 py-2 bg-[#FF9800]/5 rounded-xl border border-[#FF9800]/10">
                 <span className="text-[10px] font-black text-[#EF6C00] uppercase tracking-wider">羽化までの日数:</span>
@@ -277,17 +291,17 @@ export function LarvaForm({
                               ? `幼虫時ログを紐づけ済み\n${values.logs.map((log) => `${log.date} / ${log.stage} / ${log.weight}g / ${log.temperature || "-"}℃`).join("\n")}`
                               : "幼虫時ログなし";
                             promoteLarvaToAdult(values.id || "", {
-                              ...emptyAdultForm,
+                              ...adult, // 既存の成虫データを引き継ぐ（サイズ、状態、後食日などを保持）
                               id: adult.id,
                               japaneseName: values.japaneseName,
                               scientificName: values.scientificName,
                               locality: values.locality,
                               generation: values.generation,
-                              linkedEntryIds: Array.from(new Set([...(adult.linkedEntryIds || []), values.id || ""])),
+                              linkedEntryIds: Array.from(new Set([...((adult as AdultBeetle).linkedEntryIds || []), values.id || ""])),
                               emergenceDate: values.actualEmergenceDate || today(),
                               emergenceType: values.emergenceType,
-                              feedingDate: adult.feedingDate || "",
-                              deathDate: adult.deathDate || "",
+                              feedingDate: (adult as AdultBeetle).feedingDate || "",
+                              deathDate: (adult as AdultBeetle).deathDate || "",
                               larvaMemo: memo,
                               gender: values.logs?.[0]?.gender || "不明",
                               photos: adult.photos,
