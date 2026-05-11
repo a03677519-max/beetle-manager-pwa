@@ -33,9 +33,10 @@ export function AdultForm({
   const formRef = useRef<HTMLFormElement>(null);
 
   const isDead = useMemo(() => !!values.deathDate, [values.deathDate]);
+  const isSold = useMemo(() => !!values.soldDate || values.status === "販売済み", [values.soldDate, values.status]);
 
   const suggestions = useMemo(() => {
-    const sSet = new Set<string>();
+    const sSet = new Set<string>(["飼育中", "販売済み", "完品", "Ｂ品", "未後食"]);
     const entries = useBeetleStore.getState().entries;
     entries.forEach((e) => {
       if (e.type === "成虫" && e.status) sSet.add(e.status);
@@ -149,6 +150,27 @@ export function AdultForm({
         />
 
         <div className="pt-2 border-t border-gray-50">
+          <label className="flex items-center gap-3 py-2 cursor-pointer">
+            <input
+              type="checkbox"
+              className="w-4 h-4 rounded-lg border-gray-300 text-[#FF9800] focus:ring-[#FF9800]"
+              checked={isSold}
+              onChange={(e) => setValues({ 
+                ...values, 
+                soldDate: e.target.checked ? today() : "",
+                status: e.target.checked ? "販売済み" : values.status === "販売済み" ? "飼育中" : values.status 
+              })}
+            />
+            <span className="text-sm font-bold text-gray-700">販売済みとして登録</span>
+          </label>
+          {isSold && (
+            <DateRollField
+              label="販売日"
+              value={values.soldDate || ""}
+              onChange={(value) => setValues({ ...values, soldDate: value })}
+            />
+          )}
+
           <label className="flex items-center gap-3 py-2 cursor-pointer">
             <input
               type="checkbox"

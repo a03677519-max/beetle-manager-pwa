@@ -66,6 +66,8 @@ export const emptyAdultForm: AdultFormValues = {
   emergenceType: "羽化",
   feedingDate: "",
   deathDate: "",
+  soldDate: "",
+  status: "飼育中",
   larvaMemo: "",
   gender: "不明",
 };
@@ -82,6 +84,8 @@ export const emptyLarvaForm: LarvaFormValues = {
   actualEmergenceDate: "",
   emergenceType: "羽化",
   deathDate: "",
+  soldDate: "",
+  status: "飼育中",
   hatchDate: today(),
 } as any;
 

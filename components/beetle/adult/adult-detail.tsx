@@ -56,6 +56,10 @@ export function AdultDetail({ entry }: { entry: AdultBeetle }) {
         <div className="text-xs text-gray-500">死亡日</div>
         <div className="font-bold text-gray-800 truncate">{formatDate(entry.deathDate)}</div>
       </div>
+      <div className="bg-gray-50 p-4 rounded-2xl">
+        <div className="text-xs text-gray-500">販売日</div>
+        <div className="font-bold text-gray-800 truncate">{formatDate((entry as any).soldDate)}</div>
+      </div>
       {entry.memo && (
         <div className="bg-gray-50 p-4 rounded-2xl col-span-2">
           <div className="text-xs text-gray-500">メモ</div>

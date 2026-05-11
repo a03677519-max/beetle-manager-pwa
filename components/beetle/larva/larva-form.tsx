@@ -100,7 +100,9 @@ export function LarvaForm({
     const tSet = new Set<string>();
 
     allEntries.forEach((entry) => {
+      if (entry.type === "成虫" && entry.status) tSet.add(entry.status);
       if (entry.type === "幼虫") {
+        if ((entry as any).status) tSet.add((entry as any).status);
         entry.logs.forEach((log) => {
           if (log.substrate) sSet.add(log.substrate);
           if (log.bottleSize) bSet.add(log.bottleSize);
@@ -111,6 +113,7 @@ export function LarvaForm({
 
     return {
       substrate: Array.from(sSet).sort(),
+      status: Array.from(new Set([...Array.from(tSet), "飼育中", "販売済み"])).sort(),
       bottleSize: Array.from(bSet).sort(),
       temperature: Array.from(tSet).sort(),
     };
@@ -216,6 +219,16 @@ export function LarvaForm({
           )}
 
           <BottomSheetInput
+            label="状態"
+            value={(values as any).status || ""}
+            placeholder="例: 飼育中 / 販売済み"
+            suggestions={suggestions.status}
+            onNext={focusNextField}
+            enterKeyHint="next"
+            onChange={(val) => setValues({ ...values, status: val } as any)}
+          />
+
+          <BottomSheetInput
             label="備考"
             value={values.memo || ""}
             type="textarea"
@@ -229,6 +242,46 @@ export function LarvaForm({
         </div>
 
         <div className="pt-2 border-t border-gray-50">
+          <div className="space-y-1 mb-2">
+            <label className="flex items-center gap-3 py-1 cursor-pointer">
+              <input
+                type="checkbox"
+                className="w-4 h-4 rounded-lg border-gray-300 text-[#FF9800] focus:ring-[#FF9800]"
+                checked={!!values.soldDate || (values as any).status === "販売済み"}
+                onChange={(e) => setValues({ 
+                  ...values, 
+                  soldDate: e.target.checked ? today() : "",
+                  status: e.target.checked ? "販売済み" : (values as any).status === "販売済み" ? "飼育中" : (values as any).status 
+                } as any)}
+              />
+              <span className="text-sm font-bold text-gray-700">販売済みとして登録</span>
+            </label>
+            {(!!values.soldDate || (values as any).status === "販売済み") && (
+              <DateRollField
+                label="販売日"
+                value={values.soldDate || ""}
+                onChange={(val) => setValues({ ...values, soldDate: val })}
+              />
+            )}
+
+            <label className="flex items-center gap-3 py-1 cursor-pointer">
+              <input
+                type="checkbox"
+                className="w-4 h-4 rounded-lg border-gray-300 text-[#FF9800] focus:ring-[#FF9800]"
+                checked={!!(values as any).deathDate}
+                onChange={(e) => setValues({ ...values, deathDate: e.target.checked ? today() : "" } as any)}
+              />
+              <span className="text-sm font-bold text-gray-700">死亡済みとして登録</span>
+            </label>
+            {!!(values as any).deathDate && (
+              <DateRollField
+                label="死亡日"
+                value={(values as any).deathDate || ""}
+                onChange={(val) => setValues({ ...values, deathDate: val } as any)}
+              />
+            )}
+          </div>
+
         <div className="field">
           <label className="flex items-center gap-3 py-0.5">
             <input

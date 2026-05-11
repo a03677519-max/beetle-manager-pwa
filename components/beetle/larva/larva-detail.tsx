@@ -115,6 +115,12 @@ export function LarvaDetail({
             <div className="font-bold text-red-700">{formatDate((entry as any).deathDate)}</div>
           </div>
         )}
+        {(entry as any).soldDate && (
+          <div className="bg-blue-50 p-4 rounded-2xl col-span-2 border border-blue-100">
+            <div className="text-xs text-blue-500 font-bold uppercase tracking-wider">販売日</div>
+            <div className="font-bold text-blue-700">{formatDate((entry as any).soldDate)}</div>
+          </div>
+        )}
         {linkedAdult && (
           <button
             onClick={() => handleNavigate(linkedAdult.id)}
