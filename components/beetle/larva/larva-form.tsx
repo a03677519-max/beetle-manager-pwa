@@ -5,6 +5,7 @@ import { CountRollField, Field, DateRollField, BottomSheetInput, MoistureField, 
 import type { BeetleEntry, LarvaFormValues, LarvaLog, LogStage, Gender } from "@/types/beetle";
 import { EntryBaseFields } from "@/components/beetle/shared/entry-base-fields";
 import { today, daysBetween } from "@/lib/utils";
+import { useBeetleStore, emptyAdultForm } from "@/store/use-beetle-store";
 
 /**
  * 幼虫登録・編集用フォーム
@@ -41,6 +42,8 @@ export function LarvaForm({
   const [setEndDate, setSetEndDate] = useState(today());
   const formId = id || "larva-form"; // Keep formId for onSubmit
   const { focusNextField } = useNextFieldNavigation(formId, true);
+  const entries = useBeetleStore((state) => state.entries);
+  const promoteLarvaToAdult = useBeetleStore((state) => state.promoteLarvaToAdult);
 
   const formRef = useRef<HTMLFormElement>(null);
   const isEmerged = !!values.actualEmergenceDate;
@@ -137,6 +140,11 @@ export function LarvaForm({
     if (!hatchDate || !values.actualEmergenceDate) return null;
     return daysBetween(hatchDate, values.actualEmergenceDate);
   }, [values.actualEmergenceDate, values.hatchDate]);
+
+  const adultCandidates = useMemo(
+    () => entries.filter((entry) => entry.type === "成虫" && entry.scientificName === values.scientificName),
+    [entries, values.scientificName],
+  );
 
   // 入力されたデータから体重と温度の推移を計算（簡易グラフ用データ）
   const logStats = useMemo(() => {
@@ -238,11 +246,11 @@ export function LarvaForm({
           </label>
         </div> {/* Keep div */}
 
-        {isEmerged && (
-          <div className="pt-2 border-t border-gray-100 space-y-3">
-            <DateRollField
-              label="羽化日"
-              value={values.actualEmergenceDate}
+          {isEmerged && (
+            <div className="pt-2 border-t border-gray-100 space-y-3">
+              <DateRollField
+                label="羽化日"
+                value={values.actualEmergenceDate}
               onChange={(value) =>
                 setValues({ ...values, actualEmergenceDate: value })
               }
@@ -254,6 +262,98 @@ export function LarvaForm({
                 <span className="text-xs font-bold text-[#EF6C00]">日</span>
               </div>
             )}
+            <Field label="成虫への紐づけ / 移動">
+              <div className="space-y-2">
+                {adultCandidates.length > 0 ? (
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto pr-1">
+                      {adultCandidates.map((adult) => (
+                        <button
+                          key={adult.id}
+                          type="button"
+                          className="text-left px-3 py-2 rounded-xl border border-gray-200 bg-white/80 hover:bg-[#FF9800]/5 active:scale-[0.99] transition-all"
+                          onClick={() => {
+                            const memo = values.logs?.length
+                              ? `幼虫時ログを紐づけ済み\n${values.logs.map((log) => `${log.date} / ${log.stage} / ${log.weight}g / ${log.temperature || "-"}℃`).join("\n")}`
+                              : "幼虫時ログなし";
+                            promoteLarvaToAdult(values.id || "", {
+                              ...emptyAdultForm,
+                              id: adult.id,
+                              japaneseName: values.japaneseName,
+                              scientificName: values.scientificName,
+                              locality: values.locality,
+                              generation: values.generation,
+                              linkedEntryIds: Array.from(new Set([...(adult.linkedEntryIds || []), values.id || ""])),
+                              emergenceDate: values.actualEmergenceDate || today(),
+                              emergenceType: values.emergenceType,
+                              feedingDate: adult.feedingDate || "",
+                              deathDate: adult.deathDate || "",
+                              larvaMemo: memo,
+                              gender: values.logs?.[0]?.gender || "不明",
+                              photos: adult.photos,
+                            }, { adultId: adult.id, larvaMemo: memo });
+                          }}
+                        >
+                          <div className="text-sm font-bold text-gray-800">{adult.japaneseName}</div>
+                          <div className="text-[10px] text-gray-500">既存成虫に幼虫時データを追加</div>
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      className="w-full px-3 py-2 rounded-xl bg-[#FF9800] text-white font-black text-sm shadow-sm active:scale-[0.99] transition-all"
+                      onClick={() => {
+                        const memo = values.logs?.length
+                          ? `幼虫時ログ\n${values.logs.map((log) => `${log.date} / ${log.stage} / ${log.weight}g / ${log.temperature || "-"}℃`).join("\n")}`
+                          : "幼虫時ログなし";
+                        promoteLarvaToAdult(values.id || "", {
+                          ...emptyAdultForm,
+                          japaneseName: values.japaneseName,
+                          scientificName: values.scientificName,
+                          locality: values.locality,
+                          generation: values.generation,
+                          emergenceDate: values.actualEmergenceDate || today(),
+                          emergenceType: values.emergenceType,
+                          feedingDate: "",
+                          deathDate: "",
+                          larvaMemo: memo,
+                          gender: values.logs?.[0]?.gender || "不明",
+                          photos: values.photos,
+                        }, { larvaMemo: memo });
+                      }}
+                    >
+                      新規成虫として登録して移動
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className="w-full px-3 py-2 rounded-xl bg-[#FF9800] text-white font-black text-sm shadow-sm active:scale-[0.99] transition-all"
+                    onClick={() => {
+                      const memo = values.logs?.length
+                        ? `幼虫時ログ\n${values.logs.map((log) => `${log.date} / ${log.stage} / ${log.weight}g / ${log.temperature || "-"}℃`).join("\n")}`
+                        : "幼虫時ログなし";
+                      promoteLarvaToAdult(values.id || "", {
+                        ...emptyAdultForm,
+                        japaneseName: values.japaneseName,
+                        scientificName: values.scientificName,
+                        locality: values.locality,
+                        generation: values.generation,
+                        emergenceDate: values.actualEmergenceDate || today(),
+                        emergenceType: values.emergenceType,
+                        feedingDate: "",
+                        deathDate: "",
+                        larvaMemo: memo,
+                        gender: values.logs?.[0]?.gender || "不明",
+                        photos: values.photos,
+                      }, { larvaMemo: memo });
+                    }}
+                  >
+                    新規成虫として登録して移動
+                  </button>
+                )}
+              </div>
+            </Field>
             <Field label="羽化/掘り出し">
               <div className="flex space-x-2">
                 <button

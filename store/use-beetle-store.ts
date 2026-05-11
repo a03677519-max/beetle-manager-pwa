@@ -6,10 +6,12 @@ import { createJSONStorage, persist } from "zustand/middleware";
 import { createId, today } from "@/lib/utils";
 import type {
   AdultFormValues,
+  AdultBeetle,
   BeetleEntry,
   EntryType,
   GenerationValue,
   LarvaFormValues,
+  LarvaBeetle,
   LarvaLog,
   SpawnSetFormValues,
   SwitchBotSettings,
@@ -41,6 +43,11 @@ type BeetleState = {
   addPhotos: (id: string, photos: string[]) => void;
   deletePhoto: (entryId: string, photoIndex: number) => void;
   importData: (entries: BeetleEntry[]) => void;
+  promoteLarvaToAdult: (
+    larvaId: string,
+    adultInput: AdultFormValues,
+    options?: { adultId?: string; larvaMemo?: string },
+  ) => void;
 };
 
 const emptyGeneration = {
@@ -168,6 +175,47 @@ export const useBeetleStore = create<BeetleState>()(
               : entry,
           ),
         })),
+      promoteLarvaToAdult: (larvaId, adultInput, options) =>
+        set((state) => {
+          const larva = state.entries.find((entry): entry is LarvaBeetle => entry.id === larvaId && entry.type === "幼虫");
+          if (!larva) return state;
+
+          const nextNumber = Math.max(0, ...state.entries.filter(e => e.scientificName === adultInput.scientificName).map(e => e.entryNumber || 0)) + 1;
+          const larvaLogSummary = larva.logs.length > 0
+            ? larva.logs.map((log) => `${log.date} / ${log.stage} / ${log.weight}g / ${log.temperature || "-"}℃`).join("\n")
+            : "ログなし";
+
+          const adultId = options?.adultId ?? createId();
+          const { id: _adultInputId, photos: adultPhotos, linkedEntryIds: adultLinks, larvaMemo: adultMemo, ...adultBase } = adultInput as AdultFormValues & { larvaMemo?: string };
+          const mergedAdult: AdultBeetle = {
+            id: adultId,
+            ...adultBase,
+            type: "成虫",
+            entryNumber: nextNumber,
+            photos: adultPhotos || larva.photos || [],
+            createdAt: today(),
+            updatedAt: today(),
+            larvaMemo: adultMemo || options?.larvaMemo || `幼虫時ログ\n${larvaLogSummary}`,
+            linkedEntryIds: Array.from(new Set([...(adultLinks || []), larvaId])),
+          };
+
+          const remainingEntries = state.entries.map((entry) =>
+            entry.id === larvaId
+              ? {
+                  ...entry,
+                  actualEmergenceDate: larva.actualEmergenceDate || adultInput.emergenceDate || today(),
+                  emergenceType: larva.emergenceType || adultInput.emergenceType || "羽化",
+                  linkedEntryIds: Array.from(new Set([...(entry.linkedEntryIds || []), adultId])),
+                  updatedAt: today(),
+                }
+              : entry,
+          );
+
+          return {
+            entries: [mergedAdult, ...remainingEntries],
+            editingId: null,
+          };
+        }),
       updateLarvaLog: (entryId, logId, input) =>
         set((state) => ({
           entries: state.entries.map((entry) =>

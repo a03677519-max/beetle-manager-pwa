@@ -125,6 +125,7 @@ export type AdultFormValues = Omit<AdultBeetle, "id" | "photos" | "createdAt" | 
   id?: string;
   photos?: string[];
   linkedEntryIds?: string[];
+  larvaMemoSource?: string;
 };
 export type LarvaFormValues = Omit<LarvaBeetle, "id" | "photos" | "createdAt" | "updatedAt"> & {
   id?: string;
@@ -132,6 +133,7 @@ export type LarvaFormValues = Omit<LarvaBeetle, "id" | "photos" | "createdAt" | 
   linkedEntryIds?: string[];
   hatchDate?: string;
   createdAt?: string;
+  emergenceTargetAdultId?: string;
 };
 export type SpawnSetFormValues = Omit<SpawnSet, "id" | "photos" | "createdAt" | "updatedAt"> & {
   id?: string;
