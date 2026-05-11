@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { CountRollField, Field, DateRollField, BottomSheetInput, MoistureField, PressureField, useNextFieldNavigation } from "@/components/entry-fields";
-import type { BeetleEntry, LarvaFormValues, LarvaLog, LogStage, Gender } from "@/types/beetle";
+import type { BeetleEntry, AdultBeetle, LarvaFormValues, LarvaLog, LogStage, Gender } from "@/types/beetle";
 import { EntryBaseFields } from "@/components/beetle/shared/entry-base-fields";
 import { today, daysBetween } from "@/lib/utils";
 import { useBeetleStore, emptyAdultForm } from "@/store/use-beetle-store";
@@ -142,7 +142,7 @@ export function LarvaForm({
   }, [values.actualEmergenceDate, values.hatchDate]);
 
   const adultCandidates = useMemo(
-    () => entries.filter((entry) => entry.type === "成虫" && entry.scientificName === values.scientificName),
+    () => entries.filter((entry): entry is AdultBeetle => entry.type === "成虫" && entry.scientificName === values.scientificName),
     [entries, values.scientificName],
   );
 
