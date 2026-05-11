@@ -70,7 +70,7 @@ export const emptyAdultForm: AdultFormValues = {
   status: "飼育中",
   larvaMemo: "",
   gender: "不明",
-};
+} as any;
 
 export const emptyLarvaForm: LarvaFormValues = {
   type: "幼虫",
