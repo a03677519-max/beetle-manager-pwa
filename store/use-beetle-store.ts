@@ -79,6 +79,7 @@ export const emptyLarvaForm: LarvaFormValues = {
   locality: "",
   generation: { ...emptyGeneration },
   linkedEntryIds: [],
+  extractionDate: "-",
   logs: [],
   plannedEmergenceDate: "",
   actualEmergenceDate: "",
@@ -95,6 +96,7 @@ export const emptySpawnSetForm: SpawnSetFormValues = {
   scientificName: "",
   locality: "",
   generation: { ...emptyGeneration },
+  setEndDate: "-",
   setDate: "", // 1回目のセットの開始日
   sets: [],
   emergenceDate: "",

@@ -62,8 +62,8 @@ export function LarvaForm({
     });
 
     // セット期間用の日付を初期化（既存の日付があれば優先、なければ作成日や今日）
-    setSetStartDate(hatch || fmt(initialValues.createdAt) || today());
-    setSetEndDate(extraction || today());
+    setSetStartDate(hatch || (initialValues.createdAt ? fmt(initialValues.createdAt) : today()));
+    setSetEndDate(extraction || (initialValues.extractionDate === "-" ? "-" : today()));
   }, [initialValues.id]);
 
   // タブ切り替え時に日付データを同期する
@@ -71,19 +71,19 @@ export function LarvaForm({
     const fmt = (d?: string) => (d ? d.slice(0, 10) : "");
     
     if (dateType === "hatch") {
-      if (!values.hatchDate) {
+      if (!values.hatchDate || values.hatchDate === "-") {
         const backupDate = values.extractionDate || (initialValues.createdAt ? fmt(initialValues.createdAt) : today());
         setValues(prev => ({ ...prev, hatchDate: backupDate }));
       }
     } else if (dateType === "extraction") {
-      if (!values.extractionDate) {
+      if (!values.extractionDate || values.extractionDate === "-") {
         const backupDate = values.hatchDate || (initialValues.createdAt ? fmt(initialValues.createdAt) : today());
         setValues(prev => ({ ...prev, extractionDate: backupDate }));
       }
     } else if (dateType === "set") {
       // セット期間タブでは値をクリアせず、開始・終了日ピッカーに同期させる
-      setSetStartDate(prev => prev || values.hatchDate || fmt(initialValues.hatchDate) || today());
-      setSetEndDate(prev => prev || values.extractionDate || fmt(initialValues.extractionDate) || today());
+      setSetStartDate(prev => prev || (values.hatchDate !== "-" ? values.hatchDate : "") || (initialValues.createdAt ? fmt(initialValues.createdAt) : today()));
+      setSetEndDate(prev => prev || (values.extractionDate !== "-" ? values.extractionDate : "") || "-");
     }
   }, [dateType]);
 
@@ -178,7 +178,10 @@ export function LarvaForm({
           finalValues.extractionDate = finalValues.extractionDate || (initialValues.createdAt ? initialValues.createdAt.slice(0, 10) : today());
           finalValues.hatchDate = ""; // 割出データとして保存
         } else if (dateType === "set") {
-          if (new Date(setStartDate) > new Date(setEndDate)) {
+          const isStartValid = setStartDate && setStartDate !== "-";
+          const isEndValid = setEndDate && setEndDate !== "-";
+
+          if (isStartValid && isEndValid && new Date(setStartDate) > new Date(setEndDate)) {
             finalValues.extractionDate = setStartDate;
             finalValues.hatchDate = setEndDate;
           } else {
@@ -247,19 +250,19 @@ export function LarvaForm({
               <input
                 type="checkbox"
                 className="w-4 h-4 rounded-lg border-gray-300 text-[#FF9800] focus:ring-[#FF9800]"
-                checked={!!(values as any).soldDate || (values as any).status === "販売済み"}
+                checked={((values as any).soldDate && (values as any).soldDate !== "-") || (values as any).status === "販売済み"}
                 onChange={(e) => setValues({ 
                   ...values, 
-                  soldDate: e.target.checked ? today() : "",
+                  soldDate: e.target.checked ? today() : "-",
                   status: e.target.checked ? "販売済み" : (values as any).status === "販売済み" ? "飼育中" : (values as any).status 
                 } as any)}
               />
               <span className="text-sm font-bold text-gray-700">販売済みとして登録</span>
             </label>
-            {(!!(values as any).soldDate || (values as any).status === "販売済み") && (
+            {(((values as any).soldDate && (values as any).soldDate !== "-") || (values as any).status === "販売済み") && (
               <DateRollField
                 label="販売日"
-                value={(values as any).soldDate || ""}
+                value={(values as any).soldDate}
                 onChange={(val) => setValues({ ...values, soldDate: val } as any)}
               />
             )}
@@ -268,15 +271,15 @@ export function LarvaForm({
               <input
                 type="checkbox"
                 className="w-4 h-4 rounded-lg border-gray-300 text-[#FF9800] focus:ring-[#FF9800]"
-                checked={!!(values as any).deathDate}
-                onChange={(e) => setValues({ ...values, deathDate: e.target.checked ? today() : "" } as any)}
+                checked={(values as any).deathDate && (values as any).deathDate !== "-"}
+                onChange={(e) => setValues({ ...values, deathDate: e.target.checked ? today() : "-" } as any)}
               />
               <span className="text-sm font-bold text-gray-700">死亡済みとして登録</span>
             </label>
-            {!!(values as any).deathDate && (
+            {((values as any).deathDate && (values as any).deathDate !== "-") && (
               <DateRollField
                 label="死亡日"
-                value={(values as any).deathDate || ""}
+                value={(values as any).deathDate}
                 onChange={(val) => setValues({ ...values, deathDate: val } as any)}
               />
             )}

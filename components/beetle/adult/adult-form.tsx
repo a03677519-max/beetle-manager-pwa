@@ -32,8 +32,8 @@ export function AdultForm({
   const { focusNextField } = useNextFieldNavigation(formId, true);
   const formRef = useRef<HTMLFormElement>(null);
 
-  const isDead = useMemo(() => !!values.deathDate, [values.deathDate]);
-  const isSold = useMemo(() => !!(values as any).soldDate || values.status === "販売済み", [(values as any).soldDate, values.status]);
+  const isDead = useMemo(() => values.deathDate && values.deathDate !== "-", [values.deathDate]);
+  const isSold = useMemo(() => ((values as any).soldDate && (values as any).soldDate !== "-") || values.status === "販売済み", [(values as any).soldDate, values.status]);
 
   const suggestions = useMemo(() => {
     const sSet = new Set<string>(["飼育中", "販売済み", "完品", "Ｂ品", "未後食"]);
@@ -157,7 +157,7 @@ export function AdultForm({
               checked={isSold}
               onChange={(e) => setValues({ 
                 ...values, 
-                soldDate: e.target.checked ? today() : "",
+                soldDate: e.target.checked ? today() : "-",
                 status: e.target.checked ? "販売済み" : values.status === "販売済み" ? "飼育中" : values.status 
               } as any)}
             />
@@ -176,7 +176,7 @@ export function AdultForm({
               type="checkbox"
               className="w-4 h-4 rounded-lg border-gray-300 text-[#FF9800] focus:ring-[#FF9800]"
               checked={isDead}
-              onChange={(e) => setValues({ ...values, deathDate: e.target.checked ? today() : "" })}
+              onChange={(e) => setValues({ ...values, deathDate: e.target.checked ? today() : "-" })}
             />
             <span className="text-sm font-bold text-gray-700">死亡済みとして登録</span>
           </label>
