@@ -250,7 +250,7 @@ export function LarvaForm({
               <input
                 type="checkbox"
                 className="w-4 h-4 rounded-lg border-gray-300 text-[#FF9800] focus:ring-[#FF9800]"
-                checked={((values as any).soldDate && (values as any).soldDate !== "-") || (values as any).status === "販売済み"}
+                checked={!!(((values as any).soldDate && (values as any).soldDate !== "-") || (values as any).status === "販売済み")}
                 onChange={(e) => setValues({ 
                   ...values, 
                   soldDate: e.target.checked ? today() : "-",
@@ -271,7 +271,7 @@ export function LarvaForm({
               <input
                 type="checkbox"
                 className="w-4 h-4 rounded-lg border-gray-300 text-[#FF9800] focus:ring-[#FF9800]"
-                checked={(values as any).deathDate && (values as any).deathDate !== "-"}
+                checked={!!((values as any).deathDate && (values as any).deathDate !== "-")}
                 onChange={(e) => setValues({ ...values, deathDate: e.target.checked ? today() : "-" } as any)}
               />
               <span className="text-sm font-bold text-gray-700">死亡済みとして登録</span>

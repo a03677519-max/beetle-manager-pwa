@@ -32,8 +32,8 @@ export function AdultForm({
   const { focusNextField } = useNextFieldNavigation(formId, true);
   const formRef = useRef<HTMLFormElement>(null);
 
-  const isDead = useMemo(() => values.deathDate && values.deathDate !== "-", [values.deathDate]);
-  const isSold = useMemo(() => ((values as any).soldDate && (values as any).soldDate !== "-") || values.status === "販売済み", [(values as any).soldDate, values.status]);
+  const isDead = useMemo(() => !!(values.deathDate && values.deathDate !== "-"), [values.deathDate]);
+  const isSold = useMemo(() => !!(((values as any).soldDate && (values as any).soldDate !== "-") || values.status === "販売済み"), [(values as any).soldDate, values.status]);
 
   const suggestions = useMemo(() => {
     const sSet = new Set<string>(["飼育中", "販売済み", "完品", "Ｂ品", "未後食"]);
