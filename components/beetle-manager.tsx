@@ -1566,7 +1566,7 @@ export function BeetleManager() {
                     if (key === "date") return (e as any).hatchDate || (e as any).setDate || (e as any).actualEmergenceDate || (e as any).emergenceDate || e.createdAt || "";
                     if (key === "weight") {
                       if (e.type === "幼虫" && e.logs?.[0]) return e.logs[0].weight;
-                      if (e.type === "成虫") return parseFloat(e.size) || 0;
+                      if (e.type === "成虫") return parseFloat((e as any).size || "0") || 0;
                       return 0;
                     }
                     return (e as any)[key] || "";
