@@ -466,24 +466,29 @@ export function BeetleManager() {
       for (const entry of sortedSelectedEntries) {
         if (!entry.linkedEntryIds?.length) continue;
         const pos = entryCellMap.get(entry.id);
-        if (!pos) continue;
+        if (!pos || !pos.sheetName) continue;
 
         const sheet = workbook.getWorksheet(pos.sheetName);
+        if (!sheet) continue; // ここで sheet が undefined でないことを確定させる
+
         const linkCellIdx = entry.type === "成虫" ? 8 : entry.type === "幼虫" ? 7 : 8;
-        const cell = sheet.getRow(pos.row).getCell(linkCellIdx);
+
+        // sheet が確実に存在することをコンパイラに伝えるため、直接参照を避けて変数を定義
+        const row = sheet.getRow(pos.row);
+        const cell = row.getCell(linkCellIdx);
 
         for (const targetId of entry.linkedEntryIds) {
           const targetPos = entryCellMap.get(targetId);
-          if (targetPos) {
-            const target = entries.find(i => i.id === targetId);
-            cell.value = {
-              text: `紐付: ${target?.managementName || "詳細"}`,
-              hyperlink: `#\'${targetPos.sheetName}\'!A${targetPos.row}`,
-              tooltip: "リンク先へ移動"
-            };
-            cell.font = { color: { argb: "FF2196F3" }, underline: true };
-            break;
-          }
+          if (!targetPos || !targetPos.sheetName) continue;
+
+          const target = entries.find(i => i.id === targetId);
+          cell.value = {
+            text: `紐付: ${target?.managementName || "詳細"}`,
+            hyperlink: `#\'${targetPos.sheetName}\'!A${targetPos.row}`,
+            tooltip: "リンク先へ移動"
+          };
+          cell.font = { color: { argb: "FF2196F3" }, underline: true };
+          break;
         }
       }
 
