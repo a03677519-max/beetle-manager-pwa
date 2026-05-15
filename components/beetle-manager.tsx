@@ -480,6 +480,7 @@ export function BeetleManager() {
 
         // sheet が確実に存在することをコンパイラに伝えるため、直接参照を避けて変数を定義
         const row = sheet.getRow(pos.row);
+        if (!row) continue; // row が undefined の場合をスキップ
         const cell = row.getCell(linkCellIdx);
 
         for (const targetId of entry.linkedEntryIds) {
@@ -1177,20 +1178,26 @@ export function BeetleManager() {
       <section className="sticky top-0 z-30 bg-white/70 backdrop-blur-xl pt-4 pb-2 px-4 border-b border-[#E8E2DA] mb-3 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
         <div className="flex justify-between items-center mb-2">
           <p className="text-[11px] font-black text-[#B0A495] uppercase tracking-[0.3em]">Breeding Dashboard</p>
-          <div className="flex gap-1 items-center">
-            <button 
-              onClick={handleRegenerateAllNames}
-              className="p-1.5 text-gray-400 hover:text-[#FF9800] transition-colors"
-              title="一括採番"
-            >
-              <Hash size={18} />
-            </button>
-            <button
-              onClick={() => setIsSettingsOpen(true)}
-              className="p-1.5 text-gray-400 hover:text-[#FF9800] transition-colors"
-            >
-              <Settings size={18} />
-            </button>
+          <div className="flex gap-1.5 items-center">
+            <div className="flex bg-[#EFE9E2]/50 rounded-full p-0.5 border border-white/50 shadow-sm">
+              <button 
+                onClick={handleRegenerateAllNames}
+                className="flex items-center gap-1 px-2.5 py-1 text-[8px] font-black text-gray-500 hover:text-[#FF9800] transition-colors"
+                title="規則に従って全個体の名前を付け直します"
+              >
+                <Hash size={10} />
+                <span>一括採番</span>
+              </button>
+              <div className="w-px h-2.5 bg-gray-300/50 self-center" />
+              <button
+                onClick={() => handleBulkCopyToExcel()}
+                className="flex items-center gap-1 px-2.5 py-1 text-[8px] font-black text-gray-500 hover:text-green-600 transition-colors"
+                title="全データをExcelファイルで書き出します"
+              >
+                <FileSpreadsheet size={10} />
+                <span>Excel出力</span>
+              </button>
+            </div>
             <button 
               onClick={() => setShowSort(!showSort)}
               className={`text-[10px] font-black px-3 py-1 rounded-full transition-all ${showSort ? "bg-[#FF9800] text-white shadow-lg shadow-orange-200" : "bg-[#EFE9E2] text-[#8B7D7B]"}`}
@@ -1430,11 +1437,11 @@ export function BeetleManager() {
           <EntryDetail
             entry={entries.find((item) => item.id === selectedEntry.id) ?? selectedEntry}
             onClose={() => setSelectedEntry(null)}
-            onFetchTemperature={fetchCurrentTemperature}
-            isFetchingTemperature={isFetching}
-            onAddSecondSet={() => setIsAddingSecondSet(true)}
-            onDeleteSet={(setId) => handleDeleteSet(selectedEntry.id, setId)}
-            onEditSet={(set) => handleEditSet(selectedEntry.id, set)}
+            onFetchTemperature={fetchCurrentTemperature} // Pass the function
+            isFetchingTemperature={isFetching} // Pass the state
+            onAddSecondSet={() => setIsAddingSecondSet(true)} // Pass the function
+            onDeleteSet={(setId) => handleDeleteSet(selectedEntry.id, setId)} // Pass the function
+            onEditSet={(set) => handleEditSet(selectedEntry.id, set)} // Pass the function
           />
         )}
       </AnimatePresence>

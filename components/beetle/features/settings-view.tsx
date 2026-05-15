@@ -67,6 +67,7 @@ export function SettingsView({
           </h3>
           <div className="bg-white rounded-2xl p-4 border border-gray-100 space-y-4 shadow-sm">
             {(["成虫", "幼虫", "産卵セット"] as EntryType[]).map((type) => (
+              // Added key prop for list rendering
               <div key={type} className="space-y-2">
                 <label className="text-[10px] font-black text-[#A67C52] uppercase tracking-wider block">
                   {type} の命名規則

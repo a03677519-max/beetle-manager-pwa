@@ -12,14 +12,18 @@ import { createId, today } from "@/types/utils";
 
 export function SpawnSetDetail({ 
   entry, 
-  allEntries,
+  allEntries = [],
+  onAddSecondSet,
+  onDeleteSet,
+  onEditSet,
 }: { 
   entry: SpawnSet; 
-  allEntries: BeetleEntry[];
+  allEntries?: BeetleEntry[];
+  onAddSecondSet?: () => void;
+  onDeleteSet?: (setId: string) => void;
+  onEditSet?: (set: any) => void;
 }) {
   const [expandedMemos, setExpandedMemos] = useState<Record<string, boolean>>({});
-  const [isSecondFormOpen, setIsSecondFormOpen] = useState(false);
-  const [editingChildSet, setEditingChildSet] = useState<any>(null); // 産卵セットの2回目以降の編集用
   const updateSpawnSet = useBeetleStore((state) => state.updateSpawnSet);
 
   const toggleMemo = (id: string) => {
@@ -71,90 +75,6 @@ export function SpawnSetDetail({
     { eggs: 0, larvae: 0 }
   );
 
-  const handleAddSecondSet = useCallback(() => {
-    setEditingChildSet(null); // 新規追加なので編集対象はクリア
-    setIsSecondFormOpen(true);
-  }, []);
-
-  const handleEditSet = useCallback((set: any) => {
-    // 1回目のセットを編集する場合
-    if (set.id === "primary") {
-      setEditingChildSet({
-        ...entry, // entryの全プロパティを渡す
-        id: "primary", // IDをprimaryとして識別
-        setDate: entry.setDate,
-        setEndDate: entry.setEndDate,
-        eggCount: entry.eggCount,
-        larvaCount: entry.larvaCount,
-        substrate: entry.substrate,
-        containerSize: entry.containerSize,
-        pressure: entry.pressure,
-        moisture: entry.moisture,
-        temperature: entry.temperature,
-        cohabitation: entry.cohabitation,
-        memo: entry.memo,
-      });
-    } else {
-      setEditingChildSet({ ...set, parentId: entry.id }); // 親IDも渡す
-    }
-    setIsSecondFormOpen(true);
-  }, [entry]);
-
-  const handleDeleteSet = useCallback((setId: string) => {
-    if (!window.confirm("この記録を削除しますか？")) return;
-
-    const s = entry as any;
-    if (setId === "primary") {
-      // 1回目のセット（基本フィールド）をクリア
-      updateSpawnSet(entry.id, {
-        ...s,
-        setDate: "", setEndDate: "", eggCount: 0, larvaCount: 0,
-        substrate: "", containerSize: "", pressure: "", moisture: 3,
-        temperature: "", cohabitation: "なし", memo: "",
-      });
-    } else {
-      // sets配列から削除
-      const updatedSets = (s.sets || []).filter((set: any) => set.id !== setId);
-      updateSpawnSet(entry.id, { ...s, sets: updatedSets });
-    }
-  }, [entry, updateSpawnSet]);
-
-  const handleSecondFormSubmit = useCallback((submittedSet: SpawnSetFormValues) => {
-    let updatedSets;
-    const { parentId, sets, useDifferentMethod, ...cleanSet } = submittedSet as any; // Remove useDifferentMethod as it's a UI flag
-
-    if (cleanSet.id === "primary") {
-      // 1回目のセットの編集の場合、SpawnSetSecondFormから受け取った値を直接entryに適用
-      updateSpawnSet(entry.id, {
-        ...entry,
-        setDate: cleanSet.setDate,
-        setEndDate: cleanSet.setEndDate,
-        eggCount: cleanSet.eggCount,
-        larvaCount: cleanSet.larvaCount,
-        substrate: cleanSet.substrate,
-        containerSize: cleanSet.containerSize,
-        pressure: cleanSet.pressure,
-        moisture: cleanSet.moisture,
-        temperature: cleanSet.temperature,
-        cohabitation: cleanSet.cohabitation,
-        memo: cleanSet.memo,
-      } as any);
-    }
-    else if (editingChildSet && editingChildSet.id) { // Editing an existing child set
-      updatedSets = (entry.sets || []).map((s: any) => s.id === submittedSet.id ? { ...cleanSet, id: s.id } : s);
-    } else { // New addition
-      updatedSets = [...(entry.sets || []), { ...cleanSet, id: createId() }];
-    }
-    
-    // 日付でソート
-    if (cleanSet.id !== "primary") { // primaryセットはソート対象外
-      updatedSets.sort((a: any, b: any) => (a.setDate || "").localeCompare(b.setDate || ""));
-      updateSpawnSet(entry.id, { ...entry, sets: updatedSets } as any);
-    }
-    setIsSecondFormOpen(false);
-    setEditingChildSet(null);
-  }, [entry, editingChildSet, updateSpawnSet]);
-
   return (
     <div className="space-y-4">
       {/* 合計成績のサマリー */}
@@ -172,7 +92,7 @@ export function SpawnSetDetail({
 
       <div className="flex items-center justify-between px-1">
         <h3 className="font-black text-gray-700">産卵セット履歴</h3>
-        <button onClick={handleAddSecondSet} className="relative z-0 bg-[#FF9800] text-white p-1 rounded-full shadow-lg active:scale-95 transition-all">
+        <button onClick={() => onAddSecondSet?.()} className="relative z-0 bg-[#FF9800] text-white p-1 rounded-full shadow-lg active:scale-95 transition-all">
           <Plus size={20} />
         </button>
       </div>

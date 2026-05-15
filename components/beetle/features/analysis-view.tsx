@@ -579,21 +579,9 @@ export function AnalysisView({
             管理名を新規則で一括更新
           </button>
         )}
-        <div className="grid grid-cols-2 gap-3">
-          <button 
-            onClick={handleSync} 
-            disabled={isSyncing}
-            className="col-span-2 flex items-center justify-center gap-2 bg-[#FF9800] text-white py-3 rounded-xl text-xs font-bold shadow-md active:scale-95 transition-all disabled:opacity-50"
-          >
-            <Upload size={14} /> 
-            {isSyncing ? "同期中..." : "GitHubへデータを同期"}
-          </button>
-          <button 
-            onClick={onExcelExportAll} 
-            className="col-span-2 flex items-center justify-center gap-2 bg-green-600 text-white py-3 rounded-xl text-xs font-bold shadow-md active:scale-95 transition-all"
-          >
-            <FileSpreadsheet size={14} /> 全データをエクセル形式で保存
-          </button>
+        <div className="grid grid-cols-2 gap-3"> {/* Keep grid layout */}
+          {/* GitHub Sync button moved to Navbar, Excel Export All button moved to Navbar */}
+          {/* The original request was to move these buttons to the header, which is done in beetle-manager.tsx */}
           <button onClick={handleExport} className="flex items-center justify-center gap-2 bg-white/80 py-3 rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-all"><Download size={14} /> 書き出し</button>
           <label className="flex items-center justify-center gap-2 bg-white/80 py-3 rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-all cursor-pointer"><Upload size={14} /> JSON読込<input type="file" hidden onChange={handleImport} accept=".json" /></label>
           <label className="flex items-center justify-center gap-2 bg-white/80 py-3 rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-all cursor-pointer col-span-2">
