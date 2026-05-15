@@ -157,6 +157,34 @@ export function BeetleManager() {
   const [showSort, setShowSort] = useState(false);
   const [isBulkEditing, setIsBulkEditing] = useState(false);
 
+  // ソート値取得ヘルパー関数 (useMemo/useCallback の外で定義し、依存配列から参照可能にする)
+  const getSortValue = useCallback((e: BeetleEntry, key: string): string | number => {
+    if (key === "date") {
+      if (e.type === "成虫") return (e as any).actualEmergenceDate || (e as any).emergenceDate || e.createdAt || "";
+      if (e.type === "幼虫") return (e as any).hatchDate || (e as any).extractionDate || e.createdAt || "";
+      if (e.type === "産卵セット") return (e as any).setDate || (e as any).createdAt || "";
+      return (e as any).createdAt || "";
+    }
+    if (key === "weight") {
+      if (e.type === "幼虫" && (e as LarvaBeetle).logs?.[0]) return (e as LarvaBeetle).logs[0].weight;
+      if (e.type === "成虫") return parseFloat((e as any).size || "0") || 0;
+      return 0;
+    }
+    if (key === "gender") {
+      const val = e.type === "成虫" ? (e as any).gender : (e.type === "幼虫" ? (e as any).logs?.[0]?.gender : "不明");
+      if (val === "オス" || val === "♂") return "0";
+      if (val === "メス" || val === "♀") return "1";
+      return "2";
+    }
+    if (key === "managementName") return e.managementName || "";
+    if (key === "japaneseName") return e.japaneseName || "";
+    if (key === "scientificName") return e.scientificName || "";
+    if (key === "locality") return e.locality || "";
+    if (key === "type") return e.type || "";
+    return (e as any)[key] || "";
+  }, []);
+
+
   const sortKeys = [
     { id: 'japaneseName', label: '和名' },
     { id: 'scientificName', label: '学名' },
@@ -264,32 +292,6 @@ export function BeetleManager() {
            .includes(normalizedQuery);
        return matchesType && matchesQuery;
      });
-
-     const getSortValue = useCallback((e: BeetleEntry, key: string): string | number => {
-       if (key === "date") {
-         if (e.type === "成虫") return (e as any).actualEmergenceDate || (e as any).emergenceDate || e.createdAt || "";
-         if (e.type === "幼虫") return (e as any).hatchDate || (e as any).extractionDate || e.createdAt || "";
-         if (e.type === "産卵セット") return (e as any).setDate || e.createdAt || "";
-         return (e as any).createdAt || "";
-       }
-       if (key === "weight") {
-         if (e.type === "幼虫" && (e as LarvaBeetle).logs?.[0]) return (e as LarvaBeetle).logs[0].weight;
-         if (e.type === "成虫") return parseFloat((e as any).size || "0") || 0;
-         return 0;
-       }
-       if (key === "gender") {
-         const val = e.type === "成虫" ? (e as any).gender : (e.type === "幼虫" ? (e as any).logs?.[0]?.gender : "不明");
-         if (val === "オス" || val === "♂") return "0";
-         if (val === "メス" || val === "♀") return "1";
-         return "2";
-       }
-       if (key === "managementName") return e.managementName || "";
-       if (key === "japaneseName") return e.japaneseName || "";
-       if (key === "scientificName") return e.scientificName || "";
-       if (key === "locality") return e.locality || "";
-       if (key === "type") return e.type || "";
-       return (e as any)[key] || "";
-     }, []);
 
      return [...list].sort((a, b) => {
        const compare = (key: string, direction: "asc" | "desc") => {
