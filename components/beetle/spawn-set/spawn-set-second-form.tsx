@@ -87,7 +87,7 @@ export function SpawnSetSecondForm({
     <form
       id={formId}
       ref={formRef}
-      className="flex flex-col h-[70dvh] overflow-hidden bg-[#0f0f12]"
+      className="flex flex-col h-[70dvh] overflow-hidden bg-white"
       onKeyDown={(e) => { // テキストエリアでのEnterキーによる改行は許可
         if (e.key === 'Enter' && (e.target as HTMLElement).tagName !== 'TEXTAREA') {
           e.preventDefault(); // それ以外のEnterキーはフォーム送信を防止
@@ -95,26 +95,26 @@ export function SpawnSetSecondForm({
       }}
       onSubmit={(e) => { e.preventDefault(); onSubmit(values); }}
     >
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 text-gray-300">
-        <h3 className="font-black text-purple-400/80 italic tracking-widest">Invoke Secondary Ritual</h3>
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 text-gray-700">
+        <h3 className="font-bold">追加のセット登録</h3>
         <div className="grid grid-cols-2 gap-3">
           <DateRollField label="開始日" value={values.setDate || ""} onChange={(val) => setValues((prev: any) => ({...prev, setDate: val}))} />
           <DateRollField label="割出日" value={values.setEndDate || ""} onChange={(val) => setValues((prev: any) => ({...prev, setEndDate: val}))} />
         </div>
-        <label className="flex items-center gap-2 text-[10px] font-black text-purple-400/60 uppercase tracking-widest cursor-pointer">
+        <label className="flex items-center gap-2 text-xs font-bold text-gray-500 cursor-pointer">
           <input type="checkbox" checked={!!values.setEndDate} onChange={(e) => setValues((prev: any) => ({...prev, setEndDate: e.target.checked ? today() : ""}))} />
-          Seal the ritual (Today)
+          産卵を終了する（本日）
         </label>
         <div className="grid grid-cols-2 gap-3">
           <BottomSheetInput label="卵数" value={values.eggCount ?? ""} onNext={focusNextField} onChange={(val) => setValues((prev: any) => ({...prev, eggCount: parseInt(val) || 0}))} />
           <BottomSheetInput label="幼虫数" value={values.larvaCount ?? ""} onNext={focusNextField} onChange={(val) => setValues((prev: any) => ({...prev, larvaCount: parseInt(val) || 0}))} />
         </div>
-        <label className="flex items-center gap-2 text-[10px] font-black text-purple-400/60 uppercase tracking-widest cursor-pointer">
+        <label className="flex items-center gap-2 text-xs font-bold text-gray-500 cursor-pointer">
           <input type="checkbox" checked={!!values.useDifferentMethod} onChange={(e) => setValues((prev: any) => ({...prev, useDifferentMethod: e.target.checked}))} />
-          Altered Methods
+          前回とセット方法が違う
         </label>
         {values.useDifferentMethod && (
-          <div className="grid grid-cols-2 gap-3 bg-black/40 p-3 rounded-2xl border border-white/5 shadow-inner">
+          <div className="grid grid-cols-2 gap-3 bg-gray-50 p-2 rounded-lg">
             <BottomSheetInput label="マット" value={values.substrate || ""} onNext={focusNextField} onChange={(val) => setValues((prev: any) => ({...prev, substrate: val}))} suggestions={suggestions.container} />
             <BottomSheetInput label="容器" value={values.containerSize || ""} onNext={focusNextField} onChange={(val) => setValues((prev: any) => ({...prev, containerSize: val}))} suggestions={suggestions.container} />
             <BottomSheetInput label="詰圧" value={values.pressure || ""} onNext={focusNextField} onChange={(val) => setValues((prev: any) => ({...prev, pressure: val}))} />
@@ -131,9 +131,9 @@ export function SpawnSetSecondForm({
         />
         <div className="h-20" />
       </div>
-      <div className="p-4 border-t border-purple-900/20 bg-black/60 backdrop-blur-md">
-        <button type="submit" className="w-full py-3 bg-purple-900/40 text-purple-100 rounded-xl font-black border border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.2)] active:scale-95 transition-all uppercase tracking-[0.2em] italic">
-          {initialValues.id ? "Overwrite" : "Invoke"}
+      <div className="p-4 border-t border-gray-100 bg-white">
+        <button type="submit" className="w-full py-3 bg-[#2D5A27] text-white rounded-xl font-black">
+          {initialValues.id ? "保存" : "登録"}
         </button>
       </div>
     </form>

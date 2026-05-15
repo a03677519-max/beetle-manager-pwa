@@ -41,7 +41,7 @@ export function Field({
 }) {
   return (
     <label className="field">
-      <span className="text-[10px] font-black text-purple-400/70 mb-2 block tracking-[0.2em] uppercase ml-1 italic">{label}</span>
+      <span className="text-[11px] font-bold text-[#A67C52] mb-1.5 block tracking-wider uppercase">{label}</span>
       {children}
     </label>
   );
@@ -99,7 +99,7 @@ function DrumrollPicker<T extends string | number>({ options, value, onChange, i
       className="flex-1 h-full overflow-y-scroll snap-y snap-mandatory no-scrollbar py-[36px] overscroll-contain touch-pan-y"
     >
       {options.map((option) => (
-        <div key={option} className="h-7 flex items-center justify-center snap-center text-sm font-black text-purple-100/90">
+        <div key={option} className="h-7 flex items-center justify-center snap-center text-sm font-bold text-gray-700">
           {option}
         </div>
       ))}
@@ -109,13 +109,13 @@ function DrumrollPicker<T extends string | number>({ options, value, onChange, i
 
 function PickerContainer({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative h-[110px] bg-black/40 rounded-[24px] overflow-hidden border border-purple-500/10 shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)] flex">
+    <div className="relative h-[110px] bg-[#F9F7F5] rounded-[24px] overflow-hidden border border-[#E8E2DA] shadow-[inset_0_2px_10px_rgba(0,0,0,0.03)] flex">
       {/* グラデーションオーバーレイ */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#0f0f17] via-transparent to-[#0f0f17] pointer-events-none z-10" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#F9F7F5] via-transparent to-[#F9F7F5] pointer-events-none z-10" />
       
       {/* Center highlight */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-        <div className="w-[94%] h-8 border-y border-purple-500/20 bg-purple-900/10 rounded-xl" />
+        <div className="w-[94%] h-8 border-y border-[#FF9800]/10 bg-white/80 rounded-xl shadow-sm" />
       </div>
       {children}
     </div>
@@ -241,7 +241,7 @@ export function GenerationRollField({
 
   return (
     <div className="field">
-      <span className="text-[10px] font-black text-purple-400/70 mb-1.5 block tracking-[0.2em] uppercase ml-1 italic">累代 {labelSuffix}</span>
+      <span className="text-[11px] font-bold text-[#A67C52] mb-1.5 block tracking-wider uppercase">累代 {labelSuffix}</span>
       <PickerContainer>
         <DrumrollPicker
           options={GENERATION_PRIMARY}
@@ -255,7 +255,7 @@ export function GenerationRollField({
           onChange={(v) => onChange({ ...value, count: v === "-" ? "" : v })}
         />
       </PickerContainer>
-      <p className="field-note text-purple-400/40 text-[9px] mt-1 ml-1 tracking-widest">Signet: {preview}</p>
+      <p className="field-note text-gray-400 text-[9px] mt-1 ml-1">表示: {preview}</p>
     </div>
   );
 }
@@ -292,14 +292,14 @@ export function LevelButtonGroup({
 }) {
   return (
     <div className="field">
-      <span className="text-[10px] font-black text-purple-400/70 mb-1.5 block tracking-[0.2em] uppercase ml-1 italic">{label}</span>
-      <div className="flex bg-white/5 rounded-xl p-1 gap-1 border border-white/5">
+      <span className="text-[11px] font-bold text-[#A67C52] mb-1.5 block uppercase tracking-wider">{label}</span>
+      <div className="flex bg-[#F5F0EB] rounded-xl p-1 gap-1">
         {values.map((option) => (
           <button // Keep button
             key={option}
             type="button"
             style={{ width: `${100 / values.length}%` }}
-            className={`py-1 text-xs font-black rounded-lg transition-all ${option === value ? "bg-purple-600 text-white shadow-[0_0_10px_rgba(168,85,247,0.4)]" : "text-gray-500 hover:text-gray-300"}`}
+            className={`py-1 text-sm font-bold rounded-lg transition-all ${option === value ? "bg-[#FF9800] text-white shadow-sm" : "text-gray-500"}`}
             onClick={() => {
               onChange(option);
               if (onNext) {
@@ -391,7 +391,7 @@ export function BottomSheetSelect({
 
   return (
     <div className="field">
-      <span className="text-[10px] font-black text-purple-400/70 mb-1.5 block tracking-[0.2em] uppercase ml-1 italic">{label}</span>
+      <span className="text-[11px] font-bold text-[#A67C52] mb-1.5 block tracking-wider uppercase">{label}</span>
       <input
         type="text"
         readOnly
@@ -400,10 +400,10 @@ export function BottomSheetSelect({
         value={String(value)}
         autoComplete="off"
         placeholder={placeholder}
-        className={`w-full bg-white/5 border rounded-xl px-3 py-1.5 text-sm text-left text-gray-300 min-h-[34px] transition-all outline-none cursor-pointer ${
+        className={`w-full bg-white border rounded-xl px-3 py-1.5 text-sm text-left text-gray-700 min-h-[34px] transition-all outline-none cursor-pointer ${
           isOpen 
-            ? "border-purple-500/50 ring-4 ring-purple-500/10 shadow-[0_0_15px_rgba(168,85,247,0.2)]" 
-            : "border-white/10 active:bg-white/10"
+            ? "border-[#FF9800] ring-4 ring-[#FF9800]/10 shadow-sm" 
+            : "border-gray-200 active:bg-gray-50"
         }`}
         onFocus={() => setIsOpen(true)}
         onClick={() => {
@@ -431,15 +431,15 @@ export function BottomSheetSelect({
                 animate={{ y: 0 }}
                 exit={{ y: "-100%" }}
                 transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="bg-[#1a1a24]/95 backdrop-blur-2xl w-full max-w-md rounded-b-[40px] p-8 pt-[calc(2rem+env(safe-area-inset-top,0px))] shadow-[0_20px_60px_rgba(0,0,0,0.5)] space-y-6 pointer-events-auto z-10 border-b border-purple-500/10"
+                className="bg-white/95 backdrop-blur-2xl w-full max-w-md rounded-b-[40px] p-8 pt-[calc(2rem+env(safe-area-inset-top,0px))] shadow-[0_20px_60px_rgba(0,0,0,0.15)] space-y-6 pointer-events-auto z-10 border-b border-white"
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex justify-between items-center mb-4">
-                  <span className="text-[10px] font-black text-purple-400 uppercase tracking-[0.2em] italic">{label} Selection</span>
+                  <span className="text-[11px] font-bold text-[#A67C52] uppercase tracking-wider">{label}</span>
                   <div className="flex gap-2">
                     <button
                       type="button"
-                      className="bg-white/5 border border-white/10 text-gray-500 px-4 py-1.5 rounded-full text-[10px] font-black uppercase"
+                      className="bg-gray-100 text-gray-500 px-4 py-1.5 rounded-full text-xs font-bold"
                       onClick={() => setIsOpen(false)}
                     >
                       閉じる
@@ -452,8 +452,8 @@ export function BottomSheetSelect({
                       key={option}
                       ref={value === option ? selectedRef : null}
                       type="button"
-                      className={`w-full text-left px-5 py-4 rounded-[20px] font-black text-sm transition-all border ${ 
-                        value === option ? "bg-purple-600 text-white border-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.3)] scale-[1.02]" : "bg-white/5 text-gray-400 border-white/5 hover:bg-white/10"
+                      className={`w-full text-left px-5 py-4 rounded-[20px] font-black text-sm transition-all ${ 
+                        value === option ? "bg-[#FF9800] text-white shadow-lg shadow-orange-100 scale-[1.02]" : "bg-[#F9F7F5] text-[#716860] hover:bg-[#F0EDE9]"
                       }`}
                       onMouseDown={(e) => e.preventDefault()} // フォーカス移動を防いでキーボードを維持
                       onClick={(e) => {
@@ -582,7 +582,7 @@ export function BottomSheetInput({
 
   return (
     <div className="field">
-      <span className="text-[10px] font-black text-purple-400/70 mb-1.5 block tracking-[0.2em] uppercase ml-1 italic">{label}</span>
+      <span className="text-[11px] font-bold text-[#A67C52] mb-1.5 block tracking-wider uppercase">{label}</span>
       <input
         type="text"
         readOnly
@@ -590,10 +590,10 @@ export function BottomSheetInput({
         inputMode="none"
         value={value}
         placeholder={placeholder}
-        className={`w-full bg-white/5 border rounded-xl px-3 py-1.5 text-sm text-left text-gray-300 min-h-[34px] transition-all outline-none cursor-pointer ${
+        className={`w-full bg-white border rounded-xl px-3 py-1.5 text-sm text-left text-gray-700 min-h-[34px] transition-all outline-none cursor-pointer ${
           isOpen 
-            ? "border-purple-500/50 ring-4 ring-purple-500/10 shadow-[0_0_15px_rgba(168,85,247,0.2)]" 
-            : "border-white/10 active:bg-white/10"
+            ? "border-[#FF9800] ring-4 ring-[#FF9800]/10 shadow-sm" 
+            : "border-gray-200 active:bg-gray-50"
         }`}
         onFocus={() => {
           window.dispatchEvent(new CustomEvent('app:close-bottom-sheets', { detail: { sourceId: internalId } }));
@@ -624,15 +624,15 @@ export function BottomSheetInput({
                 animate={{ y: 0 }}
                 exit={{ y: "-100%" }}
                 transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="bg-[#1a1a24] border-b border-purple-500/10 w-full max-w-md rounded-b-3xl p-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] shadow-[0_20px_60px_rgba(0,0,0,0.6)] space-y-4 pointer-events-auto z-10"
+                className="bg-white w-full max-w-md rounded-b-3xl p-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] shadow-2xl space-y-4 pointer-events-auto z-10"
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-[10px] font-black text-purple-400 uppercase tracking-[0.2em] italic">{label} Entry</span>
+                  <span className="text-[11px] font-bold text-[#A67C52] uppercase tracking-wider">{label}</span>
                   <button
                     id={id ? `${id}-done-button` : undefined} // Add id to done button
                     type="button"
-                    className="bg-purple-600 text-white px-4 py-1.5 rounded-full text-[10px] font-black uppercase shadow-[0_0_15px_rgba(168,85,247,0.3)]"
+                    className="bg-[#FF9800] text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-sm"
                     onClick={() => {
                       setIsOpen(false);
                       // モーダルを閉じた後に必要なら次へ
@@ -654,7 +654,7 @@ export function BottomSheetInput({
                     enterKeyHint={enterKeyHint || "done"}
                     placeholder={placeholder} // Keep placeholder
                     rows={5}
-                    className="w-full bg-black/40 border border-white/10 rounded-2xl px-4 py-3 text-[16px] text-gray-200 focus:bg-black/60 focus:border-purple-500/50 outline-none transition-all shadow-inner"
+                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3 text-[16px] focus:bg-white focus:border-[#FF9800] outline-none transition-all"
                   />
                 ) : (
                   <input
@@ -676,7 +676,7 @@ export function BottomSheetInput({
                     enterKeyHint={enterKeyHint || "next"}
                     inputMode={inputMode}
                     placeholder={placeholder} // Keep placeholder
-                    className="w-full h-12 bg-black/40 border border-white/10 rounded-2xl px-4 py-2 text-[16px] text-gray-200 focus:bg-black/60 focus:border-purple-500/50 outline-none transition-all shadow-inner"
+                    className="w-full h-12 bg-gray-50 border border-gray-100 rounded-2xl px-4 py-2 text-[16px] focus:bg-white focus:border-[#FF9800] outline-none transition-all"
                   />
                 )}
 
@@ -688,7 +688,7 @@ export function BottomSheetInput({
                         <button
                           key={suggestion} // Keep key
                           type="button"
-                          className="px-3 py-1.5 bg-white/5 border border-white/5 rounded-full text-[10px] font-black text-gray-500 active:bg-purple-600 active:text-white transition-all hover:bg-white/10 hover:text-gray-300"
+                          className="px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-full text-xs font-bold text-gray-600 active:bg-[#FF9800] active:text-white transition-all"
                           onMouseDown={(e) => e.preventDefault()} // フォーカス移動を防いでキーボードを維持
                           onClick={() => {
                             onChange(suggestion);

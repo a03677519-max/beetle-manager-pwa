@@ -71,33 +71,33 @@ export function SpawnSetDetail({
   return (
     <div className="space-y-4">
       {/* 合計成績のサマリー */}
-      <div className="bg-red-950/20 border border-red-900/30 rounded-2xl p-4 flex justify-around items-center shadow-[0_0_20px_rgba(153,27,27,0.1)] backdrop-blur-md">
+      <div className="bg-[#FF9800]/5 border border-[#FF9800]/10 rounded-2xl p-4 flex justify-around items-center shadow-sm">
         <div className="text-center">
-          <div className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1 opacity-70">Cursed Eggs</div>
-          <div className="text-2xl font-black text-red-400 drop-shadow-[0_0_8px_rgba(248,113,113,0.4)]">{totals.eggs}<span className="text-xs ml-0.5">個</span></div>
+          <div className="text-[10px] font-black text-[#EF6C00] uppercase tracking-widest mb-1">合計卵数</div>
+          <div className="text-2xl font-black text-[#EF6C00]">{totals.eggs}<span className="text-xs ml-0.5">個</span></div>
         </div>
-        <div className="w-px h-8 bg-red-900/40" />
+        <div className="w-px h-8 bg-[#FF9800]/20" />
         <div className="text-center">
-          <div className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1 opacity-70">Awakened Larvae</div>
-          <div className="text-2xl font-black text-red-400 drop-shadow-[0_0_8px_rgba(248,113,113,0.4)]">{totals.larvae}<span className="text-xs ml-0.5">頭</span></div>
+          <div className="text-[10px] font-black text-[#EF6C00] uppercase tracking-widest mb-1">合計幼虫数</div>
+          <div className="text-2xl font-black text-[#EF6C00]">{totals.larvae}<span className="text-xs ml-0.5">頭</span></div>
         </div>
       </div>
 
       <div className="flex items-center justify-between px-1">
-        <h3 className="font-black text-purple-300/80 tracking-tighter italic">Ritual History...</h3>
-        <button onClick={onAddSecondSet} className="relative z-0 bg-purple-900/60 text-purple-200 p-1 rounded-full shadow-[0_0_15px_rgba(168,85,247,0.3)] border border-purple-500/30 active:scale-95 transition-all">
+        <h3 className="font-black text-gray-700">産卵セット履歴</h3>
+        <button onClick={onAddSecondSet} className="relative z-0 bg-[#FF9800] text-white p-1 rounded-full shadow-lg active:scale-95 transition-all">
           <Plus size={20} />
         </button>
       </div>
       <div className="flex gap-4 overflow-x-auto touch-pan-x pb-2 no-scrollbar">
         {allSets.map((set, index) => (
-          <div key={set.id} className="min-w-[85%] bg-[#121216] p-4 rounded-3xl border border-purple-900/30 shadow-2xl space-y-3">
+          <div key={set.id} className="min-w-[85%] bg-white p-4 rounded-3xl border border-gray-100 shadow-sm space-y-3">
             <div className="flex justify-between items-center">
-              <div className="text-sm font-black text-purple-400/90 italic">{set.title} Night</div>
+              <div className="text-sm font-bold text-gray-700">{set.title}</div>
               <div className="flex gap-2">
               <button
                 onClick={() => onEditSet(set)}
-                className="p-1.5 text-gray-600 hover:text-purple-400 transition-colors"
+                className="p-1.5 text-gray-300 hover:text-blue-500 transition-colors"
               >
                 <Edit2 size={14} />
               </button>
@@ -111,21 +111,21 @@ export function SpawnSetDetail({
             </div>
             <div className="space-y-1">
               <div className="text-xs text-gray-500">セット期間</div>
-              <div className="font-bold text-gray-300">
+              <div className="font-bold text-gray-800">
                 {formatDate(set.setDate)} 〜 {set.setEndDate ? formatDate(set.setEndDate) : "継続中"}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <div className="bg-black/40 p-3 rounded-xl border border-white/5">
+              <div className="bg-gray-50 p-3 rounded-xl">
                 <div className="text-xs text-gray-500">卵数</div>
-                <div className="font-bold text-red-400">{set.eggCount ?? "-"}</div>
+                <div className="font-bold text-gray-800">{set.eggCount ?? "-"}</div>
               </div>
-              <div className="bg-black/40 p-3 rounded-xl border border-white/5">
+              <div className="bg-gray-50 p-3 rounded-xl">
                 <div className="text-xs text-gray-500">幼虫数</div>
-                <div className="font-bold text-purple-400">{set.larvaCount ?? "-"}</div>
+                <div className="font-bold text-gray-800">{set.larvaCount ?? "-"}</div>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2 text-[10px] text-gray-400">
+            <div className="grid grid-cols-2 gap-2 text-xs">
               <div>マット: {set.substrate || "-"}</div>
               <div>容器: {set.containerSize || "-"}</div>
               <div>詰圧: {set.pressure}</div>
@@ -133,20 +133,20 @@ export function SpawnSetDetail({
             </div>
             {set.memo && (
               <div 
-                className="mt-3 bg-purple-950/30 p-3 rounded-2xl border border-purple-800/40 cursor-pointer active:bg-purple-900/40 transition-all shadow-inner"
+                className="mt-3 bg-orange-50 p-3 rounded-2xl border border-orange-200/60 cursor-pointer active:bg-orange-100/50 transition-all shadow-sm shadow-orange-100/10"
                 onClick={() => toggleMemo(set.id)}
               >
-                <div className="flex items-center gap-1.5 text-[10px] font-black text-purple-400 uppercase mb-1.5 tracking-widest">
-                  <MessageSquareText size={11} className="text-purple-500 fill-purple-500/20" /> 
-                  <span className="flex-1">Observed</span>
-                  <div className="w-1.5 h-1.5 bg-purple-500 rounded-full shadow-[0_0_8px_#a855f7]" />
+                <div className="flex items-center gap-1.5 text-[10px] font-black text-[#BF360C] uppercase mb-1.5 tracking-wider">
+                  <MessageSquareText size={11} className="text-[#FF9800] fill-[#FF9800]/20" /> 
+                  <span className="flex-1">セット備考</span>
+                  <div className="w-1.5 h-1.5 bg-[#FF9800] rounded-full shadow-[0_0_4px_rgba(255,152,0,0.5)]" />
                 </div>
-                <div className={`text-xs text-purple-100/70 leading-relaxed whitespace-pre-wrap italic ${!expandedMemos[set.id] ? "line-clamp-2" : ""}`}>
+                <div className={`text-xs text-gray-700 leading-relaxed whitespace-pre-wrap ${!expandedMemos[set.id] ? "line-clamp-2" : ""}`}>
                   {set.memo.split('\n').map((line: string) => line.trim() ? `・${line}` : line).join('\n')}
                 </div>
                 {!expandedMemos[set.id] && set.memo.length > 40 && (
-                  <div className="text-[10px] text-purple-500 font-black mt-1.5 text-right opacity-60">
-                    Read the whispers...
+                  <div className="text-[10px] text-[#FF9800] font-black mt-1.5 text-right opacity-80">
+                    タップで全て表示
                   </div>
                 )}
               </div>
@@ -156,21 +156,21 @@ export function SpawnSetDetail({
       </div>
 
       <div className="grid grid-cols-2 gap-3 touch-pan-y select-none">
-        <div className="bg-black/20 p-4 rounded-2xl border border-white/5">
+        <div className="bg-gray-50 p-4 rounded-2xl">
           <div className="text-xs text-gray-500">累代</div>
-          <div className="font-bold text-gray-400 truncate">{buildGenerationLabel(entry.generation)}</div>
+          <div className="font-bold text-gray-800 truncate">{buildGenerationLabel(entry.generation)}</div>
         </div>
-        <div className="bg-black/20 p-4 rounded-2xl border border-white/5">
+        <div className="bg-gray-50 p-4 rounded-2xl">
           <div className="text-xs text-gray-500">産地</div>
-          <div className="font-bold text-gray-400 truncate">{entry.locality || "-"}</div>
+          <div className="font-bold text-gray-800 truncate">{entry.locality || "-"}</div>
         </div>
-        <div className="bg-black/20 p-4 rounded-2xl border border-white/5">
+        <div className="bg-gray-50 p-4 rounded-2xl">
           <div className="text-xs text-gray-500">温度</div>
-          <div className="font-bold text-gray-400 truncate">{entry.temperature}℃</div>
+          <div className="font-bold text-gray-800 truncate">{entry.temperature}℃</div>
         </div>
-        <div className="bg-black/20 p-4 rounded-2xl border border-white/5">
+        <div className="bg-gray-50 p-4 rounded-2xl">
           <div className="text-xs text-gray-500">同居</div>
-          <div className="font-bold text-gray-400 truncate">{entry.cohabitation}</div>
+          <div className="font-bold text-gray-800 truncate">{entry.cohabitation}</div>
         </div>
       </div>
     </div>

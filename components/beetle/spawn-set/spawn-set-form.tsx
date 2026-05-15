@@ -92,14 +92,14 @@ export function SpawnSetForm({
     <form
       id={formId}
       ref={formRef}
-      className={`flex flex-col h-auto overflow-hidden touch-pan-y bg-[#16161e] ${className || ''}`}
+      className={`flex flex-col h-auto overflow-hidden touch-pan-y ${className || ''}`}
       onSubmit={(event) => {
         event.preventDefault();
         onSubmit(valuesRef.current);
       }}
     >
       <div className="flex-1 overflow-y-auto px-1 space-y-2 mb-2 overscroll-contain">
-        <div className="bg-transparent rounded-2xl p-2 space-y-3">
+        <div className="bg-white rounded-2xl p-2 border border-gray-100 shadow-sm space-y-2">
         <EntryBaseFields
           {...values}
           managementName={values.managementName || ""}

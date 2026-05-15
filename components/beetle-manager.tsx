@@ -997,7 +997,7 @@ export function BeetleManager() {
   };
 
   return (
-    <div className="app-container font-cute bg-[#0f0f17] min-h-screen pb-[calc(120px+env(safe-area-inset-bottom,16px))] leading-[1.7] text-gray-300">
+    <div className="app-container font-cute bg-[#F8F5F2] min-h-screen pb-[calc(120px+env(safe-area-inset-bottom,16px))] leading-[1.7] text-[#3C3631]">
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -1015,14 +1015,14 @@ export function BeetleManager() {
         showAddButton={!isCreating && !editingId && !selectedEntry && !isSettingsOpen}
       />
       {/* 固定ヘッダーセクション */}
-      <section className="sticky top-0 z-30 bg-[#0f0f17]/80 backdrop-blur-xl pt-4 pb-2 px-4 border-b border-purple-500/10 mb-3 shadow-[0_4px_30px_rgba(0,0,0,0.3)]">
+      <section className="sticky top-0 z-30 bg-white/70 backdrop-blur-xl pt-4 pb-2 px-4 border-b border-[#E8E2DA] mb-3 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
         <div className="flex justify-between items-center mb-2">
           <p className="text-[11px] font-black text-[#B0A495] uppercase tracking-[0.3em]">Breeding Dashboard</p>
           <div className="flex gap-1 items-center">
             <button
               onClick={handleGitHubSync}
               disabled={isSyncing}
-              className={`p-1.5 transition-all ${isSyncing ? "text-purple-400 animate-spin" : "text-gray-500 hover:text-purple-400 hover:drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]"}`}
+              className={`p-1.5 transition-all ${isSyncing ? "text-orange-400 animate-spin" : "text-gray-400 hover:text-[#FF9800] transition-colors"}`}
             >
               {isSyncing ? <Loader2 size={18} /> : <FileSpreadsheet size={18} />}
             </button>
@@ -1048,20 +1048,20 @@ export function BeetleManager() {
         </div>
         
         {(isSelectionMode || showSort) && (
-          <div className="bg-white/5 p-3 rounded-[24px] border border-white/5 mb-6 space-y-3 backdrop-blur-md">
+          <div className="bg-gray-50/50 p-3 rounded-[24px] border border-gray-100 mb-6 space-y-3">
             <div className="flex justify-between items-center mb-1">
-              <span className="text-[10px] font-black text-purple-400/50 uppercase tracking-widest">Sort & Selection</span>
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sort & Selection</span>
               {isSelectionMode && (
                 <div className="flex gap-2">
                   <button 
                     onClick={handleSelectAll}
-                    className="px-3 py-1 bg-purple-900/40 border border-purple-500/30 rounded-full text-[10px] font-black text-purple-200 shadow-sm active:scale-95 transition-all"
+                    className="px-3 py-1 bg-white border border-gray-100 rounded-full text-[10px] font-black text-[#FF9800] shadow-sm active:scale-95 transition-all"
                   >
                     すべて選択
                   </button>
                   <button 
                     onClick={handleDeselectAll}
-                    className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[10px] font-black text-gray-500 shadow-sm active:scale-95 transition-all"
+                    className="px-3 py-1 bg-white border border-gray-100 rounded-full text-[10px] font-black text-gray-400 shadow-sm active:scale-95 transition-all"
                   >
                     解除
                   </button>
@@ -1071,42 +1071,42 @@ export function BeetleManager() {
             <div className="space-y-2">
               <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
                 <div className="flex flex-col items-start min-w-[50px]">
-                  <span className="text-[9px] font-black text-purple-400/40 uppercase tracking-widest">Primary</span>
+                  <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Primary</span>
                   <button 
                     onClick={() => setMainSortConfig({ ...mainSortConfig, primary: { ...mainSortConfig.primary, direction: mainSortConfig.primary.direction === "asc" ? "desc" : "asc" } })}
-                    className="text-[8px] font-black text-red-400 flex items-center gap-0.5"
+                    className="text-[8px] font-black text-[#F4511E] flex items-center gap-0.5"
                   >
                     <ArrowUpDown size={8} /> {mainSortConfig.primary.direction === "asc" ? "昇" : "降"}
                   </button>
                 </div>
                 {sortKeys.map(k => (
-                  <button key={`p-${k.id}`} onClick={() => setMainSortConfig({ ...mainSortConfig, primary: { ...mainSortConfig.primary, key: k.id } })} className={`px-3 py-1 rounded-lg text-[10px] font-bold whitespace-nowrap transition-all ${mainSortConfig.primary.key === k.id ? "bg-purple-600 text-white shadow-[0_0_10px_rgba(168,85,247,0.4)]" : "bg-white/5 text-gray-500 border border-white/5"}`}>{k.label}</button>
+                  <button key={`p-${k.id}`} onClick={() => setMainSortConfig({ ...mainSortConfig, primary: { ...mainSortConfig.primary, key: k.id } })} className={`px-3 py-1 rounded-lg text-[10px] font-bold whitespace-nowrap transition-all ${mainSortConfig.primary.key === k.id ? "bg-[#FF9800] text-white shadow-sm" : "bg-white text-gray-400 border border-gray-100"}`}>{k.label}</button>
                 ))}
               </div>
               <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
                 <div className="flex flex-col items-start min-w-[50px]">
-                  <span className="text-[9px] font-black text-purple-400/40 uppercase tracking-widest">Secondary</span>
+                  <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Secondary</span>
                   <button 
                     onClick={() => setMainSortConfig({ ...mainSortConfig, secondary: { ...mainSortConfig.secondary, direction: mainSortConfig.secondary.direction === "asc" ? "desc" : "asc" } })}
-                    className="text-[8px] font-black text-red-400 flex items-center gap-0.5"
+                    className="text-[8px] font-black text-[#F4511E] flex items-center gap-0.5"
                   >
                     <ArrowUpDown size={8} /> {mainSortConfig.secondary.direction === "asc" ? "昇" : "降"}
                   </button>
                 </div>
                 {sortKeys.map(k => (
-                  <button key={`s-${k.id}`} onClick={() => setMainSortConfig({ ...mainSortConfig, secondary: { ...mainSortConfig.secondary, key: k.id } })} className={`px-3 py-1 rounded-lg text-[10px] font-bold whitespace-nowrap transition-all ${mainSortConfig.secondary.key === k.id ? "bg-purple-600 text-white shadow-[0_0_10px_rgba(168,85,247,0.4)]" : "bg-white/5 text-gray-500 border border-white/5"}`}>{k.label}</button>
+                  <button key={`s-${k.id}`} onClick={() => setMainSortConfig({ ...mainSortConfig, secondary: { ...mainSortConfig.secondary, key: k.id } })} className={`px-3 py-1 rounded-lg text-[10px] font-bold whitespace-nowrap transition-all ${mainSortConfig.secondary.key === k.id ? "bg-[#FF9800] text-white shadow-sm" : "bg-white text-gray-400 border border-gray-100"}`}>{k.label}</button>
                 ))}
               </div>
             </div>
             {isSelectionMode && (
-              <div className="flex gap-2 pt-2 border-t border-white/5">
-                <button onClick={handleBulkCopyToExcel} disabled={selectedIds.length === 0} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-green-950/20 text-green-400 border border-green-900/30 rounded-xl text-[11px] font-bold disabled:opacity-30 transition-all active:scale-95">
+              <div className="flex gap-2 pt-2 border-t border-gray-200/50">
+                <button onClick={handleBulkCopyToExcel} disabled={selectedIds.length === 0} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-green-50 text-green-600 rounded-xl text-[11px] font-bold disabled:opacity-30 transition-all active:scale-95">
                   <FileSpreadsheet size={14} /> Excelコピー
                 </button>
-                <button onClick={handleBulkDelete} disabled={selectedIds.length === 0} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-red-950/20 text-red-400 border border-red-900/30 rounded-xl text-[11px] font-bold disabled:opacity-30 transition-all active:scale-95">
+                <button onClick={handleBulkDelete} disabled={selectedIds.length === 0} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-red-50 text-red-500 rounded-xl text-[11px] font-bold disabled:opacity-30 transition-all active:scale-95">
                   <Trash2 size={14} /> 削除 ({selectedIds.length})
                 </button>
-                <button onClick={() => setIsBulkEditing(true)} disabled={selectedIds.length === 0} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-blue-950/20 text-blue-400 border border-blue-900/30 rounded-xl text-[11px] font-bold disabled:opacity-30 transition-all active:scale-95">
+                <button onClick={() => setIsBulkEditing(true)} disabled={selectedIds.length === 0} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-blue-50 text-blue-500 rounded-xl text-[11px] font-bold disabled:opacity-30 transition-all active:scale-95">
                   <Edit size={14} /> 編集 ({selectedIds.length})
                 </button>
               </div>
@@ -1118,35 +1118,35 @@ export function BeetleManager() {
         <div className="grid grid-cols-3 gap-2 mb-3">
           <button 
             onClick={() => { setActiveTab("成虫"); setSelectedType("成虫"); }}
-            className={`p-2 rounded-[18px] border transition-all text-left ${activeTab === "成虫" && selectedType === "成虫" ? "bg-purple-900/40 border-purple-500/50 text-purple-100 shadow-[0_0_20px_rgba(168,85,247,0.2)] scale-[1.02]" : "bg-white/5 border-white/5 text-gray-400 shadow-sm"}`}
+            className={`p-2 rounded-[18px] border transition-all text-left ${activeTab === "成虫" && selectedType === "成虫" ? "bg-[#FF9800] border-[#FF9800] text-white shadow-[0_8px_20px_rgba(255,152,0,0.2)] scale-[1.02]" : "bg-white/60 border-white/80 text-[#4A3F35] shadow-sm"}`}
           >
             <p className="text-[10px] font-black opacity-80 mb-0.5">成虫</p>
             <p className="text-xl font-black leading-none">{stats.adults}<span className="text-xs ml-0.5 font-bold">頭</span></p>
           </button>
           <button 
             onClick={() => { setActiveTab("幼虫"); setSelectedType("幼虫"); }}
-            className={`p-2 rounded-[18px] border transition-all text-left ${activeTab === "幼虫" && selectedType === "幼虫" ? "bg-purple-900/40 border-purple-500/50 text-purple-100 shadow-[0_0_20px_rgba(168,85,247,0.2)] scale-[1.02]" : "bg-white/5 border-white/5 text-gray-400 shadow-sm"}`}
+            className={`p-2 rounded-[18px] border transition-all text-left ${activeTab === "幼虫" && selectedType === "幼虫" ? "bg-[#FF9800] border-[#FF9800] text-white shadow-[0_8px_20px_rgba(255,152,0,0.2)] scale-[1.02]" : "bg-white/60 border-white/80 text-[#4A3F35] shadow-sm"}`}
           >
             <p className="text-[10px] font-black opacity-80 mb-0.5">幼虫</p>
             <p className="text-xl font-black leading-none">{stats.larvae}<span className="text-xs ml-0.5 font-bold">頭</span></p>
           </button>
           <button 
             onClick={() => { setActiveTab("産卵セット"); setSelectedType("産卵セット"); }}
-            className={`p-2 rounded-[18px] border transition-all text-left ${activeTab === "産卵セット" && selectedType === "産卵セット" ? "bg-purple-900/40 border-purple-500/50 text-purple-100 shadow-[0_0_20px_rgba(168,85,247,0.2)] scale-[1.02]" : "bg-white/5 border-white/5 text-gray-400 shadow-sm"}`}
+            className={`p-2 rounded-[18px] border transition-all text-left ${activeTab === "産卵セット" && selectedType === "産卵セット" ? "bg-[#FF9800] border-[#FF9800] text-white shadow-[0_8px_20px_rgba(255,152,0,0.2)] scale-[1.02]" : "bg-white/60 border-white/80 text-[#4A3F35] shadow-sm"}`}
           >
             <p className="text-[10px] font-black opacity-80 mb-0.5">セット</p>
             <p className="text-xl font-black leading-none">{stats.spawnSets}<span className="text-xs ml-0.5 font-bold">件</span></p>
           </button>
         </div>
 
-        <label className="flex items-center bg-white/5 rounded-[16px] px-4 py-2 border border-white/5 focus-within:border-purple-500/30 transition-all mb-3">
-          <Search size={16} className="text-purple-400/40 mr-2" />
+        <label className="flex items-center bg-white/90 rounded-[16px] px-4 py-2 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] border border-white focus-within:border-[#FF9800] transition-all mb-3">
+          <Search size={16} className="text-[#B0A495] mr-2" />
           <input
             type="text"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search from abyss..."
-            className="flex-1 text-sm text-gray-300 outline-none bg-transparent placeholder-gray-600 italic"
+            placeholder="検索..."
+            className="flex-1 text-sm text-[#4A3F35] outline-none bg-transparent placeholder-[#D7CCC8]"
           />
         </label>
 
@@ -1156,25 +1156,25 @@ export function BeetleManager() {
             <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
               <button 
                 onClick={() => setLarvaFilter("active")}
-                className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${larvaFilter === "active" ? "bg-purple-600 text-white shadow-md" : "bg-white/5 text-gray-500 border border-white/5"}`}
+                className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${larvaFilter === "active" ? "bg-[#FF9800] text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}
               >
                 飼育中 ({stats.larvaeActive})
               </button>
               <button 
                 onClick={() => setLarvaFilter("emerged")}
-                className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${larvaFilter === "emerged" ? "bg-purple-900 text-white shadow-md" : "bg-white/5 text-gray-500 border border-white/5"}`}
+                className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${larvaFilter === "emerged" ? "bg-[#795548] text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}
               >
                 羽化済み ({stats.larvaeEmerged})
               </button>
               <button 
                 onClick={() => setLarvaFilter("deceased")}
-                className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${larvaFilter === "deceased" ? "bg-red-900 text-white shadow-md" : "bg-white/5 text-gray-500 border border-white/5"}`}
+                className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${larvaFilter === "deceased" ? "bg-[#F4511E] text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}
               >
                 死亡 ({stats.larvaeDeceased})
               </button>
               <button 
                 onClick={() => setLarvaFilter("sold")}
-                className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${larvaFilter === "sold" ? "bg-blue-900 text-white shadow-md" : "bg-white/5 text-gray-500 border border-white/5"}`}
+                className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${larvaFilter === "sold" ? "bg-blue-500 text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}
               >
                 販売済み ({stats.larvaeSold})
               </button>
@@ -1185,19 +1185,19 @@ export function BeetleManager() {
             <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
               <button 
                 onClick={() => setAdultFilter("active")}
-                className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${adultFilter === "active" ? "bg-purple-600 text-white shadow-md" : "bg-white/5 text-gray-500 border border-white/5"}`}
+                className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${adultFilter === "active" ? "bg-[#FF9800] text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}
               >
                 飼育中 ({stats.adultsActive})
               </button>
               <button 
                 onClick={() => setAdultFilter("deceased")}
-                className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${adultFilter === "deceased" ? "bg-red-900 text-white shadow-md" : "bg-white/5 text-gray-500 border border-white/5"}`}
+                className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${adultFilter === "deceased" ? "bg-[#F4511E] text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}
               >
                 死亡 ({stats.adultsDeceased})
               </button>
               <button 
                 onClick={() => setAdultFilter("sold")}
-                className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${adultFilter === "sold" ? "bg-blue-900 text-white shadow-md" : "bg-white/5 text-gray-500 border border-white/5"}`}
+                className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${adultFilter === "sold" ? "bg-blue-500 text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}
               >
                 販売済み ({stats.adultsSold})
               </button>
@@ -1208,13 +1208,13 @@ export function BeetleManager() {
             <div className="flex gap-2">
               <button 
                 onClick={() => setSpawnSetFilter("active")}
-                className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${spawnSetFilter === "active" ? "bg-purple-600 text-white shadow-md" : "bg-white/5 text-gray-500 border border-white/5"}`}
+                className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${spawnSetFilter === "active" ? "bg-[#FF9800] text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}
               >
                 継続中 ({stats.spawnSetsActive})
               </button>
               <button 
                 onClick={() => setSpawnSetFilter("finished")}
-                className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${spawnSetFilter === "finished" ? "bg-gray-700 text-white shadow-md" : "bg-white/5 text-gray-500 border border-white/5"}`}
+                className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${spawnSetFilter === "finished" ? "bg-gray-500 text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}
               >
                 終了 ({stats.spawnSets - stats.spawnSetsActive})
               </button>
@@ -1248,17 +1248,17 @@ export function BeetleManager() {
               </>
             )}
           </div>
-          <p className="text-[10px] text-gray-500 text-center font-bold italic">Adjust until the soul is captured...</p>
+          <p className="text-[10px] text-gray-500 text-center font-bold">※ 全体が収まるように調整して確定してください</p>
           <div className="flex gap-3">
             <button 
               onClick={() => setIsCropping(false)}
-              className="flex-1 py-3 bg-white/5 border border-white/10 rounded-xl font-bold text-gray-500"
+              className="flex-1 py-3 bg-gray-100 rounded-xl font-bold text-gray-500"
             >
               キャンセル
             </button>
             <button 
               onClick={handleCropComplete}
-              className="flex-[2] py-3 bg-purple-900/40 border border-purple-500/30 text-purple-100 rounded-xl font-bold flex items-center justify-center gap-2"
+              className="flex-[2] py-3 bg-[#FF9800] text-white rounded-xl font-bold flex items-center justify-center gap-2"
             >
               <Check size={18} /> 範囲を確定して解析
             </button>
@@ -1291,22 +1291,22 @@ export function BeetleManager() {
         }}
         title={editingEntry ? "編集" : "新規登録"}
       >
-        <div className="sticky top-0 z-40 bg-[#16161e]/95 backdrop-blur-md -mx-6 px-6 pt-1 pb-1 border-b border-purple-500/10 mb-2">
+        <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md -mx-6 px-6 pt-1 pb-1 border-b border-gray-100 mb-2">
           {/* Row 1: Actions & Auto-fill (縮小版) */}
           <div className="flex items-center justify-between gap-4 mb-1">
             <button 
               onClick={() => { setIsCreating(false); startEditing(null); }}
-              className="text-gray-500 font-bold text-[10px] px-1 hover:text-gray-300 transition-colors whitespace-nowrap"
+              className="text-gray-400 font-bold text-[10px] px-1 hover:bg-gray-50 rounded-lg transition-colors whitespace-nowrap"
             >
               閉じる
             </button>
 
             {!editingEntry && (
               <label className="flex items-center gap-2 cursor-pointer group">
-                <span className={`text-[9px] font-black transition-colors ${isAutoFillEnabled ? 'text-purple-400' : 'text-gray-600'} uppercase tracking-tighter`}>Auto-Fill</span>
+                <span className={`text-[9px] font-black transition-colors ${isAutoFillEnabled ? 'text-[#FF9800]' : 'text-gray-400'} uppercase tracking-tighter`}>自動反映</span>
                 <div 
                   onClick={() => setIsAutoFillEnabled(!isAutoFillEnabled)}
-                  className={`w-6 h-3 rounded-full transition-colors relative border ${isAutoFillEnabled ? 'bg-purple-600 border-purple-500' : 'bg-white/5 border-white/10'}`}
+                  className={`w-6 h-3 rounded-full transition-colors relative border ${isAutoFillEnabled ? 'bg-[#FF9800] border-[#FF9800]' : 'bg-gray-100 border-gray-200'}`}
                 >
                   <div className={`absolute top-0.5 w-1.5 h-1.5 bg-white rounded-full transition-all shadow-sm ${isAutoFillEnabled ? 'left-[0.875rem]' : 'left-0.5'}`} />
                 </div>
@@ -1316,15 +1316,15 @@ export function BeetleManager() {
             <button 
               type="submit" 
               form={editingEntry ? "edit-form" : "create-form"}
-              className="bg-purple-900/40 border border-purple-500/30 text-purple-100 px-4 py-1 rounded-lg font-black text-[10px] shadow-sm hover:brightness-110 active:scale-95 transition-all select-none whitespace-nowrap italic"
+              className="bg-[#2D5A27] text-white px-4 py-1 rounded-lg font-black text-[10px] shadow-sm hover:brightness-110 active:scale-95 transition-all select-none whitespace-nowrap"
             >
-              Overwrite
+              保存
             </button>
           </div>
 
           <div className="flex items-center gap-2">
-            <button onClick={handlePasteAndFill} className="flex items-center gap-1 px-2 py-1 bg-white/5 border border-white/10 rounded-lg shadow-sm text-[9px] font-black text-purple-400 active:scale-95 transition-all"><Clipboard size={10} />貼付</button>
-            <label className={`flex items-center gap-1 px-2 py-1 bg-white/5 border border-white/10 rounded-lg shadow-sm text-[9px] font-black text-purple-400 active:scale-95 transition-all cursor-pointer ${isOcrProcessing ? 'opacity-50 pointer-events-none' : ''}`}>{isOcrProcessing ? <Loader2 size={10} className="animate-spin" /> : <Camera size={10} />}OCR<input type="file" accept="image/*" capture="environment" hidden onChange={handleCameraOCR} disabled={isOcrProcessing} /></label>
+            <button onClick={handlePasteAndFill} className="flex items-center gap-1 px-2 py-1 bg-white border border-gray-200 rounded-lg shadow-sm text-[9px] font-black text-[#FF9800] active:scale-95 transition-all"><Clipboard size={10} />貼付</button>
+            <label className={`flex items-center gap-1 px-2 py-1 bg-white border border-gray-200 rounded-lg shadow-sm text-[9px] font-black text-[#FF9800] active:scale-95 transition-all cursor-pointer ${isOcrProcessing ? 'opacity-50 pointer-events-none' : ''}`}>{isOcrProcessing ? <Loader2 size={10} className="animate-spin" /> : <Camera size={10} />}OCR<input type="file" accept="image/*" capture="environment" hidden onChange={handleCameraOCR} disabled={isOcrProcessing} /></label>
           </div>
           
           {!editingEntry && (
@@ -1332,7 +1332,7 @@ export function BeetleManager() {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              className="p-1 bg-white/5 rounded-lg text-gray-500 active:text-purple-400 active:bg-purple-900/10 transition-all"
+              className="p-1 bg-gray-50 rounded-lg text-gray-400 active:text-[#FF9800] active:bg-[#FF9800]/5 transition-all"
               onClick={() => {
                 const idx = ENTRY_TYPES.indexOf(createType);
                 const prevIdx = (idx - 1 + ENTRY_TYPES.length) % ENTRY_TYPES.length;
@@ -1341,7 +1341,7 @@ export function BeetleManager() {
             >
               <ChevronLeft size={16} />
             </button>
-            <div className="flex-1 flex bg-white/5 shadow-inner rounded-lg p-0.5 gap-0.5 border border-white/5">
+            <div className="flex-1 flex bg-gray-50 shadow-inner rounded-lg p-0.5 gap-0.5">
           {ENTRY_TYPES.map((type) => (
             <button
               key={type}
@@ -1349,7 +1349,7 @@ export function BeetleManager() {
               data-ignore-click-outside="true"
               style={{ width: `${100 / ENTRY_TYPES.length}%` }}
               className={`py-1 text-[11px] font-bold rounded-md transition-all select-none ${
-                createType === type ? "bg-purple-600 text-white shadow-sm" : "text-gray-500"
+                createType === type ? "bg-[#FF9800] text-white shadow-sm" : "text-gray-500"
               }`}
               onClick={() => {
                 setCreateType(type);
@@ -1381,13 +1381,13 @@ export function BeetleManager() {
           {/* 幼虫の場合の日付区分セレクター (固定表示) */}
           {(createType === "幼虫" || editingEntry?.type === "幼虫") && (
             <div className="mt-2 pt-2 border-t border-white/5">
-              <div className="text-[9px] font-black text-purple-400/40 block tracking-widest uppercase mb-1 px-1">Ritual Phase</div>
-              <div className="flex bg-white/5 shadow-inner rounded-xl p-1 gap-1">
+              <div className="text-[9px] font-black text-gray-400 block tracking-widest uppercase mb-1 px-1">日付区分</div>
+              <div className="flex bg-gray-50 shadow-inner rounded-xl p-1 gap-1">
                 {(['hatch', 'set', 'extraction'] as const).map((type) => (
                   <button
                     key={type}
                     type="button"
-                    className={`flex-1 py-1.5 text-[10px] font-black rounded-lg transition-all ${larvaDateType === type ? "bg-purple-900/40 text-purple-100 shadow-sm" : "text-gray-600"}`}
+                    className={`flex-1 py-1.5 text-[10px] font-black rounded-lg transition-all ${larvaDateType === type ? "bg-white shadow-sm text-[#FF9800]" : "text-gray-400"}`}
                     onClick={() => setLarvaDateType(type)}
                   >
                     {type === 'hatch' ? '孵化日' : type === 'set' ? 'セット' : '割出日'}
@@ -1668,16 +1668,16 @@ export function BeetleManager() {
                       >
                         <button 
                           onClick={() => setSelectedSpecies(sciName)}
-                          className="w-full flex items-center justify-between p-4 bg-purple-950/10 rounded-2xl border border-purple-500/10 active:scale-[0.98] transition-all shadow-[0_4px_15px_rgba(0,0,0,0.1)] hover:border-purple-500/30"
+                          className="w-full flex items-center justify-between p-4 bg-white/40 rounded-2xl mb-2 border border-white/60 active:scale-[0.98] transition-all"
                         >
                           <div className="text-left flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className="font-black text-purple-200/90 tracking-tight italic">{japaneseName}</span>
-                              <span className="text-[9px] font-black bg-purple-900/60 text-purple-200 px-2 py-0.5 rounded-full border border-purple-500/30 shadow-[0_0_10px_rgba(168,85,247,0.2)]">{group.length}</span>
+                              <span className="font-black text-[#4A3F35]">{japaneseName}</span>
+                              <span className="text-[10px] font-bold bg-[#FF9800] text-white px-2 py-0.5 rounded-full">{group.length}</span>
                             </div>
-                            <div className="text-[10px] italic text-purple-400/40 truncate tracking-wide">{sciName}</div>
+                            <div className="text-[10px] italic text-gray-400 truncate">{sciName}</div>
                           </div>
-                          <div className="text-purple-500/40">
+                          <div className="text-gray-300">
                             <ChevronRight size={18} />
                           </div>
                         </button>
