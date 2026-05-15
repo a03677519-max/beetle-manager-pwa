@@ -635,14 +635,10 @@ export function BeetleManager() {
     const entry = entries.find(e => e.id === entryId);
     if (!entry || entry.type !== "産卵セット") return;
 
-    // 1回目のセットを編集する場合
-    if (set.id === "primary") {
-      startEditing(entryId); // メインの編集フォームを開く
-    } else {
-      // 2回目以降のセットを編集する場合
-      setEditingChildSet({ ...set, id: set.id, parentId: entryId }); // 明示的にIDを保持
-      setIsAddingSecondSet(true); // 2回目セット用のモーダルを再利用
-    }
+    // 1回目(primary)も2回目以降も、履歴専用フォーム(SpawnSetSecondForm)を開くように統合
+    // これにより、個体情報全体を開かずにセット内容だけを素早く修正可能になります
+    setEditingChildSet({ ...set, id: set.id, parentId: entryId });
+    setIsAddingSecondSet(true);
   };
 
 
@@ -982,7 +978,7 @@ export function BeetleManager() {
         showAddButton={!isCreating && !editingId && !selectedEntry && !isSettingsOpen}
       />
       {/* 固定ヘッダーセクション */}
-      <section className="sticky top-0 z-30 bg-white/70 backdrop-blur-xl pt-6 pb-3 px-6 border-b border-[#E8E2DA] mb-6 shadow-[0_4px_30px_rgba(0,0,0,0.02)]">
+      <section className="sticky top-0 z-30 bg-white/70 backdrop-blur-xl pt-4 pb-2 px-4 border-b border-[#E8E2DA] mb-3 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
         <div className="flex justify-between items-center mb-2">
           <p className="text-[11px] font-black text-[#B0A495] uppercase tracking-[0.3em]">Breeding Dashboard</p>
           <div className="flex gap-1 items-center">
@@ -1075,53 +1071,40 @@ export function BeetleManager() {
         )}
 
         {/* 統計ボタン */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className="grid grid-cols-3 gap-2 mb-3">
           <button 
             onClick={() => { setActiveTab("成虫"); setSelectedType("成虫"); }}
-            className={`p-3 rounded-[24px] border transition-all text-left ${activeTab === "成虫" && selectedType === "成虫" ? "bg-[#FF9800] border-[#FF9800] text-white shadow-[0_10px_25px_rgba(255,152,0,0.3)] scale-[1.02]" : "bg-white/60 border-white/80 text-[#4A3F35] shadow-sm"}`}
+            className={`p-2 rounded-[18px] border transition-all text-left ${activeTab === "成虫" && selectedType === "成虫" ? "bg-[#FF9800] border-[#FF9800] text-white shadow-[0_8px_20px_rgba(255,152,0,0.2)] scale-[1.02]" : "bg-white/60 border-white/80 text-[#4A3F35] shadow-sm"}`}
           >
-            <p className="text-[10px] font-black opacity-80 uppercase mb-1 tracking-tighter">Adults</p>
-            <p className="text-2xl font-black leading-none">{stats.adults}<span className="text-xs ml-1 font-bold">頭</span></p>
+            <p className="text-[10px] font-black opacity-80 mb-0.5">成虫</p>
+            <p className="text-xl font-black leading-none">{stats.adults}<span className="text-xs ml-0.5 font-bold">頭</span></p>
           </button>
           <button 
             onClick={() => { setActiveTab("幼虫"); setSelectedType("幼虫"); }}
-            className={`p-3 rounded-[24px] border transition-all text-left ${activeTab === "幼虫" && selectedType === "幼虫" ? "bg-[#FF9800] border-[#FF9800] text-white shadow-[0_10px_25px_rgba(255,152,0,0.3)] scale-[1.02]" : "bg-white/60 border-white/80 text-[#4A3F35] shadow-sm"}`}
+            className={`p-2 rounded-[18px] border transition-all text-left ${activeTab === "幼虫" && selectedType === "幼虫" ? "bg-[#FF9800] border-[#FF9800] text-white shadow-[0_8px_20px_rgba(255,152,0,0.2)] scale-[1.02]" : "bg-white/60 border-white/80 text-[#4A3F35] shadow-sm"}`}
           >
-            <p className="text-[10px] font-black opacity-80 uppercase mb-1 tracking-tighter">Larvae</p>
-            <p className="text-2xl font-black leading-none">{stats.larvae}<span className="text-xs ml-1 font-bold">頭</span></p>
+            <p className="text-[10px] font-black opacity-80 mb-0.5">幼虫</p>
+            <p className="text-xl font-black leading-none">{stats.larvae}<span className="text-xs ml-0.5 font-bold">頭</span></p>
           </button>
           <button 
             onClick={() => { setActiveTab("産卵セット"); setSelectedType("産卵セット"); }}
-            className={`p-3 rounded-[24px] border transition-all text-left ${activeTab === "産卵セット" && selectedType === "産卵セット" ? "bg-[#FF9800] border-[#FF9800] text-white shadow-[0_10px_25px_rgba(255,152,0,0.3)] scale-[1.02]" : "bg-white/60 border-white/80 text-[#4A3F35] shadow-sm"}`}
+            className={`p-2 rounded-[18px] border transition-all text-left ${activeTab === "産卵セット" && selectedType === "産卵セット" ? "bg-[#FF9800] border-[#FF9800] text-white shadow-[0_8px_20px_rgba(255,152,0,0.2)] scale-[1.02]" : "bg-white/60 border-white/80 text-[#4A3F35] shadow-sm"}`}
           >
-            <p className="text-[10px] font-black opacity-80 uppercase mb-1 tracking-tighter">Spawn</p>
-            <p className="text-2xl font-black leading-none">{stats.spawnSets}<span className="text-xs ml-1 font-bold">件</span></p>
+            <p className="text-[10px] font-black opacity-80 mb-0.5">セット</p>
+            <p className="text-xl font-black leading-none">{stats.spawnSets}<span className="text-xs ml-0.5 font-bold">件</span></p>
           </button>
         </div>
 
-        <label className="flex items-center bg-white/90 rounded-[20px] px-5 py-3 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] border border-white focus-within:border-[#FF9800] transition-all mb-6">
-          <Search size={18} className="text-[#B0A495] mr-3" />
+        <label className="flex items-center bg-white/90 rounded-[16px] px-4 py-2 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] border border-white focus-within:border-[#FF9800] transition-all mb-3">
+          <Search size={16} className="text-[#B0A495] mr-2" />
           <input
             type="text"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search entries..."
-            className="flex-1 text-base text-[#4A3F35] outline-none bg-transparent placeholder-[#D7CCC8]"
+            placeholder="検索..."
+            className="flex-1 text-sm text-[#4A3F35] outline-none bg-transparent placeholder-[#D7CCC8]"
           />
         </label>
-
-        <div className="flex gap-2 overflow-x-auto no-scrollbar">
-          {ENTRY_TYPES.map((type) => (
-            <button
-              key={type}
-              type="button"
-              className={`px-4 py-1.5 rounded-full text-[12px] font-bold transition-all whitespace-nowrap ${selectedType === type ? "bg-[#FF9800] text-white shadow-md" : "bg-white/40 text-[#8B7D7B] border border-white/40"}`}
-              onClick={() => { setActiveTab(type); setSelectedType(type); }}
-            >
-              {type}
-            </button>
-          ))}
-        </div>
 
         {/* 種別ごとのサブフィルター */}
         <div className="mt-4">
@@ -1509,14 +1492,14 @@ export function BeetleManager() {
       </Modal>
 
       <section className="px-6">
-        <AnimatePresence mode="wait">
+        <AnimatePresence>
           {selectedSpecies ? (
             <motion.div
               key="species-view"
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              transition={{ type: "spring", damping: 30, stiffness: 450, mass: 0.8 }}
               className="fixed inset-0 z-80 bg-[#F5F0EB] overflow-y-auto px-6 pt-4 pb-32"
             >
               <div className="flex items-center gap-4 mb-6">
@@ -1594,6 +1577,7 @@ export function BeetleManager() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
             >
               {activeTab !== "分析" && activeTab !== "タスク" && activeTab !== "設定" ? (
                 filteredEntries.length === 0 ? (
@@ -1686,10 +1670,26 @@ export function BeetleManager() {
               if (!entry) return;
 
               let updatedSets;
-              // 保存するデータのクリーンアップ（再帰的なデータ混入を防止）
-              const { parentId, sets, ...cleanSet } = submittedSet as any;
+              const { parentId, sets, useDifferentMethod, ...cleanSet } = submittedSet as any; // Remove useDifferentMethod as it's a UI flag
 
-              if (editingChildSet) {
+              if (cleanSet.id === "primary") {
+                // Update the main SpawnSet entry's fields
+                updateSpawnSet(parentEntryId, {
+                  ...entry, // Keep existing base fields
+                  setDate: cleanSet.setDate,
+                  setEndDate: cleanSet.setEndDate,
+                  eggCount: cleanSet.eggCount,
+                  larvaCount: cleanSet.larvaCount,
+                  substrate: cleanSet.substrate,
+                  containerSize: cleanSet.containerSize,
+                  pressure: cleanSet.pressure,
+                  moisture: cleanSet.moisture,
+                  temperature: cleanSet.temperature,
+                  cohabitation: cleanSet.cohabitation,
+                  memo: cleanSet.memo,
+                } as any);
+              }
+              else if (editingChildSet && editingChildSet.id) { // Editing an existing child set
                 // 編集の場合
                 updatedSets = (entry.sets || []).map((s: any) => 
                   s.id === submittedSet.id ? { ...cleanSet, id: s.id } : s

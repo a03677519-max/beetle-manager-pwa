@@ -418,7 +418,7 @@ export function BottomSheetSelect({
           <Portal>
             <div 
               ref={containerRef}
-              className="fixed inset-0 z-[100] flex items-start justify-center pointer-events-none overscroll-none"
+              className="fixed inset-0 z-[110] flex items-start justify-center pointer-events-none overscroll-none"
             >
               <motion.div
                 initial={{ opacity: 0 }}
@@ -611,7 +611,7 @@ export function BottomSheetInput({
           <Portal>
             <div 
               ref={containerRef}
-              className="fixed inset-0 z-[100] flex items-start justify-center pointer-events-none overscroll-none"
+              className="fixed inset-0 z-[110] flex items-start justify-center pointer-events-none overscroll-none"
             >
               <motion.div
                 initial={{ opacity: 0 }}

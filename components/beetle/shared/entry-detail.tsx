@@ -160,7 +160,7 @@ export function EntryDetail({
         initial={{ y: "100%" }}
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
-        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+        transition={{ type: "spring", damping: 30, stiffness: 450, mass: 0.8 }}
         className="bg-white rounded-t-3xl shadow-2xl h-[90dvh] z-10 w-full max-w-md mx-auto overscroll-contain pointer-events-auto flex flex-col overflow-hidden"
       >
         <div className="flex justify-between items-center p-6 sticky top-0 bg-white/90 backdrop-blur-sm z-10 h-[72px] border-b border-gray-50 shrink-0">
