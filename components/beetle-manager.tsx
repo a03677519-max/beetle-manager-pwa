@@ -997,7 +997,7 @@ export function BeetleManager() {
   };
 
   return (
-    <div className="app-container font-cute bg-[#F8F5F2] min-h-screen pb-[calc(120px+env(safe-area-inset-bottom,16px))] leading-[1.7] text-[#3C3631]">
+    <div className="app-container font-cute bg-[#0a0a0c] min-h-screen pb-[calc(120px+env(safe-area-inset-bottom,16px))] leading-[1.7] text-gray-400">
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -1019,6 +1019,13 @@ export function BeetleManager() {
         <div className="flex justify-between items-center mb-2">
           <p className="text-[11px] font-black text-[#B0A495] uppercase tracking-[0.3em]">Breeding Dashboard</p>
           <div className="flex gap-1 items-center">
+            <button
+              onClick={handleGitHubSync}
+              disabled={isSyncing}
+              className={`p-1.5 transition-all ${isSyncing ? "text-purple-400 animate-spin" : "text-gray-600 hover:text-purple-400 hover:drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]"}`}
+            >
+              {isSyncing ? <Loader2 size={18} /> : <FileSpreadsheet size={18} />}
+            </button>
             <button
               onClick={() => setIsSettingsOpen(true)}
               className="p-1.5 text-gray-400 hover:text-[#FF9800] transition-colors"
