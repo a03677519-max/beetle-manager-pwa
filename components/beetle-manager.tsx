@@ -19,6 +19,7 @@ import type {
   EntryType,
   LarvaBeetle,
   AdultBeetle,
+  SpawnSet,
 } from "@/types/beetle";
 import { ENTRY_TYPES } from "@/types/beetle";
 
