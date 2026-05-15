@@ -128,7 +128,6 @@ export async function importDataFromExcel(file: File): Promise<BeetleEntry[]> {
             emergenceType: (String(entryData["羽化区分"] || "羽化") as AdultBeetle["emergenceType"]),
             feedingDate: parseDateToISO(entryData["後食日"]),
             deathDate: deathDate,
-            soldDate: soldDate,
             gender: (String(entryData["性別"] || "不明") as AdultBeetle["gender"]),
             size: String(parseNumber(entryData["サイズ"]) || ""),
             status: status || "飼育中",
