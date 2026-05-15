@@ -355,6 +355,7 @@ export function LarvaForm({
                               japaneseName: values.japaneseName,
                               scientificName: values.scientificName,
                               locality: values.locality,
+                              // managementName: values.managementName, // This will be handled by promoteLarvaToAdult
                               generation: values.generation,
                               linkedEntryIds: Array.from(new Set([...((adult as AdultBeetle).linkedEntryIds || []), values.id || ""])),
                               emergenceDate: values.actualEmergenceDate || today(),

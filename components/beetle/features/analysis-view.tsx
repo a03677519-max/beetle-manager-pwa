@@ -24,10 +24,12 @@ interface AnalysisViewProps {
   setActiveTab: (tab: string) => void;
   handleExport: () => void;
   handleImport: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  handleExcelImport: (event: React.ChangeEvent<HTMLInputElement>) => void; // New prop for Excel import
   isPersisted: boolean;
   requestPersistence: () => void;
   handleSync: () => void;
   isSyncing?: boolean;
+  onRegenerateNames?: () => void;
   onAddSpawnTemplate?: (template: Partial<SpawnSet>) => void;
 }
 
@@ -95,10 +97,12 @@ export function AnalysisView({
   setActiveTab, 
   handleExport, 
   handleImport, 
+  handleExcelImport, // Destructure new prop
   isPersisted, 
   requestPersistence,
   handleSync,
   isSyncing,
+  onRegenerateNames,
   onAddSpawnTemplate
 }: AnalysisViewProps) {
   const [expandedNames, setExpandedNames] = useState<string[]>([]);
@@ -565,6 +569,14 @@ export function AnalysisView({
           </div>
           {!isPersisted && <button onClick={requestPersistence} className="text-[10px] bg-[#FF9800] text-white px-3 py-1 rounded-full font-bold">有効化</button>}
         </div>
+        {onRegenerateNames && (
+          <button 
+            onClick={onRegenerateNames}
+            className="w-full mb-3 flex items-center justify-center gap-2 bg-gray-100 text-gray-600 py-3 rounded-xl text-xs font-bold active:scale-95 transition-all"
+          >
+            管理名を新規則で一括更新
+          </button>
+        )}
         <div className="grid grid-cols-2 gap-3">
           <button 
             onClick={handleSync} 
@@ -575,7 +587,10 @@ export function AnalysisView({
             {isSyncing ? "同期中..." : "GitHubへデータを同期"}
           </button>
           <button onClick={handleExport} className="flex items-center justify-center gap-2 bg-white/80 py-3 rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-all"><Download size={14} /> 書き出し</button>
-          <label className="flex items-center justify-center gap-2 bg-white/80 py-3 rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-all cursor-pointer"><Upload size={14} /> 読み込み<input type="file" hidden onChange={handleImport} accept=".json" /></label>
+          <label className="flex items-center justify-center gap-2 bg-white/80 py-3 rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-all cursor-pointer"><Upload size={14} /> JSON読込<input type="file" hidden onChange={handleImport} accept=".json" /></label>
+          <label className="flex items-center justify-center gap-2 bg-white/80 py-3 rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-all cursor-pointer col-span-2">
+            <FileSpreadsheet size={14} /> Excel読込<input type="file" hidden onChange={handleExcelImport} accept=".xlsx" />
+          </label>
         </div>
       </section>
     </div>

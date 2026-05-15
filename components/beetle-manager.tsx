@@ -4,9 +4,9 @@ import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { AnimatePresence, motion, Reorder } from "framer-motion";
 import { Search, Clipboard, Camera, Loader2, Crop, Check, X as CloseIcon, Trash2, Edit, CheckSquare, Square, ArrowUpDown, ChevronDown, ChevronUp, Settings, ChevronLeft, ChevronRight, FileSpreadsheet } from "lucide-react";
 import { Navbar } from "@/components/layout/navbar";
-import { Modal } from "./ui/modal";
+import { Modal } from "./ui/modal"; // Ensure Modal is imported
 import { useSwitchBot } from "@/components/use-switchbot";
-import { formatGeneration, today, isSpawnSetFinished, createId } from "@/lib/utils";
+import { formatGeneration, today, isSpawnSetFinished, createId, generateUniqueMName } from "@/lib/utils";
 import { pushDataToGitHub } from "@/lib/github";
 import {
   emptyAdultForm,
@@ -18,6 +18,7 @@ import type {
   BeetleEntry,
   EntryType,
   LarvaBeetle,
+  AdultBeetle,
 } from "@/types/beetle";
 import { ENTRY_TYPES } from "@/types/beetle";
 
@@ -28,6 +29,7 @@ import { SpawnSetSecondForm } from "./beetle/spawn-set/spawn-set-second-form";
 import { EntryCard } from "./beetle/shared/entry-card";
 import { EmptyState } from "./beetle/shared/empty-state";
 import { EntryDetail } from "./beetle/shared/entry-detail";
+import { importDataFromExcel } from "@/lib/excel"; // Import the new Excel import function
 import { AnalysisView } from "./beetle/features/analysis-view";
 import { TaskView } from "./beetle/features/task-view";
 import { SettingsView } from "./beetle/features/settings-view"; // 新設を想定
@@ -50,6 +52,11 @@ export function BeetleManager() {
   const switchBot = useBeetleStore((state) => state.switchBot);
   const gitHub = useBeetleStore((state) => state.gitHub);
   const mainSortConfig = useBeetleStore((state) => state.mainSortConfig);
+  const managementNameFormats = useBeetleStore((state) => state.managementNameFormats);
+  const backupEntries = useBeetleStore((state) => state.backupEntries);
+  const createBackup = useBeetleStore((state) => state.createBackup);
+  const restoreBackup = useBeetleStore((state) => state.restoreBackup);
+  const clearBackup = useBeetleStore((state) => state.clearBackup);
   const setMainSortConfig = useBeetleStore((state) => state.setMainSortConfig);
   const { fetchTemperature, isFetching } = useSwitchBot();
 
@@ -203,52 +210,6 @@ export function BeetleManager() {
   }, [selectedIds, entries]);
 
   const bulkFormId = "bulk-edit-form";
-  const generateUniqueMName = (base: string, sciName: string, currentEntries: BeetleEntry[], type: EntryType) => {
-    const trimmedBase = base.trim();
-    const namePart = trimmedBase || "個体";
-    
-    // 末尾の数値部分とその前のテキストを分離（ハイフンはあってもなくても良い）
-    const match = namePart.match(/^(.*?)(\d+)$/);
-    let prefix: string;
-    let startNum: number;
-
-    if (match) {
-      prefix = match[1];
-      // プレフィックスがハイフンで終わっていない場合はハイフンを付与
-      if (prefix && !prefix.endsWith("-")) {
-        prefix += "-";
-      }
-      startNum = Math.max(1, parseInt(match[2], 10));
-    } else {
-      prefix = namePart.endsWith("-") ? namePart : `${namePart}-`;
-      startNum = 1;
-    }
-
-    // 指定したプレフィックスに合致する既存の数値を集計
-    const existingNumbers = currentEntries
-      .filter(e => e.scientificName === sciName && e.type === type)
-      .map(e => e.managementName || "")
-      .filter(name => name.startsWith(prefix))
-      .map(name => {
-        const suffix = name.slice(prefix.length);
-        return /^\d+$/.test(suffix) ? parseInt(suffix, 10) : null;
-      })
-      .filter((n): n is number => n !== null);
-
-    // startNum 以折で未使用の最小番号を探す
-    let nextNumber = startNum;
-    const sortedExisting = [...new Set(existingNumbers.filter(n => n >= startNum))].sort((a: number, b: number) => a - b);
-    for (const n of sortedExisting) {
-      if (n === nextNumber) {
-        nextNumber++;
-      } else if (n > nextNumber) {
-        break;
-      }
-    }
-
-    // 2桁でパディング
-    return `${prefix}${String(nextNumber).padStart(2, "0")}`;
-  };
 
   const filteredEntries = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -358,113 +319,197 @@ export function BeetleManager() {
     );
   };
 
-  const handleBulkCopyToExcel = () => {
+  const handleBulkCopyToExcel = async () => {
     if (selectedIds.length === 0) return;
-    
-    // 現在の並び順を維持した状態で選択個体を抽出
+
+    setIsSyncing(true); // 処理中インジケータとして利用
     const sortedSelectedEntries = filteredEntries.filter(e => selectedIds.includes(e.id));
-    const fmtDate = (d: string) => (d || "").replace(/-/g, "/");
-    
-    // 全選択個体の中で最大のログ数を確認
-    const maxLogsCount = Math.max(...sortedSelectedEntries.map(e => (e as any).logs?.length || 0));
-    // 2回目セットが存在するか確認
-    const hasAnySecondSet = sortedSelectedEntries.some(e => (e as any).secondSetDate);
 
-    const headers = ["管理名", "和名", "学名", "累代", "種別", "孵化/開始日", "羽化日", "掘出日", "計測値", "温度", "水分", "詰圧", "容器サイズ", "メモ"];
+    try {
+      const ExcelJS = (await import("exceljs")).default;
+      const workbook = new ExcelJS.Workbook();
 
-    // ログ用のヘッダーを履歴数に合わせて動的に生成
-    for (let i = 0; i < maxLogsCount; i++) {
-      const num = i + 1;
-      headers.push(`履歴${num}_日付`, `履歴${num}_体重`, `履歴${num}_ステージ`, `履歴${num}_マット`, `履歴${num}_ボトル`, `履歴${num}_温度`, `履歴${num}_水分`, `履歴${num}_詰圧`);
-    }
+      // IDからエクセル内のセル番地を引くためのマップ
+      const entryCellMap = new Map<string, { sheetName: string; row: number }>();
 
-    if (hasAnySecondSet) {
-      headers.push("セット2_開始日", "セット2_割出日", "セット2_卵数", "セット2_幼虫数", "セット2_マット", "セット2_容器", "セット2_詰圧", "セット2_水分");
-    }
+      const getStatusText = (e: any) => {
+        if (e.deathDate && e.deathDate !== "-") return "死亡";
+        if ((e.soldDate && e.soldDate !== "-") || e.status === "販売済み") return "販売済み";
+        if (e.type === "成虫") return e.status || "飼育中";
+        if (e.type === "幼虫") return e.actualEmergenceDate ? "羽化済み" : "飼育中";
+        if (e.type === "産卵セット") return isSpawnSetFinished(e) ? "終了" : "継続中";
+        return "-";
+      };
 
-    const rows = sortedSelectedEntries.map(e => {
-      const entry = e as any;
-      const hatchOrSetDate = entry.hatchDate || entry.setDate || "";
-      const emergenceDate = (entry.emergenceType === "羽化") ? (entry.actualEmergenceDate || entry.emergenceDate || "") : "";
-      const extractionDate = entry.extractionDate || (entry.emergenceType === "掘り出し" ? (entry.actualEmergenceDate || entry.emergenceDate || "") : "");
+      // 1. 学名ごとにグループ化
+      const groups = sortedSelectedEntries.reduce((acc, e) => {
+        const key = e.scientificName || "Unknown";
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(e);
+        return acc;
+      }, {} as Record<string, BeetleEntry[]>);
 
-      let measurement = "";
-      if (entry.type === "幼虫" && entry.logs && entry.logs.length > 0) {
-        measurement = `${entry.logs[0].weight}g`;
-      } else if (entry.type === "成虫") {
-        measurement = entry.size ? `${entry.size}mm` : "";
-      }
+      // 2. 各学名のシートを作成
+      for (const [sciName, speciesEntries] of Object.entries(groups)) {
+        const sheetName = sciName.replace(/[\\/*?[\]]/g, "").slice(0, 31);
+        const sheet = workbook.addWorksheet(sheetName);
+        let currentRow = 1;
 
-      const rowData = [
-        entry.managementName || "",
-        entry.japaneseName,
-        entry.scientificName,
-        formatGeneration(entry.generation),
-        entry.type,
-        fmtDate(hatchOrSetDate),
-        fmtDate(emergenceDate),
-        fmtDate(extractionDate),
-        measurement,
-        entry.temperature || "",
-        entry.moisture || "",
-        entry.pressure || "",
-        entry.containerSize || "",
-        (entry.memo || "").replace(/\n/g, " ")
-      ];
+        // 成虫・幼虫・産卵セットの順に出力
+        const types: EntryType[] = ["成虫", "幼虫", "産卵セット"];
+        for (const type of types) {
+          const typeEntries = speciesEntries.filter(e => e.type === type);
+          if (typeEntries.length === 0) continue;
 
-      // ログデータ（古い順）を追加
-      const logs = [...(entry.logs || [])].reverse();
-      for (let i = 0; i < maxLogsCount; i++) {
-        if (logs[i]) {
-          rowData.push(
-            fmtDate(logs[i].date),
-            logs[i].weight ? `${logs[i].weight}g` : "",
-            logs[i].stage || "",
-            logs[i].substrate || "",
-            logs[i].bottleSize || "",
-            logs[i].temperature || "",
-            logs[i].moisture || "",
-            logs[i].pressure || ""
-          );
-        } else {
-          // 履歴がない列は空欄にする
-          rowData.push("", "", "", "", "", "", "", "");
+          // セクション見出し
+          const titleRow = sheet.getRow(currentRow++);
+          titleRow.getCell(1).value = `■ ${type}一覧`;
+          titleRow.getCell(1).font = { bold: true, size: 12, color: { argb: "FF795548" } };
+
+          // ヘッダー構成
+          let columns: { header: string; key: string; width: number }[] = [];
+          if (type === "成虫") {
+            columns = [
+              { header: "状態", key: "status", width: 10 },
+              { header: "管理名", key: "mName", width: 18 },
+              { header: "和名", key: "jName", width: 18 },
+              { header: "累代", key: "gen", width: 10 },
+              { header: "性別", key: "gender", width: 8 },
+              { header: "サイズ", key: "size", width: 10 },
+              { header: "羽化日", key: "eDate", width: 14 },
+              { header: "リンク", key: "link", width: 20 },
+              { header: "メモ", key: "memo", width: 30 },
+            ];
+          } else if (type === "幼虫") {
+            columns = [
+              { header: "状態", key: "status", width: 10 },
+              { header: "管理名", key: "mName", width: 18 },
+              { header: "和名", key: "jName", width: 18 },
+              { header: "累代", key: "gen", width: 10 },
+              { header: "最新体重", key: "weight", width: 10 },
+              { header: "孵化/割出日", key: "hDate", width: 14 },
+              { header: "リンク", key: "link", width: 20 },
+              { header: "メモ", key: "memo", width: 30 },
+            ];
+          } else {
+            columns = [
+              { header: "状態", key: "status", width: 10 },
+              { header: "管理名", key: "mName", width: 18 },
+              { header: "和名", key: "jName", width: 18 },
+              { header: "累代", key: "gen", width: 10 },
+              { header: "開始日", key: "sDate", width: 14 },
+              { header: "終了日", key: "seDate", width: 14 },
+              { header: "合計回収", key: "total", width: 10 },
+              { header: "リンク", key: "link", width: 20 },
+              { header: "メモ", key: "memo", width: 30 },
+            ];
+          }
+
+          const headerRow = sheet.getRow(currentRow++);
+          columns.forEach((col, i) => {
+            const cell = headerRow.getCell(i + 1);
+            cell.value = col.header;
+            cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF9F7F5" } };
+            cell.font = { bold: true };
+            cell.border = { bottom: { style: "thin" } };
+            sheet.getColumn(i + 1).width = col.width;
+          });
+
+          // データ行
+          for (const entry of typeEntries) {
+            const dataRow = sheet.getRow(currentRow);
+            const e = entry as any;
+            const status = getStatusText(e);
+
+            entryCellMap.set(entry.id, { sheetName, row: currentRow });
+
+            const rowValues: any = { status };
+            rowValues.mName = e.managementName || "-";
+            rowValues.jName = e.japaneseName;
+            rowValues.gen = formatGeneration(e.generation);
+            rowValues.memo = e.memo || "";
+
+            if (type === "成虫") {
+              rowValues.gender = e.gender;
+              rowValues.size = e.size ? `${e.size}mm` : "-";
+              rowValues.eDate = formatDate(e.emergenceDate);
+            } else if (type === "幼虫") {
+              rowValues.weight = e.logs?.[0]?.weight ? `${e.logs[0].weight}g` : "-";
+              rowValues.hDate = formatDate(e.hatchDate || e.extractionDate);
+            } else {
+              rowValues.sDate = formatDate(e.setDate);
+              rowValues.seDate = formatDate(e.setEndDate);
+              rowValues.total = (e.eggCount || 0) + (e.larvaCount || 0);
+            }
+
+            columns.forEach((col, i) => {
+              const cell = dataRow.getCell(i + 1);
+              if (col.key !== "link") {
+                cell.value = rowValues[col.key];
+                if (col.key === "status") {
+                  const color = status === "死亡" ? "FFFFEBEE" : status === "販売済み" ? "FFE3F2FD" : "FFF1F8E9";
+                  cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: color.slice(2) } };
+                }
+                if (col.key === "memo") {
+                  cell.alignment = { wrapText: true };
+                }
+              }
+              cell.border = { bottom: { style: "hair" } };
+            });
+            currentRow++;
+          }
+          currentRow += 2; // セクション間余白
         }
       }
 
-      // 産卵セットの2回目データ追加
-      if (hasAnySecondSet) {
-        if (entry.type === "産卵セット" && entry.secondSetDate) {
-          rowData.push(
-            fmtDate(entry.secondSetDate),
-            fmtDate(entry.secondSetEndDate),
-            entry.secondEggCount ?? "",
-            entry.secondLarvaCount ?? "",
-            entry.secondSubstrate || entry.substrate || "",
-            entry.secondContainerSize || entry.containerSize || "",
-            entry.secondPressure || entry.pressure || "",
-            entry.secondMoisture ?? entry.moisture ?? ""
-          );
-        } else {
-          rowData.push("", "", "", "", "", "", "", "");
+      // 3. ハイパーリンク（紐付け）の設定
+      for (const entry of sortedSelectedEntries) {
+        if (!entry.linkedEntryIds?.length) continue;
+        const pos = entryCellMap.get(entry.id);
+        if (!pos) continue;
+
+        const sheet = workbook.getWorksheet(pos.sheetName);
+        const linkCellIdx = entry.type === "成虫" ? 8 : entry.type === "幼虫" ? 7 : 8;
+        const cell = sheet.getRow(pos.row).getCell(linkCellIdx);
+
+        for (const targetId of entry.linkedEntryIds) {
+          const targetPos = entryCellMap.get(targetId);
+          if (targetPos) {
+            const target = entries.find(i => i.id === targetId);
+            cell.value = {
+              text: `紐付: ${target?.managementName || "詳細"}`,
+              hyperlink: `#\'${targetPos.sheetName}\'!A${targetPos.row}`,
+              tooltip: "リンク先へ移動"
+            };
+            cell.font = { color: { argb: "FF2196F3" }, underline: true };
+            break;
+          }
         }
       }
 
-      return rowData.join("\t");
-    });
+      // 4. ダウンロード実行
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `beetle_manager_${today().replace(/-/g, "")}.xlsx`;
+      a.click();
+      window.URL.revokeObjectURL(url);
 
-    const text = headers.join("\t") + "\n" + rows.join("\n");
-    
-    navigator.clipboard.writeText(text).then(() => {
-      window.alert(`${selectedIds.length}件のデータをExcel形式でコピーしました`);
-    }).catch(() => {
-      window.alert("コピーに失敗しました");
-    });
+      window.alert(`${sortedSelectedEntries.length}件のデータを保存しました。`);
+    } catch (error) {
+      console.error(error);
+      window.alert("エクセルファイルの生成に失敗しました。");
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   const handleBulkDelete = () => {
     if (selectedIds.length === 0) return;
     if (window.confirm(`${selectedIds.length}件のデータを一括削除しますか？`)) {
+      createBackup();
       selectedIds.forEach(id => deleteEntry(id));
       setSelectedIds([]);
       setIsSelectionMode(false);
@@ -472,6 +517,7 @@ export function BeetleManager() {
   };
 
   const handleBulkEditSubmit = (values: any) => {
+    createBackup();
     // 変更された項目のみを一括適用
     selectedIds.forEach(id => {
       const entry = entries.find(e => e.id === id);
@@ -625,7 +671,17 @@ export function BeetleManager() {
     const confirm = window.confirm(`${entry.japaneseName}を成虫として登録し、幼虫データを移行しますか？`);
     if (!confirm) return;
 
-    const mName = generateUniqueMName(entry.managementName || "", entry.scientificName, entries, "成虫");
+    // 幼虫の管理名を適用。重複していれば日付ベースで新採番
+    const emergenceDate = entry.actualEmergenceDate || today();
+    const mName = generateUniqueMName(
+      emergenceDate, 
+      entry.scientificName, 
+      entries, 
+      "成虫", 
+      managementNameFormats["成虫"],
+      entry.managementName
+    );
+
     addAdult({
       type: "成虫",
       managementName: mName,
@@ -635,8 +691,8 @@ export function BeetleManager() {
       locality: entry.locality,
       generation: entry.generation,
       linkedEntryIds: entry.linkedEntryIds,
-      photos: entry.photos, // 写真を引き継ぐ
-      emergenceDate: entry.actualEmergenceDate || today(),
+      photos: entry.photos,
+      emergenceDate: emergenceDate,
       emergenceType: entry.emergenceType || "羽化",
       feedingDate: "",
       deathDate: "",
@@ -694,6 +750,67 @@ export function BeetleManager() {
     } catch {
       window.alert("バックアップファイルを読み込めませんでした。");
     } finally {
+      event.target.value = "";
+    }
+  };
+
+  const handleExcelImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsSyncing(true);
+      const importedEntries = await importDataFromExcel(file);
+      if (importedEntries.length === 0) {
+        window.alert("読み込めるデータが見つかりませんでした。");
+        return;
+      }
+
+      let finalEntries: BeetleEntry[] = [];
+
+      // 1. 既存データがある場合の処理モード選択
+      const isMerge = entries.length > 0 && window.confirm(
+        "既存のデータに『追加・統合』しますか？\n\n「キャンセル」を押すと既存データをすべて削除して『入れ替え』ます。"
+      );
+
+      if (!isMerge) {
+        // 入れ替えモード
+        finalEntries = importedEntries;
+      } else {
+        // 追加・統合モード: 重複チェック (管理名 + 学名)
+        const duplicates = importedEntries.filter(imp => 
+          entries.some(ext => ext.managementName === imp.managementName && ext.scientificName === imp.scientificName)
+        );
+
+        if (duplicates.length > 0) {
+          const overwrite = window.confirm(
+            `${duplicates.length}件の重複する管理名が見つかりました。\n\n` +
+            `・「OK」を選択：重複した個体を【上書き】してインポートします。\n` +
+            `・「キャンセル」を選択：重複した個体は【スキップ】して新規個体のみインポートします。`
+          );
+
+          if (overwrite) {
+            // 上書き：既存データから重複分を除去し、インポートデータを結合
+            const impKeys = new Set(importedEntries.map(e => `${e.managementName}-${e.scientificName}`));
+            const nonDuplicates = entries.filter(e => !impKeys.has(`${e.managementName}-${e.scientificName}`));
+            finalEntries = [...nonDuplicates, ...importedEntries];
+          } else {
+            // スキップ：インポートデータから重複分を除去し、既存データに結合
+            const extKeys = new Set(entries.map(e => `${e.managementName}-${e.scientificName}`));
+            const onlyNew = importedEntries.filter(e => !extKeys.has(`${e.managementName}-${e.scientificName}`));
+            finalEntries = [...entries, ...onlyNew];
+          }
+        } else {
+          finalEntries = [...entries, ...importedEntries];
+        }
+      }
+
+      importData(finalEntries);
+      window.alert(`インポートが完了しました。`);
+    } catch (error) {
+      window.alert(`Excelファイルの読み込みに失敗しました: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setIsSyncing(false);
       event.target.value = "";
     }
   };
@@ -1403,7 +1520,7 @@ export function BeetleManager() {
             id="create-form"
             initialValues={pastedData && pastedData.type === "成虫" ? { ...emptyAdultForm, ...pastedData } : getInitialValues("成虫", emptyAdultForm)}
             onSubmit={(value) => {
-              const mName = generateUniqueMName(value.managementName || "", value.scientificName, entries, "成虫");
+              const mName = generateUniqueMName(value.emergenceDate || today(), value.scientificName, entries, "成虫", managementNameFormats["成虫"]);
               addAdult({ ...value, managementName: mName });
               setIsCreating(false);
             }}
@@ -1421,7 +1538,8 @@ export function BeetleManager() {
             onSubmit={(values, count) => {
               let currentEntries = [...entries];
               for (let index = 0; index < count; index += 1) {
-                const mName = generateUniqueMName(values.managementName || "", values.scientificName, currentEntries, "幼虫");
+                const targetDate = values.extractionDate && values.extractionDate !== "-" ? values.extractionDate : (values.hatchDate || today());
+                const mName = generateUniqueMName(targetDate, values.scientificName, currentEntries, "幼虫", managementNameFormats["幼虫"]);
                 // IDや作成日などのメタデータを除去して新規登録
                 const { id, createdAt, ...cleanValues } = values as any;
                 addLarva({ ...cleanValues, managementName: mName });
@@ -1439,7 +1557,7 @@ export function BeetleManager() {
             initialValues={pastedData && pastedData.type === "産卵セット" ? { ...emptySpawnSetForm, ...pastedData } : (spawnTemplate ? { ...emptySpawnSetForm, ...spawnTemplate } : getInitialValues("産卵セット", emptySpawnSetForm))}
             allEntries={entries}
             onSubmit={(value) => {
-              const mName = generateUniqueMName(value.managementName || "", value.scientificName, entries, "産卵セット");
+              const mName = generateUniqueMName(value.setDate || today(), value.scientificName, entries, "産卵セット", managementNameFormats["産卵セット"]);
               addSpawnSet({ ...value, managementName: mName });
               setIsCreating(false);
             }}
@@ -1469,11 +1587,12 @@ export function BeetleManager() {
             allEntries={entries}
             onSubmit={(value, count) => {
               updateLarva(editingEntry.id, value);
-              // 追加分がある場合
               if (count > 1) {
                 let currentEntries = [...entries];
                 for (let i = 1; i < count; i++) {
-                  const mName = generateUniqueMName(value.managementName || "", value.scientificName, currentEntries, "幼虫");
+                  const targetDate = value.extractionDate && value.extractionDate !== "-" ? value.extractionDate : (value.hatchDate || today());
+                  const mName = generateUniqueMName(targetDate, value.scientificName, currentEntries, "幼虫", managementNameFormats["幼虫"]);
+                  
                   const { id, photos, createdAt, ...rest } = value;
                   addLarva({ ...rest as any, managementName: mName, photos: [] });
                   currentEntries.push({ managementName: mName, scientificName: value.scientificName, type: "幼虫" } as any);
@@ -1692,11 +1811,41 @@ export function BeetleManager() {
                   setSelectedType={setSelectedType}
                   setActiveTab={setActiveTab}
                   handleExport={handleExport}
+                  handleExcelImport={handleExcelImport} // Pass the new handler
                   handleImport={handleImport}
                   isPersisted={isPersisted}
                   requestPersistence={requestPersistence}
                   handleSync={handleGitHubSync}
                   isSyncing={isSyncing}
+                  onRegenerateNames={() => {
+                    if (!window.confirm("全個体の管理名を新規則（日付_連番）で一括更新します。よろしいですか？")) return;
+                    
+                    const newEntries = [...entries].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+                    const processed: BeetleEntry[] = [];
+                    
+                    newEntries.forEach(entry => {
+                      let date = "";
+                      if (entry.type === "成虫") {
+                        date = entry.actualEmergenceDate || entry.emergenceDate || entry.createdAt;
+                      } else if (entry.type === "幼虫") {
+                        date = entry.extractionDate && entry.extractionDate !== "-" ? entry.extractionDate : (entry.hatchDate || entry.createdAt);
+                      } else if (entry.type === "産卵セット") {
+                        date = entry.setDate || entry.createdAt;
+                      }
+                      
+                      const newName = generateUniqueMName(
+                        date, 
+                        entry.scientificName, 
+                        processed, 
+                        entry.type,
+                        managementNameFormats[entry.type]
+                      );
+                      processed.push({ ...entry, managementName: newName });
+                    });
+                    
+                    importData(processed);
+                    window.alert("管理名の一括更新が完了しました。");
+                  }}
                   onAddSpawnTemplate={(template) => {
                     setSpawnTemplate(template);
                     setCreateType("産卵セット");
@@ -1786,6 +1935,15 @@ export function BeetleManager() {
           />
         )}
       </Modal>
+      {isSettingsOpen && (
+        <SettingsView
+          onClose={() => setIsSettingsOpen(false)}
+          sortKeys={sortKeys}
+        />
+      )}
+    </div>
+  );
+}
       {isSettingsOpen && (
         <SettingsView
           onClose={() => setIsSettingsOpen(false)}

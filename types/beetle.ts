@@ -19,6 +19,8 @@ export type Gender = (typeof GENDERS)[number];
 export type EmergenceType = (typeof EMERGENCE_TYPES)[number];
 export type CohabitationOption = (typeof COHABITATION_OPTIONS)[number];
 export type LogStage = (typeof LOG_STAGES)[number];
+export type ManagementNameFormat = "YYYYMMDD_NN" | "YYMMDD-NN" | "YYYYMMDD-SCI-NN";
+export type ManagementNameFormatMap = Record<EntryType, ManagementNameFormat>;
 
 export type GenerationValue = {
   primary: (typeof GENERATION_PRIMARY)[number];

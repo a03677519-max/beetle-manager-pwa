@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
-import { createId, today } from "@/lib/utils";
+import { createId, today, generateUniqueMName } from "@/lib/utils";
 import type {
   AdultFormValues,
   AdultBeetle,
@@ -13,6 +13,8 @@ import type {
   LarvaFormValues,
   LarvaBeetle,
   LarvaLog,
+  ManagementNameFormat,
+  ManagementNameFormatMap,
   SpawnSetFormValues,
   SwitchBotSettings,
   GitHubSettings,
@@ -32,7 +34,13 @@ type BeetleState = {
   switchBot: SwitchBotSettings;
   gitHub: GitHubSettings;
   mainSortConfig: SortConfig;
+  managementNameFormats: ManagementNameFormatMap;
+  setManagementNameFormat: (type: EntryType, format: ManagementNameFormat) => void;
   setMainSortConfig: (config: SortConfig) => void;
+  backupEntries: BeetleEntry[] | null;
+  createBackup: () => void;
+  restoreBackup: () => void;
+  clearBackup: () => void;
   setSelectedType: (stage: EntryType | "すべて") => void;
   startEditing: (id: string | null) => void;
   updateSwitchBot: (input: Partial<SwitchBotSettings>) => void;
@@ -124,9 +132,27 @@ export const useBeetleStore = create<BeetleState>()(
         primary: { key: "japaneseName", direction: "asc" },
         secondary: { key: "date", direction: "desc" }
       },
+      backupEntries: null,
+      createBackup: () => set((state) => ({ backupEntries: [...state.entries] })),
+      restoreBackup: () => set((state) => {
+        if (!state.backupEntries) return state;
+        return { entries: state.backupEntries, backupEntries: null };
+      }),
+      clearBackup: () => set({ backupEntries: null }),
       setMainSortConfig: (mainSortConfig) => set({ mainSortConfig }),
       setSelectedType: (selectedType) => set({ selectedType }),
       startEditing: (editingId) => set({ editingId }),
+      managementNameFormats: {
+        "成虫": "YYYYMMDD_NN",
+        "幼虫": "YYYYMMDD_NN",
+        "産卵セット": "YYYYMMDD_NN",
+      },
+      setManagementNameFormat: (type, format) => set((state) => ({ 
+        managementNameFormats: {
+          ...state.managementNameFormats,
+          [type]: format
+        }
+      })),
       updateSwitchBot: (input) =>
         set((state) => ({ switchBot: { ...state.switchBot, ...input } })),
       updateGitHub: (input) =>
@@ -198,6 +224,17 @@ export const useBeetleStore = create<BeetleState>()(
           const larva = state.entries.find((entry): entry is LarvaBeetle => entry.id === larvaId && entry.type === "幼虫");
           if (!larva) return state;
 
+          // 管理名の決定ロジック
+          const emergenceDate = adultInput.emergenceDate || today();
+          const mName = generateUniqueMName(
+            emergenceDate,
+            adultInput.scientificName,
+            state.entries.filter(e => e.id !== larvaId), // Filter out the current larva to avoid self-collision
+            "成虫",
+            state.managementNameFormats["成虫"],
+            adultInput.managementName || larva.managementName
+          );
+
           const nextNumber = Math.max(0, ...state.entries.filter(e => e.scientificName === adultInput.scientificName && e.type === "成虫").map(e => e.entryNumber || 0)) + 1;
           const larvaLogSummary = larva.logs.length > 0
             ? larva.logs.map((log) => `${log.date} / ${log.stage} / ${log.weight}g / ${log.temperature || "-"}℃`).join("\n")
@@ -209,6 +246,7 @@ export const useBeetleStore = create<BeetleState>()(
             id: adultId,
             ...adultBase,
             type: "成虫",
+            managementName: mName,
             entryNumber: nextNumber,
             photos: adultPhotos || larva.photos || [],
             createdAt: today(),
@@ -276,7 +314,11 @@ export const useBeetleStore = create<BeetleState>()(
               : entry,
           ),
         })),
-      importData: (entries) => set({ entries: normalizeEntries(entries), editingId: null }),
+      importData: (entries) => set((state) => ({ 
+        backupEntries: [...state.entries], 
+        entries: normalizeEntries(entries), 
+        editingId: null 
+      })),
     }),
     {
       name: "beetle-manager-storage",
@@ -287,6 +329,8 @@ export const useBeetleStore = create<BeetleState>()(
         switchBot: state.switchBot,
         gitHub: state.gitHub,
         mainSortConfig: state.mainSortConfig,
+        managementNameFormats: state.managementNameFormats,
+        backupEntries: state.backupEntries,
       }),
       merge: (persistedState, currentState) => {
         const persisted = persistedState as Partial<BeetleState> & { beetles?: unknown };
@@ -297,7 +341,9 @@ export const useBeetleStore = create<BeetleState>()(
           selectedType: persisted.selectedType ?? currentState.selectedType,
           switchBot: persisted.switchBot ?? currentState.switchBot,
           gitHub: persisted.gitHub ?? currentState.gitHub,
+          managementNameFormats: persisted.managementNameFormats ?? currentState.managementNameFormats,
           mainSortConfig: persisted.mainSortConfig ?? currentState.mainSortConfig,
+          backupEntries: persisted.backupEntries ?? currentState.backupEntries,
         };
       },
     },
