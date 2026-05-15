@@ -1,10 +1,14 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { X, Settings, Database, Cloudse/use-beetle-store";
+import { X, Settings, Database, Cloud, ArrowUpDown } from "lucide-react";
+import { useBeetleStore } from "@/store/use-beetle-store";
 import { BottomSheetInput, BottomSheetSelect } from "@/components/entry-fields";
-iew({ onClose, sortKeys }: { onClose: () => void, sortK  const { switchBot, gitHub, mainSortConfig, updateSwitchBot, updateGitHub, setMainSortConfig } = useBeetleStore();
 
+export function SettingsView({ onClose, sortKeys }: { onClose: () => void, sortKeys: { id: string, label: string }[] }) {
+  const { switchBot, gitHub, mainSortConfig, updateSwitchBot, updateGitHub, setMainSortConfig } = useBeetleStore();
+
+  return (
     <motion.div 
       initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
       className="fixed inset-0 z-[100] bg-white flex flex-col p-6"
