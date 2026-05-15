@@ -1499,6 +1499,15 @@ export function BeetleManager() {
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.05}
+              onDragEnd={(_, info) => {
+                // 右にスワイプ、または素早いフリックで前の画面に戻る
+                if (info.offset.x > 80 || info.velocity.x > 500) {
+                  setSelectedSpecies(null);
+                }
+              }}
               transition={{ type: "spring", damping: 30, stiffness: 450, mass: 0.8 }}
               className="fixed inset-0 z-80 bg-[#F5F0EB] overflow-y-auto px-6 pt-4 pb-32"
             >
@@ -1577,6 +1586,33 @@ export function BeetleManager() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.05}
+              onDragEnd={(_, info) => {
+                const categories = ["成虫", "幼虫", "産卵セット"];
+                const currentIndex = categories.indexOf(activeTab);
+                if (currentIndex === -1) return;
+
+                const swipeThreshold = 50;
+                const velocityThreshold = 400;
+
+                if (info.offset.x < -swipeThreshold || info.velocity.x < -velocityThreshold) {
+                  // 左にスワイプ -> 次のカテゴリ（タブ）へ
+                  if (currentIndex < categories.length - 1) {
+                    const next = categories[currentIndex + 1];
+                    setActiveTab(next);
+                    setSelectedType(next as any);
+                  }
+                } else if (info.offset.x > swipeThreshold || info.velocity.x > velocityThreshold) {
+                  // 右にスワイプ -> 前のカテゴリ（タブ）へ
+                  if (currentIndex > 0) {
+                    const prev = categories[currentIndex - 1];
+                    setActiveTab(prev);
+                    setSelectedType(prev as any);
+                  }
+                }
+              }}
               transition={{ duration: 0.2 }}
             >
               {activeTab !== "分析" && activeTab !== "タスク" && activeTab !== "設定" ? (

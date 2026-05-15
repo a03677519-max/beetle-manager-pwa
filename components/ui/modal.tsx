@@ -1,6 +1,15 @@
 import { ReactNode, useEffect } from "react";
 
-export function Modal({ isOpen, onClose, title, children, centered = false }: { isOpen: boolean, onClose: () => void, title: string, children: ReactNode, centered?: boolean }) {
+interface ModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  children: ReactNode;
+  centered?: boolean;
+  className?: string;
+}
+
+export function Modal({ isOpen, onClose, title, children, centered = false, className = "" }: ModalProps) {
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -39,14 +48,14 @@ export function Modal({ isOpen, onClose, title, children, centered = false }: { 
   if (!isOpen) return null;
   return (
     <div 
-      className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex ${centered ? 'items-center' : 'items-end'} justify-center z-50 touch-none`}
+      className={`fixed inset-0 bg-black/40 backdrop-blur-xl flex ${centered ? 'items-center' : 'items-end'} justify-center z-[100] touch-none ${className}`}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div 
         id="modal-container" 
-        className={`flex flex-col bg-white/90 backdrop-blur-lg ${centered ? 'rounded-3xl' : 'rounded-t-3xl'} shadow-2xl border border-white/50 w-full max-w-md max-h-[85dvh] overflow-hidden overscroll-contain fixed`}
+        className={`flex flex-col bg-white/95 backdrop-blur-2xl ${centered ? 'rounded-[36px]' : 'rounded-t-[36px]'} shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-white/80 w-full max-w-md max-h-[85dvh] overflow-hidden overscroll-contain fixed`}
         style={{ bottom: 0 }}
       >
         <div className="flex justify-between items-center p-6 shrink-0">

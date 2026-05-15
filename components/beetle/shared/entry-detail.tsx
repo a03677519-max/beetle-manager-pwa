@@ -153,7 +153,7 @@ export function EntryDetail({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="absolute inset-0 bg-black/40 backdrop-blur-[2px] pointer-events-auto" 
+        className="absolute inset-0 bg-black/40 backdrop-blur-xl pointer-events-auto" 
         onClick={onClose} 
       />
       <motion.div 
@@ -161,7 +161,7 @@ export function EntryDetail({
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
         transition={{ type: "spring", damping: 30, stiffness: 450, mass: 0.8 }}
-        className="bg-white rounded-t-3xl shadow-2xl h-[90dvh] z-10 w-full max-w-md mx-auto overscroll-contain pointer-events-auto flex flex-col overflow-hidden"
+        className="bg-white rounded-t-[36px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] h-[90dvh] z-10 w-full max-w-md mx-auto overscroll-contain pointer-events-auto flex flex-col overflow-hidden"
       >
         <div className="flex justify-between items-center p-6 sticky top-0 bg-white/90 backdrop-blur-sm z-10 h-[72px] border-b border-gray-50 shrink-0">
           <div className="text-left">
