@@ -20,12 +20,19 @@ import type {
 import { COHABITATION_OPTIONS } from "@/types/beetle";
 import { normalizeEntries } from "./beetle-store-utils";
 
+export type SortConfig = {
+  primary: { key: string, direction: "asc" | "desc" },
+  secondary: { key: string, direction: "asc" | "desc" }
+};
+
 type BeetleState = {
   entries: BeetleEntry[];
   selectedType: EntryType | "すべて";
   editingId: string | null;
   switchBot: SwitchBotSettings;
   gitHub: GitHubSettings;
+  mainSortConfig: SortConfig;
+  setMainSortConfig: (config: SortConfig) => void;
   setSelectedType: (stage: EntryType | "すべて") => void;
   startEditing: (id: string | null) => void;
   updateSwitchBot: (input: Partial<SwitchBotSettings>) => void;
@@ -113,6 +120,11 @@ export const useBeetleStore = create<BeetleState>()(
       editingId: null,
       switchBot: { token: "", secret: "", deviceId: "", deviceName: "" },
       gitHub: { token: "", owner: "", repo: "", path: "data.json", branch: "main" },
+      mainSortConfig: {
+        primary: { key: "japaneseName", direction: "asc" },
+        secondary: { key: "date", direction: "desc" }
+      },
+      setMainSortConfig: (mainSortConfig) => set({ mainSortConfig }),
       setSelectedType: (selectedType) => set({ selectedType }),
       startEditing: (editingId) => set({ editingId }),
       updateSwitchBot: (input) =>
@@ -274,6 +286,7 @@ export const useBeetleStore = create<BeetleState>()(
         selectedType: state.selectedType,
         switchBot: state.switchBot,
         gitHub: state.gitHub,
+        mainSortConfig: state.mainSortConfig,
       }),
       merge: (persistedState, currentState) => {
         const persisted = persistedState as Partial<BeetleState> & { beetles?: unknown };
@@ -284,6 +297,7 @@ export const useBeetleStore = create<BeetleState>()(
           selectedType: persisted.selectedType ?? currentState.selectedType,
           switchBot: persisted.switchBot ?? currentState.switchBot,
           gitHub: persisted.gitHub ?? currentState.gitHub,
+          mainSortConfig: persisted.mainSortConfig ?? currentState.mainSortConfig,
         };
       },
     },
