@@ -1546,44 +1546,46 @@ export function BeetleManager() {
                 }
               }}
               transition={{ type: "spring", damping: 30, stiffness: 450, mass: 0.8 }}
-              className="fixed inset-0 z-80 bg-[#F5F0EB] overflow-y-auto px-6 pt-4 pb-32"
+              className="fixed inset-0 z-80 bg-[#F5F0EB] overflow-y-auto pb-32"
             >
-              <div className="flex items-center gap-4 mb-6">
-                <button 
-                  onClick={() => setSelectedSpecies(null)}
-                  className="p-2 bg-white rounded-xl shadow-sm text-gray-500 active:scale-95 transition-all"
-                >
-                  <ChevronLeft size={24} />
-                </button>
-                <div className="flex-1 min-w-0">
-                  <h2 className="text-xl font-black text-[#4A3F35] truncate">{groupedEntries[selectedSpecies]?.[0]?.japaneseName || "不明"}</h2>
-                  <p className="text-xs italic text-gray-400 truncate">{selectedSpecies}</p>
+              <div className="sticky top-0 z-30 bg-[#F5F0EB]/90 backdrop-blur-xl px-6 pt-4 pb-3 border-b border-gray-200/50 shadow-sm mb-4">
+                <div className="flex items-center gap-4 mb-3">
+                  <button 
+                    onClick={() => setSelectedSpecies(null)}
+                    className="p-2 bg-white rounded-xl shadow-sm text-gray-500 active:scale-95 transition-all"
+                  >
+                    <ChevronLeft size={24} />
+                  </button>
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-xl font-black text-[#4A3F35] truncate">{groupedEntries[selectedSpecies]?.[0]?.japaneseName || "不明"}</h2>
+                    <p className="text-[10px] italic text-gray-400 truncate tracking-tight">{selectedSpecies}</p>
+                  </div>
+                </div>
+
+                {/* 種別内ソート項目 (固定ヘッダー内) */}
+                <div className="bg-white/60 rounded-[20px] p-2 px-3 border border-white/80 space-y-2 shadow-inner">
+                  <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+                    <div className="flex flex-col items-start min-w-[45px]">
+                      <span className="text-[8px] font-black text-gray-400 uppercase tracking-tighter">1st</span>
+                      <button onClick={() => setSpeciesSortConfig(s => ({ ...s, primary: { ...s.primary, direction: s.primary.direction === "asc" ? "desc" : "asc" } }))} className="text-[8px] font-black text-[#F4511E] flex items-center gap-0.5"><ArrowUpDown size={8} />{speciesSortConfig.primary.direction === "asc" ? "昇" : "降"}</button>
+                    </div>
+                    {speciesSortKeys.map(k => (
+                      <button key={`sp-p-${k.id}`} onClick={() => setSpeciesSortConfig(s => ({...s, primary: { ...s.primary, key: k.id }}))} className={`px-2.5 py-1 rounded-lg text-[9px] font-bold whitespace-nowrap transition-all ${speciesSortConfig.primary.key === k.id ? "bg-[#FF9800] text-white shadow-sm" : "bg-white/50 text-gray-400 border border-gray-100"}`}>{k.label}</button>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+                    <div className="flex flex-col items-start min-w-[45px]">
+                      <span className="text-[8px] font-black text-gray-400 uppercase tracking-tighter">2nd</span>
+                      <button onClick={() => setSpeciesSortConfig(s => ({ ...s, secondary: { ...s.secondary, direction: s.secondary.direction === "asc" ? "desc" : "asc" } }))} className="text-[8px] font-black text-[#F4511E] flex items-center gap-0.5"><ArrowUpDown size={8} />{speciesSortConfig.secondary.direction === "asc" ? "昇" : "降"}</button>
+                    </div>
+                    {speciesSortKeys.map(k => (
+                      <button key={`sp-s-${k.id}`} onClick={() => setSpeciesSortConfig(s => ({...s, secondary: { ...s.secondary, key: k.id }}))} className={`px-2.5 py-1 rounded-lg text-[9px] font-bold whitespace-nowrap transition-all ${speciesSortConfig.secondary.key === k.id ? "bg-[#FF9800] text-white shadow-sm" : "bg-white/50 text-gray-400 border border-gray-100"}`}>{k.label}</button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              {/* 種別内ソート */}
-              <div className="bg-white/70 backdrop-blur-md rounded-[28px] p-4 border border-white/80 mb-6 space-y-4 shadow-sm">
-                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-                  <div className="flex flex-col items-start min-w-[50px]">
-                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Primary</span>
-                    <button onClick={() => setSpeciesSortConfig(s => ({ ...s, primary: { ...s.primary, direction: s.primary.direction === "asc" ? "desc" : "asc" } }))} className="text-[8px] font-black text-[#F4511E] flex items-center gap-0.5"><ArrowUpDown size={8} /> {speciesSortConfig.primary.direction === "asc" ? "昇" : "降"}</button>
-                  </div>
-                  {speciesSortKeys.map(k => (
-                    <button key={`sp-p-${k.id}`} onClick={() => setSpeciesSortConfig(s => ({...s, primary: { ...s.primary, key: k.id }}))} className={`px-3 py-1 rounded-lg text-[10px] font-bold whitespace-nowrap transition-all ${speciesSortConfig.primary.key === k.id ? "bg-[#FF9800] text-white shadow-sm" : "bg-white/50 text-gray-400 border border-gray-100"}`}>{k.label}</button>
-                  ))}
-                </div>
-                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-                  <div className="flex flex-col items-start min-w-[50px]">
-                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Secondary</span>
-                    <button onClick={() => setSpeciesSortConfig(s => ({ ...s, secondary: { ...s.secondary, direction: s.secondary.direction === "asc" ? "desc" : "asc" } }))} className="text-[8px] font-black text-[#F4511E] flex items-center gap-0.5"><ArrowUpDown size={8} /> {speciesSortConfig.secondary.direction === "asc" ? "昇" : "降"}</button>
-                  </div>
-                  {speciesSortKeys.map(k => (
-                    <button key={`sp-s-${k.id}`} onClick={() => setSpeciesSortConfig(s => ({...s, secondary: { ...s.secondary, key: k.id }}))} className={`px-3 py-1 rounded-lg text-[10px] font-bold whitespace-nowrap transition-all ${speciesSortConfig.secondary.key === k.id ? "bg-[#FF9800] text-white shadow-sm" : "bg-white/50 text-gray-400 border border-gray-100"}`}>{k.label}</button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-4">
+              <div className="px-6 space-y-4">
                 {[...groupedEntries[selectedSpecies]].sort((a, b) => {
                   const compare = (key: string, direction: "asc" | "desc") => {
                     const vA = getSortValue(a, key);
