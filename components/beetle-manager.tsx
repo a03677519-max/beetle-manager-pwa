@@ -161,6 +161,7 @@ export function BeetleManager() {
     { id: 'japaneseName', label: '和名' },
     { id: 'scientificName', label: '学名' },
     { id: 'locality', label: '産地' },
+    { id: 'gender', label: '性別' },
     { id: 'type', label: '種別' },
     { id: 'managementName', label: '管理名' },
     { id: 'date', label: '日付' },
@@ -264,12 +265,23 @@ export function BeetleManager() {
        return matchesType && matchesQuery;
      });
 
-     const getSortValue = (e: BeetleEntry, key: string): string | number => {
+     const getSortValue = useCallback((e: BeetleEntry, key: string): string | number => {
        if (key === "date") {
          if (e.type === "成虫") return (e as any).actualEmergenceDate || (e as any).emergenceDate || e.createdAt || "";
          if (e.type === "幼虫") return (e as any).hatchDate || (e as any).extractionDate || e.createdAt || "";
          if (e.type === "産卵セット") return (e as any).setDate || e.createdAt || "";
          return (e as any).createdAt || "";
+       }
+       if (key === "weight") {
+         if (e.type === "幼虫" && (e as LarvaBeetle).logs?.[0]) return (e as LarvaBeetle).logs[0].weight;
+         if (e.type === "成虫") return parseFloat((e as any).size || "0") || 0;
+         return 0;
+       }
+       if (key === "gender") {
+         const val = e.type === "成虫" ? (e as any).gender : (e.type === "幼虫" ? (e as any).logs?.[0]?.gender : "不明");
+         if (val === "オス" || val === "♂") return "0";
+         if (val === "メス" || val === "♀") return "1";
+         return "2";
        }
        if (key === "managementName") return e.managementName || "";
        if (key === "japaneseName") return e.japaneseName || "";
@@ -277,7 +289,7 @@ export function BeetleManager() {
        if (key === "locality") return e.locality || "";
        if (key === "type") return e.type || "";
        return (e as any)[key] || "";
-     };
+     }, []);
 
      return [...list].sort((a, b) => {
        const compare = (key: string, direction: "asc" | "desc") => {
@@ -292,7 +304,7 @@ export function BeetleManager() {
        
        return compare(mainSortConfig.secondary.key, mainSortConfig.secondary.direction);
      });
-   }, [entries, query, selectedType, activeTab, spawnSetFilter, larvaFilter, adultFilter, mainSortConfig]);
+   }, [entries, query, selectedType, activeTab, spawnSetFilter, larvaFilter, adultFilter, mainSortConfig, getSortValue]);
 
   // 並べ替え（ドラッグ）完了時の処理
   const handleReorder = (newOrder: BeetleEntry[], sciName: string) => {
@@ -544,7 +556,20 @@ export function BeetleManager() {
   };
 
   const [selectedSpecies, setSelectedSpecies] = useState<string | null>(null);
-  const [speciesSortConfig, setSpeciesSortConfig] = useState<{ key: string, direction: "asc" | "desc" }>({ key: "managementName", direction: "asc" });
+  const [speciesSortConfig, setSpeciesSortConfig] = useState<{
+    primary: { key: string, direction: "asc" | "desc" },
+    secondary: { key: string, direction: "asc" | "desc" }
+  }>({
+    primary: { key: "managementName", direction: "asc" },
+    secondary: { key: "date", direction: "desc" }
+  });
+
+  const speciesSortKeys = [
+    { id: 'managementName', label: '管理名' },
+    { id: 'date', label: '日付' },
+    { id: 'weight', label: '計測値' },
+    { id: 'gender', label: '性別' },
+  ];
 
   const stats = useMemo(() => {
     const adults = entries.filter(e => e.type === "成虫");
@@ -1535,58 +1560,40 @@ export function BeetleManager() {
               </div>
 
               {/* 種別内ソート */}
-              <div className="bg-white/60 backdrop-blur-md rounded-2xl p-4 border border-white/80 mb-6 space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">ソート</span>
-                  <button 
-                    onClick={() => setSpeciesSortConfig(s => ({ ...s, direction: s.direction === "asc" ? "desc" : "asc" }))}
-                    className="text-[10px] font-black text-[#FF9800] flex items-center gap-1"
-                  >
-                    <ArrowUpDown size={12} /> {speciesSortConfig.direction === "asc" ? "昇順" : "降順"}
-                  </button>
+              <div className="bg-white/70 backdrop-blur-md rounded-[28px] p-4 border border-white/80 mb-6 space-y-4 shadow-sm">
+                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+                  <div className="flex flex-col items-start min-w-[50px]">
+                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Primary</span>
+                    <button onClick={() => setSpeciesSortConfig(s => ({ ...s, primary: { ...s.primary, direction: s.primary.direction === "asc" ? "desc" : "asc" } }))} className="text-[8px] font-black text-[#F4511E] flex items-center gap-0.5"><ArrowUpDown size={8} /> {speciesSortConfig.primary.direction === "asc" ? "昇" : "降"}</button>
+                  </div>
+                  {speciesSortKeys.map(k => (
+                    <button key={`sp-p-${k.id}`} onClick={() => setSpeciesSortConfig(s => ({...s, primary: { ...s.primary, key: k.id }}))} className={`px-3 py-1 rounded-lg text-[10px] font-bold whitespace-nowrap transition-all ${speciesSortConfig.primary.key === k.id ? "bg-[#FF9800] text-white shadow-sm" : "bg-white/50 text-gray-400 border border-gray-100"}`}>{k.label}</button>
+                  ))}
                 </div>
-                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-                  {[
-                    { id: 'managementName', label: '管理名' },
-                    { id: 'date', label: '日付' },
-                    { id: 'weight', label: '計測値' },
-                  ].map(k => (
-                    <button 
-                      key={k.id} 
-                      onClick={() => setSpeciesSortConfig(s => ({...s, key: k.id}))} 
-                      className={`px-4 py-2 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all ${speciesSortConfig.key === k.id ? "bg-[#FF9800] text-white shadow-sm" : "bg-white text-gray-400 border border-gray-100"}`}
-                    >
-                      {k.label}
-                    </button>
+                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+                  <div className="flex flex-col items-start min-w-[50px]">
+                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Secondary</span>
+                    <button onClick={() => setSpeciesSortConfig(s => ({ ...s, secondary: { ...s.secondary, direction: s.secondary.direction === "asc" ? "desc" : "asc" } }))} className="text-[8px] font-black text-[#F4511E] flex items-center gap-0.5"><ArrowUpDown size={8} /> {speciesSortConfig.secondary.direction === "asc" ? "昇" : "降"}</button>
+                  </div>
+                  {speciesSortKeys.map(k => (
+                    <button key={`sp-s-${k.id}`} onClick={() => setSpeciesSortConfig(s => ({...s, secondary: { ...s.secondary, key: k.id }}))} className={`px-3 py-1 rounded-lg text-[10px] font-bold whitespace-nowrap transition-all ${speciesSortConfig.secondary.key === k.id ? "bg-[#FF9800] text-white shadow-sm" : "bg-white/50 text-gray-400 border border-gray-100"}`}>{k.label}</button>
                   ))}
                 </div>
               </div>
 
               <div className="space-y-4">
                 {[...groupedEntries[selectedSpecies]].sort((a, b) => {
-                  const getVal = (e: BeetleEntry, key: string): string | number => {
-                    if (key === "date") return (e as any).hatchDate || (e as any).setDate || (e as any).actualEmergenceDate || (e as any).emergenceDate || e.createdAt || "";
-                    if (key === "weight") {
-                      if (e.type === "幼虫" && (e as LarvaBeetle).logs?.[0]) return (e as LarvaBeetle).logs[0].weight;
-                      if (e.type === "成虫") return parseFloat((e as any).size || "0") || 0;
-                      return 0;
-                    }
-                    return (e as any)[key] || "";
+                  const compare = (key: string, direction: "asc" | "desc") => {
+                    const vA = getSortValue(a, key);
+                    const vB = getSortValue(b, key);
+                    const res = typeof vA === "string" ? String(vA).localeCompare(String(vB), "ja", { numeric: true }) : ((vA as number) - (vB as number));
+                    return direction === "asc" ? res : -res;
                   };
 
-                  const v1 = getVal(a, speciesSortConfig.key);
-                  const v2 = getVal(b, speciesSortConfig.key);
-                  let res = typeof v1 === "string" ? v1.localeCompare(v2 as string, "ja", { numeric: true }) : ((v1 as number) - (v2 as number));
-                  if (speciesSortConfig.direction === "desc") res = -res;
-
-                  if (res !== 0) return res;
-
-                  // 同値の場合のセカンダリソート（依頼事項）
-                  if (a.type === "成虫" && b.type === "成虫") return ((b as any).emergenceDate || (b as any).actualEmergenceDate || "").localeCompare((a as any).emergenceDate || (a as any).actualEmergenceDate || "");
-                  if (a.type === "幼虫" && b.type === "幼虫") return ((b as any).hatchDate || "").localeCompare((a as any).hatchDate || "");
-                  if (a.type === "産卵セット" && b.type === "産卵セット") return ((a as any).setDate || "").localeCompare((b as any).setDate || "");
+                  const primaryCmp = compare(speciesSortConfig.primary.key, speciesSortConfig.primary.direction);
+                  if (primaryCmp !== 0) return primaryCmp;
                   
-                  return 0;
+                  return compare(speciesSortConfig.secondary.key, speciesSortConfig.secondary.direction);
                 }).map((entry) => (
                   <EntryCard
                     key={entry.id}
