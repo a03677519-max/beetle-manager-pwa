@@ -70,7 +70,8 @@ export function AdultForm({
     <form
       id={formId}
       ref={formRef}
-      className={`flex flex-col h-full overflow-hidden 
+      className={`flex flex-col h-full overflow-hidden ${className || ''}`}
+      onSubmit={(event) => {
         event.preventDefault();
         onSubmit(valuesRef.current);
       }}
@@ -120,10 +121,13 @@ export function AdultForm({
             <button
               type="button"
               className={`flex-1 px-4 py-1.5 rounded-xl border font-bold text-sm transition-all duration-200 select-none ${
-                values.emer
+                values.emergenceType === "羽化"
+                  ? "bg-[#7B5D3F] text-white border-[#7B5D3F] shadow-md shadow-[#7B5D3F]/20 scale-[1.02]"
                   : "bg-white/60 border-gray-200 text-gray-600 hover:bg-white/80 active:scale-95"
               }`}
+              onClick={() => setValues({ ...values, emergenceType: "羽化" })}
             >
+              羽化
             </button>
             <button
               type="button"
@@ -132,8 +136,11 @@ export function AdultForm({
                   ? "bg-[#7B5D3F] text-white border-[#7B5D3F] shadow-md shadow-[#7B5D3F]/20 scale-[1.02]"
                   : "bg-white/60 border-gray-200 text-gray-600 hover:bg-white/80 active:scale-95"
               }`}
+              onClick={() => setValues({ ...values, emergenceType: "掘り出し" })}
             >
               掘り出し
+            </button>
+          </div>
         </Field>
         <DateRollField
           label="後食日"
