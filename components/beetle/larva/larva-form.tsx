@@ -194,7 +194,10 @@ export function LarvaForm({
     >
       <div className="bg-white rounded-2xl p-2 border border-gray-100 shadow-sm space-y-2 flex-1 overflow-y-auto mb-2">
         <EntryBaseFields
-          {...values}
+          japaneseName={values.japaneseName}
+          scientificName={values.scientificName}
+          locality={values.locality}
+          generation={values.generation}
           managementName={values.managementName || ""}
           allEntries={allEntries}
           onNext={focusNextField}

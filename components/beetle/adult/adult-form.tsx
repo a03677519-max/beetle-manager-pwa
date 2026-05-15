@@ -31,6 +31,7 @@ export function AdultForm({
   const formId = id || "adult-form"; // Keep formId for onSubmit
   const { focusNextField } = useNextFieldNavigation(formId, true);
   const formRef = useRef<HTMLFormElement>(null);
+  const allEntries = useBeetleStore((state) => state.entries);
 
   const isDead = useMemo(() => !!(values.deathDate && values.deathDate !== "-"), [values.deathDate]);
   const isSold = useMemo(() => !!(((values as any).soldDate && (values as any).soldDate !== "-") || values.status === "販売済み"), [(values as any).soldDate, values.status]);
@@ -79,9 +80,13 @@ export function AdultForm({
       <div className="flex-1 overflow-y-auto px-1 space-y-2 mb-2">
         <div className="bg-white rounded-2xl p-2 border border-gray-100 shadow-sm space-y-2">
         <EntryBaseFields
+          japaneseName={values.japaneseName}
+          scientificName={values.scientificName}
+          locality={values.locality}
+          generation={values.generation}
           managementName={values.managementName || ""}
           linkedEntryIds={values.linkedEntryIds}
-          allEntries={useBeetleStore.getState().entries}
+          allEntries={allEntries}
           onNext={focusNextField}
           onChange={(patch) => setValues({ ...values, ...patch })}
         />
