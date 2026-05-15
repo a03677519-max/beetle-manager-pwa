@@ -1517,7 +1517,7 @@ export function BeetleManager() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="fixed inset-0 z-50 bg-[#F5F0EB] overflow-y-auto px-6 pt-4 pb-32"
+              className="fixed inset-0 z-80 bg-[#F5F0EB] overflow-y-auto px-6 pt-4 pb-32"
             >
               <div className="flex items-center gap-4 mb-6">
                 <button 
