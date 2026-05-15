@@ -15,7 +15,7 @@ import {
   Cell,
 } from "recharts";
 import type { BeetleEntry, EntryType, Gender, LarvaBeetle, SpawnSet } from "@/types/beetle";
-import { daysBetween } from "@/lib/utils";
+import { daysBetween } from "@/types/utils";
 
 interface AnalysisViewProps {
   entries: BeetleEntry[];

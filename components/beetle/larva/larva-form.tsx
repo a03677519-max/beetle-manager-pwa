@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { CountRollField, Field, DateRollField, BottomSheetInput, MoistureField, PressureField, GenderField, useNextFieldNavigation } from "@/components/entry-fields";
 import type { BeetleEntry, AdultBeetle, LarvaFormValues, LarvaLog, LogStage, Gender } from "@/types/beetle";
 import { EntryBaseFields } from "@/components/beetle/shared/entry-base-fields";
-import { today, daysBetween, createId } from "@/lib/utils";
+import { today, daysBetween, createId } from "@/types/utils";
 import { useBeetleStore, emptyAdultForm } from "@/store/use-beetle-store";
 
 /**

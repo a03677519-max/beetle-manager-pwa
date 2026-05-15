@@ -1,4 +1,4 @@
-import { createId, today } from "@/lib/utils";
+import { createId, today } from "@/types/utils";
 import type { BeetleEntry } from "@/types/beetle";
 
 const emptyGeneration = {

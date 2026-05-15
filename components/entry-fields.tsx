@@ -23,7 +23,7 @@ import {
   type LogStage,
   type EntryType,
 } from "@/types/beetle";
-import { buildDateFromParts, createDateOptions, splitDate, today } from "@/lib/utils";
+import { buildDateFromParts, createDateOptions, splitDate, today } from "@/types/utils";
 
 const dateOptions = createDateOptions();
 

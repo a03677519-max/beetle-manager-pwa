@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
-import { createId, today, generateUniqueMName } from "@/lib/utils";
+import { createId, today, generateUniqueMName } from "@/types/utils";
 import type {
   AdultFormValues,
   AdultBeetle,
