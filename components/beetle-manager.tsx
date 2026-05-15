@@ -1649,6 +1649,7 @@ export function BeetleManager() {
       <Modal 
         isOpen={isAddingSecondSet} 
         onClose={() => { setIsAddingSecondSet(false); setEditingChildSet(null); }} 
+        className="z-[105]" // EntryDetail (z-90) の上に表示されるように調整
         title={editingChildSet ? "履歴の編集" : "追加のセット登録"}
       >
         {(selectedEntry || editingChildSet) && (
