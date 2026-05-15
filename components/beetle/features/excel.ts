@@ -38,7 +38,7 @@ export async function importDataFromExcel(file: File): Promise<BeetleEntry[]> {
   const ExcelJS = (await import("exceljs")).default;
   const workbook = new ExcelJS.Workbook();
   const buffer = await file.arrayBuffer();
-  await workbook.xlsx.read(buffer);
+  await workbook.xlsx.load(buffer);
 
   const allImportedEntries: BeetleEntry[] = [];
   // For linked entries, we'll need to map old managementName+scientificName to new IDs
