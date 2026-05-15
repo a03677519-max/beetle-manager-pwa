@@ -1664,20 +1664,20 @@ export function BeetleManager() {
                       <div 
                         key={sciName} 
                         ref={(el) => { groupRefs.current[sciName] = el; }}
-                        className="mb-4 scroll-mt-80"
+                        className="mb-3 scroll-mt-80"
                       >
                         <button 
                           onClick={() => setSelectedSpecies(sciName)}
-                          className="w-full flex items-center justify-between p-4 bg-white/40 rounded-2xl mb-2 border border-white/60 active:scale-[0.98] transition-all"
+                          className="w-full flex items-center justify-between p-4 bg-purple-950/10 rounded-2xl border border-purple-500/10 active:scale-[0.98] transition-all shadow-[0_4px_15px_rgba(0,0,0,0.1)] hover:border-purple-500/30"
                         >
                           <div className="text-left flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className="font-black text-[#4A3F35]">{japaneseName}</span>
-                              <span className="text-[10px] font-bold bg-[#FF9800] text-white px-2 py-0.5 rounded-full">{group.length}</span>
+                              <span className="font-black text-purple-200/90 tracking-tight italic">{japaneseName}</span>
+                              <span className="text-[9px] font-black bg-purple-900/60 text-purple-200 px-2 py-0.5 rounded-full border border-purple-500/30 shadow-[0_0_10px_rgba(168,85,247,0.2)]">{group.length}</span>
                             </div>
-                            <div className="text-[10px] italic text-gray-400 truncate">{sciName}</div>
+                            <div className="text-[10px] italic text-purple-400/40 truncate tracking-wide">{sciName}</div>
                           </div>
-                          <div className="text-gray-300">
+                          <div className="text-purple-500/40">
                             <ChevronRight size={18} />
                           </div>
                         </button>
