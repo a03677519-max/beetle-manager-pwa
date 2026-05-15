@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { BottomSheetInput, DateRollField, MoistureField, useNextFieldNavigation } from "@/components/entry-fields";
 import type { SpawnSetFormValues } from "@/types/beetle";
 import { today } from "@/lib/utils";
@@ -23,7 +23,7 @@ export function SpawnSetSecondForm({
   const formRef = useRef<HTMLFormElement>(null);
 
   // 最新のセット終了日を取得して開始日の初期値にする
-  const latestEndDate = useMemo(() => {
+  const getLatestEndDate = useCallback(() => {
     // 1. initialValuesそのものにsetsがある場合（親を渡された場合）
     // 2. allEntriesから親を探して取得する場合
     const parent = allEntries?.find(e => (e as any).sets?.some((s: any) => s.id === initialValues.id)) || initialValues;
@@ -34,15 +34,19 @@ export function SpawnSetSecondForm({
       return sorted[0].setEndDate || sorted[0].setDate || today();
     }
     return s.setEndDate || s.setDate || today();
-  }, [initialValues, allEntries]);
+  }, [initialValues, allEntries]); // initialValues.id が変わるたびに再計算
+
+  const latestEndDate = useMemo(() => {
+    return getLatestEndDate();
+  }, [getLatestEndDate]);
 
   const [values, setValues] = useState<any>({
     id: initialValues.id, // 編集用にIDを保持
     useDifferentMethod: false, // デフォルトでfalse
     setDate: latestEndDate,
     setEndDate: "",
-    eggCount: 0,
-    larvaCount: 0,
+    eggCount: initialValues.eggCount ?? 0,
+    larvaCount: initialValues.larvaCount ?? 0,
   });
 
   // initialValuesが変更されたらstateを更新 (編集モード用)

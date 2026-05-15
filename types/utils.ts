@@ -19,7 +19,20 @@ export const formatGeneration = (generation: {
 
 export const isSpawnSetFinished = (entry: any) => {
   if (entry.type !== "産卵セット") return false;
-  return !!entry.setEndDate && entry.setEndDate !== "-";
+  
+  // 追加のセット（2回目以降）のチェックを優先
+  if (entry.sets && entry.sets.length > 0) {
+    for (const subSet of entry.sets) {
+      // 1つでも終了日が未入力（または"-"）のセットがあれば、全体として未終了
+      if (!subSet.setEndDate || subSet.setEndDate.trim() === "" || subSet.setEndDate === "-") {
+        return false;
+      }
+    }
+    return true; // 全ての追加セットに終了日があれば終了
+  }
+  
+  // 追加セットがない場合は、メイン（1回目）の終了日を確認
+  return !!(entry.setEndDate && entry.setEndDate.trim() !== "" && entry.setEndDate !== "-");
 };
 
 export const daysBetween = (date1: string, date2: string) => {

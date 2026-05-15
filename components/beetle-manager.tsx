@@ -480,7 +480,6 @@ export function BeetleManager() {
 
         // sheet が確実に存在することをコンパイラに伝えるため、直接参照を避けて変数を定義
         const row = sheet.getRow(pos.row);
-        if (!row) continue; // row が undefined の場合をスキップ
         const cell = row.getCell(linkCellIdx);
 
         for (const targetId of entry.linkedEntryIds) {
