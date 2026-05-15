@@ -154,8 +154,6 @@ export async function importDataFromExcel(file: File): Promise<BeetleEntry[]> {
             emergenceType: (String(entryData["羽化区分"] || "羽化") as LarvaBeetle["emergenceType"]),
             hatchDate: parseDateToISO(entryData["孵化/割出日"]),
             extractionDate: parseDateToISO(entryData["孵化/割出日"]),
-            deathDate: deathDate,
-            soldDate: soldDate,
             memo,
             linkedEntryIds: [],
           };
