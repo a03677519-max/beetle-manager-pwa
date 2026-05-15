@@ -6,7 +6,7 @@ import { Search, Clipboard, Camera, Loader2, Crop, Check, X as CloseIcon, Trash2
 import { Navbar } from "@/components/layout/navbar";
 import { Modal } from "./ui/modal"; // Ensure Modal is imported
 import { useSwitchBot } from "@/components/use-switchbot";
-import { formatGeneration, today, isSpawnSetFinished, createId, generateUniqueMName } from "@/types/utils";
+import { formatGeneration, today, isSpawnSetFinished, createId, generateUniqueMName, formatDate } from "@/types/utils";
 import { pushDataToGitHub } from "@/lib/github";
 import {
   emptyAdultForm,
