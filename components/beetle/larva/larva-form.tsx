@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { CountRollField, Field, DateRollField, BottomSheetInput, MoistureField, PressureField, GenderField, useNextFieldNavigation } from "@/components/entry-fields";
 import type { BeetleEntry, AdultBeetle, LarvaFormValues, LarvaLog, LogStage, Gender } from "@/types/beetle";
 import { EntryBaseFields } from "@/components/beetle/shared/entry-base-fields";
-import { today, daysBetween } from "@/lib/utils";
+import { today, daysBetween, createId } from "@/lib/utils";
 import { useBeetleStore, emptyAdultForm } from "@/store/use-beetle-store";
 
 /**
@@ -64,7 +64,7 @@ export function LarvaForm({
     // セット期間用の日付を初期化（既存の日付があれば優先、なければ作成日や今日）
     setSetStartDate(hatch || (initialValues.createdAt ? fmt(initialValues.createdAt) : today()));
     setSetEndDate(extraction || (initialValues.extractionDate === "-" ? "-" : today()));
-  }, [initialValues.id]);
+  }, [initialValues.id, initialValues.hatchDate, initialValues.extractionDate, initialValues.actualEmergenceDate, initialValues.createdAt]);
 
   // タブ切り替え時に日付データを同期する
   useEffect(() => {
@@ -85,7 +85,7 @@ export function LarvaForm({
       setSetStartDate(prev => prev || (values.hatchDate !== "-" ? values.hatchDate : "") || (initialValues.createdAt ? fmt(initialValues.createdAt) : today()));
       setSetEndDate(prev => prev || (values.extractionDate !== "-" ? values.extractionDate : "") || "-");
     }
-  }, [dateType]);
+  }, [dateType, values.hatchDate, values.extractionDate, initialValues.createdAt, setSetStartDate, setSetEndDate]);
 
   useEffect(() => {
     if (!initialValues.id && (!values.logs || values.logs.length === 0)) {
@@ -123,7 +123,7 @@ export function LarvaForm({
   const addRecord = () => {
     const latestLog = values.logs?.[0];
     const newRecord: LarvaLog = {
-      id: "temp-id",
+      id: createId(),
       date: today(),
       stage: latestLog?.stage || "L1",
       weight: 0,

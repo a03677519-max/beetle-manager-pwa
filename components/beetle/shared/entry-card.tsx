@@ -41,7 +41,7 @@ export function EntryCard({
   else if (diffDays >= 60) dateColor = "text-[#F1C40F]"; // 黄
 
 
-  const isDeceased = !!(entry as any).deathDate;
+  const isDeceased = !!(entry as any).deathDate && (entry as any).deathDate !== "-";
   const stageMap: Record<string, Stage> = { "成虫": "成虫", "幼虫": "幼虫", "産卵セット": "卵" };
   const stage = isDeceased ? "死亡" : (stageMap[entry.type] || "卵");
 
@@ -126,7 +126,7 @@ export function EntryCard({
             {entry.type === "成虫" && (
               <div className="text-[11px] font-bold text-gray-600 space-y-0.5 mb-1">
                 {entry.size && <div><span className="text-muted">サイズ:</span> {entry.size}mm</div>}
-                {entry.emergenceDate && <div><span className="text-muted">羽化日:</span> {entry.emergenceDate.replace(/-/g, "/")}</div>}
+                {entry.emergenceDate && <div><span className="text-muted">{(entry as any).emergenceType === "掘り出し" ? "掘出日" : "羽化日"}:</span> {entry.emergenceDate.replace(/-/g, "/")}</div>}
                 {entry.feedingDate && <div><span className="text-muted">後食日:</span> {entry.feedingDate.replace(/-/g, "/")}</div>}
                 {(entry as any).deathDate && <div className="text-red-500"><span className="text-muted">死亡日:</span> {(entry as any).deathDate.replace(/-/g, "/")}</div>}
               </div>

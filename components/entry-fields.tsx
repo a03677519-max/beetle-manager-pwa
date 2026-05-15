@@ -62,7 +62,7 @@ function DrumrollPicker<T extends string | number>({ options, value, onChange, i
 
   // 初期表示時に選択値までスクロール
   useEffect(() => {
-    const index = options.indexOf(value);
+    const index = options.findIndex(o => String(o) === String(value));
     if (index !== -1 && scrollRef.current) {
       const targetScroll = index * 28;
       if (scrollRef.current.scrollTop !== targetScroll) {
@@ -71,6 +71,12 @@ function DrumrollPicker<T extends string | number>({ options, value, onChange, i
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [options]); // 初期マウント時のみ。value変更での再スクロールはループを防ぐため除外
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     // スクロール干渉を抑えるため、スクロールが止まってから値を確定させる
@@ -504,14 +510,15 @@ export function BottomSheetInput({
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // ボトムシートが開いた時の自動フォーカスを抑制（ユーザー要望）
+    /*
     const focusTimer = setTimeout(() => {
       if (isOpen && inputRef.current) {
-        // 入力欄にフォーカスを当てる
         inputRef.current.focus();
-        // フォーカス後に中央へスクロール
         inputRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
-    }, 50); // アニメーション開始直後にフォーカスを当てる
+    }, 50);
+    */
     
     // iOS キーボード展開時のスクロール追従・中央配置
     const handleViewport = () => {
@@ -567,7 +574,7 @@ export function BottomSheetInput({
     document.addEventListener('focusout', handleFocusOut);
 
     return () => {
-      clearTimeout(focusTimer);
+      // clearTimeout(focusTimer);
       window.removeEventListener('app:close-bottom-sheets', handleSync);
       window.removeEventListener('app:close-all-sheets', handleGlobalClose);
       window.visualViewport?.removeEventListener('resize', handleViewport);
@@ -686,7 +693,7 @@ export function BottomSheetInput({
                 {filteredSuggestions.length > 0 && (
                   <div className="mt-4 pt-4 border-t border-gray-50">
                     <p className="text-[10px] font-black text-gray-400 mb-2 uppercase tracking-widest">辞書・履歴</p>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto pr-1 py-1">
                       {filteredSuggestions.map((suggestion) => (
                         <button
                           key={suggestion} // Keep key

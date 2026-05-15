@@ -86,7 +86,7 @@ export function SpawnSetForm({
       setDate: prev.setDate || fmt(initialSetDate),
       setEndDate: prev.setEndDate || fmt(initialSetEndDate),
     }));
-  }, [initialValues.id]);
+  }, [initialValues.id, initialValues.setDate, initialValues.setEndDate, initialValues.managementName, initialValues.scientificName, allEntries]);
 
   return (
     <form

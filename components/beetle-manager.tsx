@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { AnimatePresence, motion, Reorder } from "framer-motion";
 import { Search, Clipboard, Camera, Loader2, Crop, Check, X as CloseIcon, Trash2, Edit, CheckSquare, Square, ArrowUpDown, ChevronDown, ChevronUp, Settings, ChevronLeft, ChevronRight, FileSpreadsheet } from "lucide-react";
 import { Navbar } from "@/components/layout/navbar";
@@ -69,22 +69,19 @@ export function BeetleManager() {
     const canvas = document.createElement("canvas");
     const img = cropImageRef.current;
     
-    // 表示サイズと実際の画像サイズの比率を計算
-    const scaleX = img.naturalWidth / img.width;
-    const scaleY = img.naturalHeight / img.height;
-    
-    canvas.width = cropArea.width * scaleX;
-    canvas.height = cropArea.height * scaleY;
+    // cropAreaはパーセント単位(0-100)のため、自然解像度に換算する
+    canvas.width = (cropArea.width / 100) * img.naturalWidth;
+    canvas.height = (cropArea.height / 100) * img.naturalHeight;
     
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     
     ctx.drawImage(
       img,
-      cropArea.x * scaleX,
-      cropArea.y * scaleY,
-      cropArea.width * scaleX,
-      cropArea.height * scaleY,
+      (cropArea.x / 100) * img.naturalWidth,
+      (cropArea.y / 100) * img.naturalHeight,
+      (cropArea.width / 100) * img.naturalWidth,
+      (cropArea.height / 100) * img.naturalHeight,
       0,
       0,
       canvas.width,
@@ -92,7 +89,10 @@ export function BeetleManager() {
     );
     
     const croppedDataUrl = canvas.toDataURL("image/jpeg");
+    
+    // 状態をリセット
     setCropSrc(null);
+    setCropArea({ x: 0, y: 0, width: 100, height: 100 });
     setIsCropping(false);
     processOCR(croppedDataUrl);
   };
@@ -536,6 +536,9 @@ export function BeetleManager() {
     }
   };
 
+  const [selectedSpecies, setSelectedSpecies] = useState<string | null>(null);
+  const [speciesSortConfig, setSpeciesSortConfig] = useState<{ key: string, direction: "asc" | "desc" }>({ key: "managementName", direction: "asc" });
+
   const stats = useMemo(() => {
     const adults = entries.filter(e => e.type === "成虫");
     const larvae = entries.filter(e => e.type === "幼虫");
@@ -673,14 +676,19 @@ export function BeetleManager() {
     URL.revokeObjectURL(url);
   };
 
-  const handleGitHubSync = async () => {
+  const handleGitHubSync = useCallback(async () => {
+    if (typeof window !== "undefined" && !navigator.onLine) {
+      window.alert("オフラインのためGitHubに同期できません。インターネット接続を確認してください。");
+      return;
+    }
+
     if (!gitHub.token || !gitHub.repo) {
-      window.alert("GitHub設定（トークンとリポジトリ名）が未完了です。");
+      window.alert("GitHubの設定（トークンやリポジトリ名）が完了していません。設定画面から設定を行ってください。");
       return;
     }
 
     const confirmSync = window.confirm(
-      "現在のローカルデータをGitHubにバックアップ（上書き）します。よろしいですか？"
+      "ローカルの全データをGitHub上のバックアップファイルに上書きします。よろしいですか？\n(GitHub側の既存データは更新されます)"
     );
     if (!confirmSync) return;
 
@@ -693,12 +701,13 @@ export function BeetleManager() {
       } else {
         throw new Error("Sync failed");
       }
-    } catch {
-      window.alert("GitHubへの同期に失敗しました。設定を確認してください。");
+    } catch (error) {
+      console.error("GitHub Sync Error:", error);
+      window.alert("GitHubへの同期に失敗しました。トークンの権限、リポジトリ名、または通信環境を確認してください。");
     } finally {
       setIsSyncing(false);
     }
-  };
+  }, [gitHub, entries]);
 
   const getInitialValues = (type: EntryType, emptyForm: any) => {
     if (!isAutoFillEnabled) return emptyForm;
@@ -1255,24 +1264,24 @@ export function BeetleManager() {
         }}
         title={editingEntry ? "編集" : "新規登録"}
       >
-        <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md -mx-6 px-6 pt-3 pb-4 border-b border-gray-100 mb-6">
-          {/* Row 1: Actions & Auto-fill */}
-          <div className="flex items-center justify-between gap-4 mb-4">
+        <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md -mx-6 px-6 pt-2 pb-2 border-b border-gray-100 mb-4">
+          {/* Row 1: Actions & Auto-fill (縮小版) */}
+          <div className="flex items-center justify-between gap-4 mb-2">
             <button 
               onClick={() => { setIsCreating(false); startEditing(null); }}
-              className="text-gray-400 font-bold text-xs px-1 hover:bg-gray-50 rounded-lg transition-colors whitespace-nowrap"
+              className="text-gray-400 font-bold text-[10px] px-1 hover:bg-gray-50 rounded-lg transition-colors whitespace-nowrap"
             >
-              キャンセル
+              閉じる
             </button>
 
             {!editingEntry && (
               <label className="flex items-center gap-2 cursor-pointer group">
-                <span className={`text-[10px] font-black transition-colors ${isAutoFillEnabled ? 'text-[#FF9800]' : 'text-gray-400'} uppercase tracking-tighter`}>前回内容を自動反映</span>
+                <span className={`text-[9px] font-black transition-colors ${isAutoFillEnabled ? 'text-[#FF9800]' : 'text-gray-400'} uppercase tracking-tighter`}>自動反映</span>
                 <div 
                   onClick={() => setIsAutoFillEnabled(!isAutoFillEnabled)}
-                  className={`w-8 h-4 rounded-full transition-colors relative border ${isAutoFillEnabled ? 'bg-[#FF9800] border-[#FF9800]' : 'bg-gray-100 border-gray-200'}`}
+                  className={`w-6 h-3 rounded-full transition-colors relative border ${isAutoFillEnabled ? 'bg-[#FF9800] border-[#FF9800]' : 'bg-gray-100 border-gray-200'}`}
                 >
-                  <div className={`absolute top-0.5 w-2.5 h-2.5 bg-white rounded-full transition-all shadow-sm ${isAutoFillEnabled ? 'left-[1.125rem]' : 'left-0.5'}`} />
+                  <div className={`absolute top-0.5 w-1.5 h-1.5 bg-white rounded-full transition-all shadow-sm ${isAutoFillEnabled ? 'left-[0.875rem]' : 'left-0.5'}`} />
                 </div>
               </label>
             )}
@@ -1280,42 +1289,39 @@ export function BeetleManager() {
             <button 
               type="submit" 
               form={editingEntry ? "edit-form" : "create-form"}
-              className="bg-[#2D5A27] text-white px-5 py-1.5 rounded-lg font-black text-[11px] shadow-md shadow-[#2D5A27]/20 hover:brightness-110 active:scale-95 transition-all select-none whitespace-nowrap"
+              className="bg-[#2D5A27] text-white px-4 py-1 rounded-lg font-black text-[10px] shadow-sm hover:brightness-110 active:scale-95 transition-all select-none whitespace-nowrap"
             >
               保存
             </button>
           </div>
 
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-2 mb-1">
-              <button onClick={handlePasteAndFill} className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-xl shadow-sm text-[10px] font-black text-[#FF9800] active:scale-95 transition-all"><Clipboard size={12} />貼付</button>
-              <label className={`flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-xl shadow-sm text-[10px] font-black text-[#FF9800] active:scale-95 transition-all cursor-pointer ${isOcrProcessing ? 'opacity-50 pointer-events-none' : ''}`}>{isOcrProcessing ? <Loader2 size={12} className="animate-spin" /> : <Camera size={12} />}カメラで読み取り<input type="file" accept="image/*" capture="environment" hidden onChange={handleCameraOCR} disabled={isOcrProcessing} /></label>
-            </div>
+          <div className="flex items-center gap-2">
+            <button onClick={handlePasteAndFill} className="flex items-center gap-1 px-2 py-1 bg-white border border-gray-200 rounded-lg shadow-sm text-[9px] font-black text-[#FF9800] active:scale-95 transition-all"><Clipboard size={10} />貼付</button>
+            <label className={`flex items-center gap-1 px-2 py-1 bg-white border border-gray-200 rounded-lg shadow-sm text-[9px] font-black text-[#FF9800] active:scale-95 transition-all cursor-pointer ${isOcrProcessing ? 'opacity-50 pointer-events-none' : ''}`}>{isOcrProcessing ? <Loader2 size={10} className="animate-spin" /> : <Camera size={10} />}OCR<input type="file" accept="image/*" capture="environment" hidden onChange={handleCameraOCR} disabled={isOcrProcessing} /></label>
           </div>
           
           {!editingEntry && (
-            <div className="mt-3">
-          <div className="text-[10px] font-black text-[#D7CCC8] block tracking-widest uppercase mb-1 px-1">種別を選択</div>
+            <div className="mt-2">
           <div className="flex items-center gap-2">
             <button
               type="button"
-              className="p-2 bg-gray-50 rounded-xl text-gray-400 active:text-[#FF9800] active:bg-[#FF9800]/5 transition-all"
+              className="p-1 bg-gray-50 rounded-lg text-gray-400 active:text-[#FF9800] active:bg-[#FF9800]/5 transition-all"
               onClick={() => {
                 const idx = ENTRY_TYPES.indexOf(createType);
                 const prevIdx = (idx - 1 + ENTRY_TYPES.length) % ENTRY_TYPES.length;
                 setCreateType(ENTRY_TYPES[prevIdx]);
               }}
             >
-              <ChevronLeft size={20} />
+              <ChevronLeft size={16} />
             </button>
-            <div className="flex-1 flex bg-gray-50 shadow-inner rounded-xl p-1 gap-1">
+            <div className="flex-1 flex bg-gray-50 shadow-inner rounded-lg p-0.5 gap-0.5">
           {ENTRY_TYPES.map((type) => (
             <button
               key={type}
               type="button"
               data-ignore-click-outside="true"
               style={{ width: `${100 / ENTRY_TYPES.length}%` }}
-              className={`py-2 text-sm font-bold rounded-lg transition-all select-none ${
+              className={`py-1 text-[11px] font-bold rounded-md transition-all select-none ${
                 createType === type ? "bg-[#FF9800] text-white shadow-sm" : "text-gray-500"
               }`}
               onClick={() => {
@@ -1332,14 +1338,14 @@ export function BeetleManager() {
           </div>
             <button
               type="button"
-              className="p-2 bg-gray-50 rounded-xl text-gray-400 active:text-[#FF9800] active:bg-[#FF9800]/5 transition-all"
+              className="p-1 bg-gray-50 rounded-lg text-gray-400 active:text-[#FF9800] active:bg-[#FF9800]/5 transition-all"
               onClick={() => {
                 const idx = ENTRY_TYPES.indexOf(createType);
                 const nextIdx = (idx + 1) % ENTRY_TYPES.length;
                 setCreateType(ENTRY_TYPES[nextIdx]);
               }}
             >
-              <ChevronRight size={20} />
+              <ChevronRight size={16} />
             </button>
           </div>
         </div>
@@ -1386,10 +1392,12 @@ export function BeetleManager() {
             onDateTypeChange={setLarvaDateType}
             allEntries={entries}
             onSubmit={(values, count) => {
-            let currentEntries = [...entries];
+              let currentEntries = [...entries];
               for (let index = 0; index < count; index += 1) {
-              const mName = generateUniqueMName(values.managementName || "", values.scientificName, currentEntries, "幼虫");
-              addLarva({ ...values, managementName: mName });
+                const mName = generateUniqueMName(values.managementName || "", values.scientificName, currentEntries, "幼虫");
+                // IDや作成日などのメタデータを除去して新規登録
+                const { id, createdAt, ...cleanValues } = values as any;
+                addLarva({ ...cleanValues, managementName: mName });
               // 次のループの判定用に管理名だけ仮追加した配列を作る
               currentEntries.push({ managementName: mName, scientificName: values.scientificName, type: "幼虫" } as any);
               }
@@ -1501,104 +1509,157 @@ export function BeetleManager() {
       </Modal>
 
       <section className="px-6">
-        {activeTab !== "分析" && activeTab !== "タスク" && activeTab !== "設定" ? (
-          filteredEntries.length === 0 ? (
-            <EmptyState />
-          ) : (
-            Object.entries(groupedEntries).map(([sciName, group]) => {
-              const isExpanded = expandedSpecies.includes(sciName) || isSelectionMode || query.length > 0;
-              const japaneseName = group[0]?.japaneseName || "不明";
-              
-              return (
-                <div 
-                  key={sciName} 
-                  ref={(el) => { groupRefs.current[sciName] = el; }}
-                  className="mb-4 scroll-mt-80"
+        <AnimatePresence mode="wait">
+          {selectedSpecies ? (
+            <motion.div
+              key="species-view"
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="fixed inset-0 z-50 bg-[#F5F0EB] overflow-y-auto px-6 pt-4 pb-32"
+            >
+              <div className="flex items-center gap-4 mb-6">
+                <button 
+                  onClick={() => setSelectedSpecies(null)}
+                  className="p-2 bg-white rounded-xl shadow-sm text-gray-500 active:scale-95 transition-all"
                 >
-                  {!isSelectionMode && query.length === 0 && (
-                    <button 
-                      onClick={() => toggleSpecies(sciName)}
-                      className="w-full flex items-center justify-between p-4 bg-white/40 rounded-2xl mb-2 border border-white/60 active:scale-[0.98] transition-all"
-                    >
-                      <div className="text-left flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-black text-[#4A3F35]">{japaneseName}</span>
-                          <span className="text-[10px] font-bold bg-[#FF9800] text-white px-2 py-0.5 rounded-full">{group.length}</span>
-                        </div>
-                        <div className="text-[10px] italic text-gray-400 truncate">{sciName}</div>
-                      </div>
-                      <div className="text-gray-300">
-                        {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                      </div>
-                    </button>
-                  )}
-                  
-                  <AnimatePresence>
-                    {isExpanded && (
-                      <Reorder.Group 
-                        axis="x" // 横方向のスクロールと、もしドラッグリオーダーが有効な場合は横方向の並べ替えに対応
-                        values={group} 
-                        onReorder={(newOrder) => handleReorder(newOrder, sciName)}
-                        // Flexboxを使ってカードを横並びにし、オーバーフロー時に横スクロールを有効化
-                        // -mx-6 px-6 でスクロールエリアを画面端まで広げ、pb-4 でスクロールバーのスペースを確保
-                        className="flex gap-3 overflow-x-auto pb-4 no-scrollbar -mx-6 px-6"
-                      >
-                        {group.map((entry) => (
-                          <Reorder.Item 
-                            key={entry.id} 
-                            value={entry}
-                            dragListener={false} // スクロール時のカードのスライド（動き）を完全に防止
-                            className="flex-shrink-0 w-[calc(100vw-48px)] max-w-sm" // 各カードの幅を定義し、縮小しないように設定
-                          >
-                          <EntryCard
-                            entry={entry}
-                            onOpen={isSelectionMode ? () => handleToggleSelect(entry.id) : setSelectedEntry}
-                            onDelete={isSelectionMode ? undefined : (e, id) => {
-                              e.stopPropagation();
-                              if (window.confirm("本当に削除しますか？")) deleteEntry(id);
-                            }}
-                            isSelectionMode={isSelectionMode}
-                            isSelected={selectedIds.includes(entry.id)}
-                          />
-                          </Reorder.Item>
-                        ))}
-                      </Reorder.Group>
-                    )}
-                  </AnimatePresence>
+                  <ChevronLeft size={24} />
+                </button>
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-xl font-black text-[#4A3F35] truncate">{groupedEntries[selectedSpecies]?.[0]?.japaneseName || "不明"}</h2>
+                  <p className="text-xs italic text-gray-400 truncate">{selectedSpecies}</p>
                 </div>
-              );
-            })
-          )
-        ) : activeTab === "分析" ? (
-          <AnalysisView
-            entries={entries}
-            setSelectedEntry={setSelectedEntry}
-            setSelectedType={setSelectedType}
-            setActiveTab={setActiveTab}
-            handleExport={handleExport}
-            handleImport={handleImport}
-            isPersisted={isPersisted}
-            requestPersistence={requestPersistence}
-            handleSync={handleGitHubSync}
-            isSyncing={isSyncing}
-            onAddSpawnTemplate={(template) => {
-              setSpawnTemplate(template);
-              setCreateType("産卵セット");
-              setIsCreating(true);
-            }}
-          />
-        ) : activeTab === "タスク" ? (
-          <TaskView
-            entries={entries}
-            skippedTaskIds={skippedTaskIds}
-            setSkippedTaskIds={setSkippedTaskIds}
-            taskSortConfig={taskSortConfig}
-            setTaskSortConfig={setTaskSortConfig}
-            setSelectedEntry={setSelectedEntry}
-            handleQuickExchange={handleQuickExchange}
-            handlePromoteToAdult={handlePromoteToAdult}
-          />
-        ) : null}
+              </div>
+
+              {/* 種別内ソート */}
+              <div className="bg-white/60 backdrop-blur-md rounded-2xl p-4 border border-white/80 mb-6 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">ソート</span>
+                  <button 
+                    onClick={() => setSpeciesSortConfig(s => ({ ...s, direction: s.direction === "asc" ? "desc" : "asc" }))}
+                    className="text-[10px] font-black text-[#FF9800] flex items-center gap-1"
+                  >
+                    <ArrowUpDown size={12} /> {speciesSortConfig.direction === "asc" ? "昇順" : "降順"}
+                  </button>
+                </div>
+                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                  {[
+                    { id: 'managementName', label: '管理名' },
+                    { id: 'date', label: '日付' },
+                    { id: 'weight', label: '計測値' },
+                  ].map(k => (
+                    <button 
+                      key={k.id} 
+                      onClick={() => setSpeciesSortConfig(s => ({...s, key: k.id}))} 
+                      className={`px-4 py-2 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all ${speciesSortConfig.key === k.id ? "bg-[#FF9800] text-white shadow-sm" : "bg-white text-gray-400 border border-gray-100"}`}
+                    >
+                      {k.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {[...groupedEntries[selectedSpecies]].sort((a, b) => {
+                  const getVal = (e: BeetleEntry, key: string) => {
+                    if (key === "date") return (e as any).hatchDate || (e as any).setDate || (e as any).actualEmergenceDate || (e as any).emergenceDate || e.createdAt || "";
+                    if (key === "weight") {
+                      if (e.type === "幼虫" && e.logs?.[0]) return e.logs[0].weight;
+                      if (e.type === "成虫") return parseFloat(e.size) || 0;
+                      return 0;
+                    }
+                    return (e as any)[key] || "";
+                  };
+                  const v1 = getVal(a, speciesSortConfig.key);
+                  const v2 = getVal(b, speciesSortConfig.key);
+                  const res = typeof v1 === "string" ? v1.localeCompare(v2, "ja", { numeric: true }) : (v1 - v2);
+                  return speciesSortConfig.direction === "asc" ? res : -res;
+                }).map((entry) => (
+                  <EntryCard
+                    key={entry.id}
+                    entry={entry}
+                    onOpen={setSelectedEntry}
+                    onDelete={(e, id) => {
+                      e.stopPropagation();
+                      if (window.confirm("本当に削除しますか？")) deleteEntry(id);
+                    }}
+                  />
+                ))}
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="main-view"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              {activeTab !== "分析" && activeTab !== "タスク" && activeTab !== "設定" ? (
+                filteredEntries.length === 0 ? (
+                  <EmptyState />
+                ) : (
+                  Object.entries(groupedEntries).map(([sciName, group]) => {
+                    const japaneseName = group[0]?.japaneseName || "不明";
+                    
+                    return (
+                      <div 
+                        key={sciName} 
+                        ref={(el) => { groupRefs.current[sciName] = el; }}
+                        className="mb-4 scroll-mt-80"
+                      >
+                        <button 
+                          onClick={() => setSelectedSpecies(sciName)}
+                          className="w-full flex items-center justify-between p-4 bg-white/40 rounded-2xl mb-2 border border-white/60 active:scale-[0.98] transition-all"
+                        >
+                          <div className="text-left flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-black text-[#4A3F35]">{japaneseName}</span>
+                              <span className="text-[10px] font-bold bg-[#FF9800] text-white px-2 py-0.5 rounded-full">{group.length}</span>
+                            </div>
+                            <div className="text-[10px] italic text-gray-400 truncate">{sciName}</div>
+                          </div>
+                          <div className="text-gray-300">
+                            <ChevronRight size={18} />
+                          </div>
+                        </button>
+                      </div>
+                    );
+                  })
+                )
+              ) : activeTab === "分析" ? (
+                <AnalysisView
+                  entries={entries}
+                  setSelectedEntry={setSelectedEntry}
+                  setSelectedType={setSelectedType}
+                  setActiveTab={setActiveTab}
+                  handleExport={handleExport}
+                  handleImport={handleImport}
+                  isPersisted={isPersisted}
+                  requestPersistence={requestPersistence}
+                  handleSync={handleGitHubSync}
+                  isSyncing={isSyncing}
+                  onAddSpawnTemplate={(template) => {
+                    setSpawnTemplate(template);
+                    setCreateType("産卵セット");
+                    setIsCreating(true);
+                  }}
+                />
+              ) : activeTab === "タスク" ? (
+                <TaskView
+                  entries={entries}
+                  skippedTaskIds={skippedTaskIds}
+                  setSkippedTaskIds={setSkippedTaskIds}
+                  taskSortConfig={taskSortConfig}
+                  setTaskSortConfig={setTaskSortConfig}
+                  setSelectedEntry={setSelectedEntry}
+                  handleQuickExchange={handleQuickExchange}
+                  handlePromoteToAdult={handlePromoteToAdult}
+                />
+              ) : null}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </section>
 
       <Modal 
