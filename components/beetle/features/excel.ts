@@ -1,5 +1,5 @@
 import type { BeetleEntry, AdultBeetle, LarvaBeetle, SpawnSet, LarvaLog, GenerationValue, EntryType } from "@/types/beetle";
-import { createId, today, parseAmbiguousDate } from "./utils";
+import { createId, today, parseAmbiguousDate } from "@/types/utils";
 
 // Helper to parse a date string into YYYY-MM-DD format
 const parseDateToISO = (dateStr: string | number | Date | undefined): string => {

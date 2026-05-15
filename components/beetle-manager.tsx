@@ -29,7 +29,7 @@ import { SpawnSetSecondForm } from "./beetle/spawn-set/spawn-set-second-form";
 import { EntryCard } from "./beetle/shared/entry-card";
 import { EmptyState } from "./beetle/shared/empty-state";
 import { EntryDetail } from "./beetle/shared/entry-detail";
-import { importDataFromExcel } from "@/lib/excel"; // Import the new Excel import function
+import { importDataFromExcel } from "./beetle/features/excel"; // インポートパスを修正
 import { AnalysisView } from "./beetle/features/analysis-view";
 import { TaskView } from "./beetle/features/task-view";
 import { SettingsView } from "./beetle/features/settings-view"; // 新設を想定
@@ -1939,15 +1939,9 @@ export function BeetleManager() {
         <SettingsView
           onClose={() => setIsSettingsOpen(false)}
           sortKeys={sortKeys}
-        />
-      )}
-    </div>
-  );
-}
-      {isSettingsOpen && (
-        <SettingsView
-          onClose={() => setIsSettingsOpen(false)}
-          sortKeys={sortKeys}
+          backupEntries={backupEntries}
+          onRestoreBackup={restoreBackup}
+          onClearBackup={clearBackup}
         />
       )}
     </div>
