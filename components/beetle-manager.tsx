@@ -226,8 +226,8 @@ export function BeetleManager() {
      const list = entries.filter((entry) => {
        if (activeTab === "幼虫") {
          if (entry.type !== "幼虫") return false;
-         const isDeceased = !!(entry as any).deathDate;
-         const isSold = !!(entry as any).soldDate || (entry as any).status === "販売済み";
+         const isDeceased = !!(entry as any).deathDate && (entry as any).deathDate !== "-";
+         const isSold = ((entry as any).soldDate && (entry as any).soldDate !== "-") || (entry as any).status === "販売済み";
          const isEmerged = !!(entry as any).actualEmergenceDate;
 
          if (larvaFilter === "deceased") return isDeceased;
@@ -240,8 +240,8 @@ export function BeetleManager() {
          if (larvaFilter === "active") return !isEmerged;
        } else if (activeTab === "成虫") {
          if (entry.type !== "成虫") return false;
-         const isDeceased = !!(entry as any).deathDate;
-         const isSold = !!(entry as any).soldDate || (entry as any).status === "販売済み";
+         const isDeceased = !!(entry as any).deathDate && (entry as any).deathDate !== "-";
+         const isSold = ((entry as any).soldDate && (entry as any).soldDate !== "-") || (entry as any).status === "販売済み";
          const isFinished = isDeceased || isSold;
 
          if (adultFilter === "deceased") return isDeceased;
