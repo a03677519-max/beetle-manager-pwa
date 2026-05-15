@@ -474,12 +474,13 @@ export function BeetleManager() {
         if (!pos || !pos.sheetName) continue;
 
         const sheet = workbook.getWorksheet(pos.sheetName);
-        if (!sheet) continue; // ここで sheet が undefined でないことを確定させる
+        if (!sheet) continue;
 
         const linkCellIdx = entry.type === "成虫" ? 8 : entry.type === "幼虫" ? 7 : 8;
 
         // sheet が確実に存在することをコンパイラに伝えるため、直接参照を避けて変数を定義
         const row = sheet.getRow(pos.row);
+        if (!row) continue; // row が undefined の場合をスキップ
         const cell = row.getCell(linkCellIdx);
 
         for (const targetId of entry.linkedEntryIds) {
@@ -523,11 +524,15 @@ export function BeetleManager() {
     const processed: BeetleEntry[] = [];
     
     sorted.forEach(entry => {
-      const date = entry.type === "成虫" 
-        ? ((entry as AdultBeetle).emergenceDate || entry.createdAt)
-        : entry.type === "幼虫"
-          ? ((entry as LarvaBeetle).extractionDate && (entry as LarvaBeetle).extractionDate !== "-" ? (entry as LarvaBeetle).extractionDate : ((entry as LarvaBeetle).hatchDate || entry.createdAt))
-          : ((entry as SpawnSet).setDate || entry.createdAt);
+      let date: string;
+      if (entry.type === "成虫") {
+        date = (entry as AdultBeetle).emergenceDate || entry.createdAt || today();
+      } else if (entry.type === "幼虫") {
+        const larvaEntry = entry as LarvaBeetle;
+        date = (larvaEntry.extractionDate && larvaEntry.extractionDate !== "-" ? larvaEntry.extractionDate : (larvaEntry.hatchDate || larvaEntry.createdAt || today()));
+      } else { // SpawnSet
+        date = (entry as SpawnSet).setDate || entry.createdAt || today();
+      }
       
       const newName = generateUniqueMName(
         date, 
