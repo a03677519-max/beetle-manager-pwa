@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { AnimatePresence, motion, Reorder } from "framer-motion";
-import { Search, Clipboard, Camera, Loader2, Crop, Check, X as CloseIcon, Trash2, Edit, CheckSquare, Square, ArrowUpDown, ChevronDown, ChevronUp, Settings, ChevronLeft, ChevronRight, FileSpreadsheet } from "lucide-react";
+import { Search, Clipboard, Camera, Loader2, Crop, Check, X as CloseIcon, Trash2, Edit, CheckSquare, Square, ArrowUpDown, ChevronDown, ChevronUp, Settings, ChevronLeft, ChevronRight, FileSpreadsheet, Hash } from "lucide-react";
 import { Navbar } from "@/components/layout/navbar";
 import { Modal } from "./ui/modal"; // Ensure Modal is imported
 import { useSwitchBot } from "@/components/use-switchbot";
@@ -59,6 +59,7 @@ export function BeetleManager() {
   const clearBackup = useBeetleStore((state) => state.clearBackup);
   const setMainSortConfig = useBeetleStore((state) => state.setMainSortConfig);
   const { fetchTemperature, isFetching } = useSwitchBot();
+  const setManagementNameFormat = useBeetleStore((state) => state.setManagementNameFormat);
 
   const editingEntry = entries.find((entry) => entry.id === editingId) ?? null;
 
@@ -319,11 +320,11 @@ export function BeetleManager() {
     );
   };
 
-  const handleBulkCopyToExcel = async () => {
-    if (selectedIds.length === 0) return;
+  const handleBulkCopyToExcel = async (ids?: string[]) => {
+    const targetIds = ids || entries.map(e => e.id);
+    if (targetIds.length === 0) return;
 
     setIsSyncing(true); // 処理中インジケータとして利用
-    const sortedSelectedEntries = filteredEntries.filter(e => selectedIds.includes(e.id));
 
     try {
       const ExcelJS = (await import("exceljs")).default;
@@ -341,13 +342,16 @@ export function BeetleManager() {
         return "-";
       };
 
+      // idsが指定されている場合は現在のフィルタ/ソート順を維持、全抽出の場合は全件
+      const targetEntries = ids ? filteredEntries.filter(e => ids.includes(e.id)) : entries;
+
       // 1. 学名ごとにグループ化
-      const groups = sortedSelectedEntries.reduce((acc, e) => {
+      const groups = targetEntries.reduce((acc, e) => {
         const key = e.scientificName || "Unknown";
         if (!acc[key]) acc[key] = [];
         acc[key].push(e);
         return acc;
-      }, {} as Record<string, BeetleEntry[]>);
+      }, {} as Record<string, BeetleEntry[] >);
 
       // 2. 各学名のシートを作成
       for (const [sciName, speciesEntries] of Object.entries(groups)) {
@@ -463,7 +467,7 @@ export function BeetleManager() {
       }
 
       // 3. ハイパーリンク（紐付け）の設定
-      for (const entry of sortedSelectedEntries) {
+      for (const entry of targetEntries) {
         if (!entry.linkedEntryIds?.length) continue;
         const pos = entryCellMap.get(entry.id);
         if (!pos || !pos.sheetName) continue;
@@ -501,8 +505,8 @@ export function BeetleManager() {
       a.download = `beetle_manager_${today().replace(/-/g, "")}.xlsx`;
       a.click();
       window.URL.revokeObjectURL(url);
-
-      window.alert(`${sortedSelectedEntries.length}件のデータを保存しました。`);
+      
+      window.alert(`${targetEntries.length}件のデータを保存しました。`);
     } catch (error) {
       console.error(error);
       window.alert("エクセルファイルの生成に失敗しました。");
@@ -510,6 +514,34 @@ export function BeetleManager() {
       setIsSyncing(false);
     }
   };
+
+  const handleRegenerateAllNames = useCallback(() => {
+    if (!window.confirm("全個体の管理名を現在の規則（設定画面で変更可能）で一括更新します。よろしいですか？")) return;
+    
+    const sorted = [...entries].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    const processed: BeetleEntry[] = [];
+    
+    sorted.forEach(entry => {
+      const date = entry.type === "成虫" 
+        ? ((entry as AdultBeetle).emergenceDate || entry.createdAt)
+        : entry.type === "幼虫"
+          ? ((entry as LarvaBeetle).extractionDate && (entry as LarvaBeetle).extractionDate !== "-" ? (entry as LarvaBeetle).extractionDate : ((entry as LarvaBeetle).hatchDate || entry.createdAt))
+          : ((entry as SpawnSet).setDate || entry.createdAt);
+      
+      const newName = generateUniqueMName(
+        date, 
+        entry.scientificName, 
+        processed, 
+        entry.type,
+        managementNameFormats[entry.type]
+      );
+      processed.push({ ...entry, managementName: newName });
+    });
+    
+    importData(processed);
+    window.alert("管理名の一括更新が完了しました。");
+  }, [entries, managementNameFormats, importData]);
+
 
   const handleBulkDelete = () => {
     if (selectedIds.length === 0) return;
@@ -1141,12 +1173,12 @@ export function BeetleManager() {
         <div className="flex justify-between items-center mb-2">
           <p className="text-[11px] font-black text-[#B0A495] uppercase tracking-[0.3em]">Breeding Dashboard</p>
           <div className="flex gap-1 items-center">
-            <button
-              onClick={handleGitHubSync}
-              disabled={isSyncing}
-              className={`p-1.5 transition-all ${isSyncing ? "text-orange-400 animate-spin" : "text-gray-400 hover:text-[#FF9800] transition-colors"}`}
+            <button 
+              onClick={handleRegenerateAllNames}
+              className="p-1.5 text-gray-400 hover:text-[#FF9800] transition-colors"
+              title="一括採番"
             >
-              {isSyncing ? <Loader2 size={18} /> : <FileSpreadsheet size={18} />}
+              <Hash size={18} />
             </button>
             <button
               onClick={() => setIsSettingsOpen(true)}
@@ -1222,7 +1254,7 @@ export function BeetleManager() {
             </div>
             {isSelectionMode && (
               <div className="flex gap-2 pt-2 border-t border-gray-200/50">
-                <button onClick={handleBulkCopyToExcel} disabled={selectedIds.length === 0} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-green-50 text-green-600 rounded-xl text-[11px] font-bold disabled:opacity-30 transition-all active:scale-95">
+                <button onClick={() => handleBulkCopyToExcel(selectedIds)} disabled={selectedIds.length === 0} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-green-50 text-green-600 rounded-xl text-[11px] font-bold disabled:opacity-30 transition-all active:scale-95">
                   <FileSpreadsheet size={14} /> Excelコピー
                 </button>
                 <button onClick={handleBulkDelete} disabled={selectedIds.length === 0} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-red-50 text-red-500 rounded-xl text-[11px] font-bold disabled:opacity-30 transition-all active:scale-95">
@@ -1822,35 +1854,8 @@ export function BeetleManager() {
                   requestPersistence={requestPersistence}
                   handleSync={handleGitHubSync}
                   isSyncing={isSyncing}
-                  onRegenerateNames={() => {
-                    if (!window.confirm("全個体の管理名を新規則（日付_連番）で一括更新します。よろしいですか？")) return;
-                    
-                    const newEntries = [...entries].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-                    const processed: BeetleEntry[] = [];
-                    
-                    newEntries.forEach(entry => {
-                      let date = "";
-                      if (entry.type === "成虫") {
-                        date = entry.emergenceDate || entry.createdAt;
-                      } else if (entry.type === "幼虫") {
-                        date = entry.extractionDate && entry.extractionDate !== "-" ? entry.extractionDate : (entry.hatchDate || entry.createdAt);
-                      } else if (entry.type === "産卵セット") {
-                        date = entry.setDate || entry.createdAt;
-                      }
-                      
-                      const newName = generateUniqueMName(
-                        date, 
-                        entry.scientificName, 
-                        processed, 
-                        entry.type,
-                        managementNameFormats[entry.type]
-                      );
-                      processed.push({ ...entry, managementName: newName });
-                    });
-                    
-                    importData(processed);
-                    window.alert("管理名の一括更新が完了しました。");
-                  }}
+                  onRegenerateNames={handleRegenerateAllNames}
+                  onExcelExportAll={() => handleBulkCopyToExcel()}
                   onAddSpawnTemplate={(template) => {
                     setSpawnTemplate(template);
                     setCreateType("産卵セット");
@@ -1947,6 +1952,8 @@ export function BeetleManager() {
           backupEntries={backupEntries}
           onRestoreBackup={restoreBackup}
           onClearBackup={clearBackup}
+          managementNameFormats={managementNameFormats}
+          onUpdateManagementNameFormat={setManagementNameFormat}
         />
       )}
     </div>

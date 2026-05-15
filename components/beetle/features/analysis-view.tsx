@@ -30,6 +30,7 @@ interface AnalysisViewProps {
   handleSync: () => void;
   isSyncing?: boolean;
   onRegenerateNames?: () => void;
+  onExcelExportAll?: () => void;
   onAddSpawnTemplate?: (template: Partial<SpawnSet>) => void;
 }
 
@@ -103,6 +104,7 @@ export function AnalysisView({
   handleSync,
   isSyncing,
   onRegenerateNames,
+  onExcelExportAll,
   onAddSpawnTemplate
 }: AnalysisViewProps) {
   const [expandedNames, setExpandedNames] = useState<string[]>([]);
@@ -585,6 +587,12 @@ export function AnalysisView({
           >
             <Upload size={14} /> 
             {isSyncing ? "同期中..." : "GitHubへデータを同期"}
+          </button>
+          <button 
+            onClick={onExcelExportAll} 
+            className="col-span-2 flex items-center justify-center gap-2 bg-green-600 text-white py-3 rounded-xl text-xs font-bold shadow-md active:scale-95 transition-all"
+          >
+            <FileSpreadsheet size={14} /> 全データをエクセル形式で保存
           </button>
           <button onClick={handleExport} className="flex items-center justify-center gap-2 bg-white/80 py-3 rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-all"><Download size={14} /> 書き出し</button>
           <label className="flex items-center justify-center gap-2 bg-white/80 py-3 rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-all cursor-pointer"><Upload size={14} /> JSON読込<input type="file" hidden onChange={handleImport} accept=".json" /></label>
