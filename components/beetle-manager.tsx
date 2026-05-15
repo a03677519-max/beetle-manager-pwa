@@ -269,7 +269,7 @@ export function BeetleManager() {
          if (e.type === "成虫") return (e as any).actualEmergenceDate || (e as any).emergenceDate || e.createdAt || "";
          if (e.type === "幼虫") return (e as any).hatchDate || (e as any).extractionDate || e.createdAt || "";
          if (e.type === "産卵セット") return (e as any).setDate || e.createdAt || "";
-         return e.createdAt || "";
+         return (e as any).createdAt || "";
        }
        if (key === "managementName") return e.managementName || "";
        if (key === "japaneseName") return e.japaneseName || "";
