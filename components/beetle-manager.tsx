@@ -551,16 +551,19 @@ export function BeetleManager() {
     const larvae = entries.filter(e => e.type === "幼虫");
     const spawnSets = entries.filter(e => e.type === "産卵セット");
 
+    const isDeceased = (e: any) => !!e.deathDate && e.deathDate !== "-";
+    const isSold = (e: any) => ((e.soldDate && e.soldDate !== "-") || e.status === "販売済み");
+
     return {
       adults: adults.length,
-      adultsActive: adults.filter(e => !(e as any).deathDate && !(e as any).soldDate && (e as any).status !== "販売済み").length,
-      adultsDeceased: adults.filter(e => !!(e as any).deathDate).length,
-      adultsSold: adults.filter(e => ((e as any).soldDate || (e as any).status === "販売済み") && !(e as any).deathDate).length,
+      adultsActive: adults.filter(e => !isDeceased(e) && !isSold(e)).length,
+      adultsDeceased: adults.filter(isDeceased).length,
+      adultsSold: adults.filter(e => isSold(e) && !isDeceased(e)).length,
       larvae: larvae.length,
-      larvaeActive: larvae.filter(e => !(e as any).deathDate && !(e as any).soldDate && !(e as any).actualEmergenceDate && (e as any).status !== "販売済み").length,
-      larvaeEmerged: larvae.filter(e => !(e as any).deathDate && !(e as any).soldDate && !!(e as any).actualEmergenceDate && (e as any).status !== "販売済み").length,
-      larvaeDeceased: larvae.filter(e => !!(e as any).deathDate).length,
-      larvaeSold: larvae.filter(e => ((e as any).soldDate || (e as any).status === "販売済み") && !(e as any).deathDate).length,
+      larvaeActive: larvae.filter(e => !isDeceased(e) && !isSold(e) && !(e as any).actualEmergenceDate).length,
+      larvaeEmerged: larvae.filter(e => !isDeceased(e) && !isSold(e) && !!(e as any).actualEmergenceDate).length,
+      larvaeDeceased: larvae.filter(isDeceased).length,
+      larvaeSold: larvae.filter(e => isSold(e) && !isDeceased(e)).length,
       spawnSets: spawnSets.length,
       spawnSetsActive: spawnSets.filter(e => !isSpawnSetFinished(e)).length,
     };
