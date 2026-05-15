@@ -42,7 +42,7 @@ export function Field({
 }) {
   return (
     <label className="field">
-      <span className="text-[12px] font-bold text-[#A67C52] mb-2 block tracking-wider uppercase">{label}</span>
+      <span className="text-[11px] font-black text-[#B0A495] mb-2 block tracking-[0.1em] uppercase ml-1">{label}</span>
       {children}
     </label>
   );
@@ -110,13 +110,13 @@ function DrumrollPicker<T extends string | number>({ options, value, onChange, i
 
 function PickerContainer({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative h-[100px] bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-inner flex">
+    <div className="relative h-[110px] bg-[#F9F7F5] rounded-[24px] overflow-hidden border border-[#E8E2DA] shadow-[inset_0_2px_10px_rgba(0,0,0,0.03)] flex">
       {/* グラデーションオーバーレイ */}
-      <div className="absolute inset-0 bg-gradient-to-b from-white/90 via-transparent to-white/90 pointer-events-none z-10" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#F9F7F5] via-transparent to-[#F9F7F5] pointer-events-none z-10" />
       
       {/* Center highlight */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-        <div className="w-[96%] h-7 border-y border-[#FF9800]/20 bg-[#FF9800]/5 rounded-lg" />
+        <div className="w-[94%] h-8 border-y border-[#FF9800]/10 bg-white/80 rounded-xl shadow-sm" />
       </div>
       {children}
     </div>
@@ -432,7 +432,7 @@ export function BottomSheetSelect({
                 animate={{ y: 0 }}
                 exit={{ y: "-100%" }}
                 transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="bg-white w-full max-w-md rounded-b-3xl p-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] shadow-2xl space-y-4 pointer-events-auto z-10"
+                className="bg-white/95 backdrop-blur-2xl w-full max-w-md rounded-b-[40px] p-8 pt-[calc(2rem+env(safe-area-inset-top,0px))] shadow-[0_20px_60px_rgba(0,0,0,0.15)] space-y-6 pointer-events-auto z-10 border-b border-white"
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex justify-between items-center mb-4">
@@ -453,8 +453,8 @@ export function BottomSheetSelect({
                       key={option}
                       ref={value === option ? selectedRef : null}
                       type="button"
-                      className={`w-full text-left px-4 py-3 rounded-2xl font-bold ${ // Keep button
-                        value === option ? "bg-[#FF9800] text-white" : "bg-gray-50 text-gray-700"
+                      className={`w-full text-left px-5 py-4 rounded-[20px] font-black text-sm transition-all ${ 
+                        value === option ? "bg-[#FF9800] text-white shadow-lg shadow-orange-100 scale-[1.02]" : "bg-[#F9F7F5] text-[#716860] hover:bg-[#F0EDE9]"
                       }`}
                       onMouseDown={(e) => e.preventDefault()} // フォーカス移動を防いでキーボードを維持
                       onClick={(e) => {

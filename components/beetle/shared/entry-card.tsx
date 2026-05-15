@@ -79,7 +79,7 @@ export function EntryCard({
 
   return (
     <article
-      className={`flex bg-white/80 backdrop-blur-md rounded-[24px] p-4 shadow-[0_4px_20px_rgba(0,0,0,0.03)] cursor-pointer active:scale-[0.98] active:opacity-90 transition-all duration-200 select-none touch-manipulation relative overflow-hidden mb-4 border ${isSelected ? "border-[#FF9800] ring-2 ring-[#FF9800]/20" : "border-white/50"}`}
+      className={`flex bg-white rounded-[32px] p-5 shadow-[0_8px_30px_rgba(0,0,0,0.04)] cursor-pointer active:scale-[0.97] transition-all duration-300 select-none touch-manipulation relative overflow-hidden mb-5 border ${isSelected ? "border-[#FF9800] ring-4 ring-orange-50" : "border-[#F1EDE8]"}`}
       onClick={(e) => {
         e.stopPropagation();
         onOpen(entry);
@@ -94,7 +94,7 @@ export function EntryCard({
       )}
 
       {entry.photos[0] && (
-        <div className={`relative w-20 h-20 flex-shrink-0 rounded-2xl overflow-hidden mr-4 shadow-sm transition-all ${isSelectionMode ? "ml-8" : ""}`}>
+        <div className={`relative w-24 h-24 flex-shrink-0 rounded-[24px] overflow-hidden mr-5 shadow-inner bg-gray-50 transition-all ${isSelectionMode ? "ml-10" : ""}`}>
           <Image src={entry.photos[0]} alt={entry.japaneseName} fill className="object-cover" unoptimized />
         </div>
       )}
@@ -102,16 +102,16 @@ export function EntryCard({
       <div className="flex-1 min-w-0">
         <div className="flex justify-between items-start mb-1">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center flex-wrap gap-x-2 gap-y-0.5 mb-0.5">
-              <h3 className="text-[18px] font-black text-[#333D33] tracking-tight leading-tight">{entry.japaneseName}</h3>
+            <div className="flex items-center flex-wrap gap-x-2 gap-y-1 mb-1">
+              <h3 className="text-[20px] font-black text-[#3C3631] tracking-tighter leading-none">{entry.japaneseName}</h3>
               {entry.type === "成虫" && (
                 <span className={`text-sm font-bold ${entry.gender === "オス" ? "text-blue-500" : entry.gender === "メス" ? "text-pink-500" : "text-gray-400"}`}>
                   {entry.gender === "オス" ? "♂" : entry.gender === "メス" ? "♀" : ""}
                 </span>
               )}
-              {entry.managementName && <span className="text-[10px] font-black bg-gray-100 px-2 py-0.5 rounded text-gray-500">{entry.managementName}</span>}
+              {entry.managementName && <span className="text-[10px] font-black bg-[#F9F7F5] px-2.5 py-1 rounded-lg text-[#B0A495] tracking-wider uppercase border border-[#E8E2DA]">{entry.managementName}</span>}
             </div>
-            <p className="text-[13px] italic text-[#D7CCC8] opacity-80 leading-tight">{entry.scientificName}</p>
+            <p className="text-[12px] italic text-[#B0A495] font-serif leading-tight">{entry.scientificName}</p>
             {entry.memo && (
               <p className="text-[11px] text-gray-400 mt-1 line-clamp-1 italic">
                 {entry.memo}

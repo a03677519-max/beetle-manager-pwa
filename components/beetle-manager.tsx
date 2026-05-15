@@ -964,7 +964,7 @@ export function BeetleManager() {
   };
 
   return (
-    <div className="app-container font-cute bg-[#F5F0EB] min-h-screen pb-[calc(120px+env(safe-area-inset-bottom,16px))] leading-[1.7]">
+    <div className="app-container font-cute bg-[#F8F5F2] min-h-screen pb-[calc(120px+env(safe-area-inset-bottom,16px))] leading-[1.7] text-[#3C3631]">
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -982,9 +982,9 @@ export function BeetleManager() {
         showAddButton={!isCreating && !editingId && !selectedEntry && !isSettingsOpen}
       />
       {/* 固定ヘッダーセクション */}
-      <section className="sticky top-0 z-30 bg-white/80 backdrop-blur-md pt-4 pb-2 px-6 border-b border-gray-100 mb-4">
+      <section className="sticky top-0 z-30 bg-white/70 backdrop-blur-xl pt-6 pb-3 px-6 border-b border-[#E8E2DA] mb-6 shadow-[0_4px_30px_rgba(0,0,0,0.02)]">
         <div className="flex justify-between items-center mb-2">
-          <p className="text-[10px] font-black text-[#D7CCC8] uppercase tracking-[0.2em] opacity-60">Breeding Dashboard</p>
+          <p className="text-[11px] font-black text-[#B0A495] uppercase tracking-[0.3em]">Breeding Dashboard</p>
           <div className="flex gap-1 items-center">
             <button
               onClick={() => setIsSettingsOpen(true)}
@@ -994,13 +994,13 @@ export function BeetleManager() {
             </button>
             <button 
               onClick={() => setShowSort(!showSort)}
-              className={`text-[9px] font-bold px-2 py-0.5 rounded-full transition-all ${showSort ? "bg-[#FF9800] text-white" : "bg-gray-100 text-gray-500"}`}
+              className={`text-[10px] font-black px-3 py-1 rounded-full transition-all ${showSort ? "bg-[#FF9800] text-white shadow-lg shadow-orange-200" : "bg-[#EFE9E2] text-[#8B7D7B]"}`}
             >
               並び替え
             </button>
             <button 
               onClick={handleToggleSelectionMode}
-              className={`text-[9px] font-bold px-2 py-0.5 rounded-full transition-all ${isSelectionMode ? "bg-[#F4511E] text-white" : "bg-gray-100 text-gray-500"}`}
+              className={`text-[10px] font-black px-3 py-1 rounded-full transition-all ${isSelectionMode ? "bg-[#F4511E] text-white shadow-lg shadow-red-200" : "bg-[#EFE9E2] text-[#8B7D7B]"}`}
             >
               一括
             </button>
@@ -1078,35 +1078,35 @@ export function BeetleManager() {
         <div className="grid grid-cols-3 gap-3 mb-6">
           <button 
             onClick={() => { setActiveTab("成虫"); setSelectedType("成虫"); }}
-            className={`p-2 rounded-2xl border transition-all text-left ${activeTab === "成虫" && selectedType === "成虫" ? "bg-[#FF9800] border-[#FF9800] text-white shadow-lg" : "bg-white/60 border-white/80 text-[#4A3F35]"}`}
+            className={`p-3 rounded-[24px] border transition-all text-left ${activeTab === "成虫" && selectedType === "成虫" ? "bg-[#FF9800] border-[#FF9800] text-white shadow-[0_10px_25px_rgba(255,152,0,0.3)] scale-[1.02]" : "bg-white/60 border-white/80 text-[#4A3F35] shadow-sm"}`}
           >
-            <p className="text-[9px] font-bold opacity-70 uppercase mb-0.5">成虫</p>
-            <p className="text-xl font-black">{stats.adults}<span className="text-[9px] ml-0.5">頭</span></p>
+            <p className="text-[10px] font-black opacity-80 uppercase mb-1 tracking-tighter">Adults</p>
+            <p className="text-2xl font-black leading-none">{stats.adults}<span className="text-xs ml-1 font-bold">頭</span></p>
           </button>
           <button 
             onClick={() => { setActiveTab("幼虫"); setSelectedType("幼虫"); }}
-            className={`p-2 rounded-2xl border transition-all text-left ${activeTab === "幼虫" && selectedType === "幼虫" ? "bg-[#FF9800] border-[#FF9800] text-white shadow-lg" : "bg-white/60 border-white/80 text-[#4A3F35]"}`}
+            className={`p-3 rounded-[24px] border transition-all text-left ${activeTab === "幼虫" && selectedType === "幼虫" ? "bg-[#FF9800] border-[#FF9800] text-white shadow-[0_10px_25px_rgba(255,152,0,0.3)] scale-[1.02]" : "bg-white/60 border-white/80 text-[#4A3F35] shadow-sm"}`}
           >
-            <p className="text-[9px] font-bold opacity-70 uppercase mb-0.5">幼虫</p>
-            <p className="text-xl font-black">{stats.larvae}<span className="text-[9px] ml-0.5">頭</span></p>
+            <p className="text-[10px] font-black opacity-80 uppercase mb-1 tracking-tighter">Larvae</p>
+            <p className="text-2xl font-black leading-none">{stats.larvae}<span className="text-xs ml-1 font-bold">頭</span></p>
           </button>
           <button 
             onClick={() => { setActiveTab("産卵セット"); setSelectedType("産卵セット"); }}
-            className={`p-2 rounded-2xl border transition-all text-left ${activeTab === "産卵セット" && selectedType === "産卵セット" ? "bg-[#FF9800] border-[#FF9800] text-white shadow-lg" : "bg-white/60 border-white/80 text-[#4A3F35]"}`}
+            className={`p-3 rounded-[24px] border transition-all text-left ${activeTab === "産卵セット" && selectedType === "産卵セット" ? "bg-[#FF9800] border-[#FF9800] text-white shadow-[0_10px_25px_rgba(255,152,0,0.3)] scale-[1.02]" : "bg-white/60 border-white/80 text-[#4A3F35] shadow-sm"}`}
           >
-            <p className="text-[9px] font-bold opacity-70 uppercase mb-0.5">セット</p>
-            <p className="text-xl font-black">{stats.spawnSets}<span className="text-[9px] ml-0.5">件</span></p>
+            <p className="text-[10px] font-black opacity-80 uppercase mb-1 tracking-tighter">Spawn</p>
+            <p className="text-2xl font-black leading-none">{stats.spawnSets}<span className="text-xs ml-1 font-bold">件</span></p>
           </button>
         </div>
 
-        <label className="flex items-center bg-white/80 rounded-2xl px-4 py-3 shadow-sm border border-white/40 focus-within:border-[#FF9800] transition-all mb-4">
-          <Search size={16} className="text-[#6C757D] mr-3" />
+        <label className="flex items-center bg-white/90 rounded-[20px] px-5 py-3 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] border border-white focus-within:border-[#FF9800] transition-all mb-6">
+          <Search size={18} className="text-[#B0A495] mr-3" />
           <input
             type="text"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="検索..."
-            className="flex-1 text-base text-[#4A3F35] outline-none bg-transparent"
+            placeholder="Search entries..."
+            className="flex-1 text-base text-[#4A3F35] outline-none bg-transparent placeholder-[#D7CCC8]"
           />
         </label>
 
