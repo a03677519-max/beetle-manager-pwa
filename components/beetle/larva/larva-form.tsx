@@ -192,7 +192,7 @@ export function LarvaForm({
         onSubmit(finalValues, count);
       }}
     >
-      <div className="bg-white rounded-2xl p-3 border border-gray-100 shadow-sm space-y-2 flex-1 overflow-y-auto mb-4">
+      <div className="bg-white rounded-2xl p-2 border border-gray-100 shadow-sm space-y-2 flex-1 overflow-y-auto mb-2">
         <EntryBaseFields
           {...values}
           managementName={values.managementName || ""}

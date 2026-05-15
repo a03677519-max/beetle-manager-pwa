@@ -1264,9 +1264,9 @@ export function BeetleManager() {
         }}
         title={editingEntry ? "編集" : "新規登録"}
       >
-        <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md -mx-6 px-6 pt-2 pb-2 border-b border-gray-100 mb-4">
+        <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md -mx-6 px-6 pt-1 pb-1 border-b border-gray-100 mb-2">
           {/* Row 1: Actions & Auto-fill (縮小版) */}
-          <div className="flex items-center justify-between gap-4 mb-2">
+          <div className="flex items-center justify-between gap-4 mb-1">
             <button 
               onClick={() => { setIsCreating(false); startEditing(null); }}
               className="text-gray-400 font-bold text-[10px] px-1 hover:bg-gray-50 rounded-lg transition-colors whitespace-nowrap"
@@ -1301,7 +1301,7 @@ export function BeetleManager() {
           </div>
           
           {!editingEntry && (
-            <div className="mt-2">
+            <div className="mt-1.5">
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -1353,8 +1353,8 @@ export function BeetleManager() {
 
           {/* 幼虫の場合の日付区分セレクター (固定表示) */}
           {(createType === "幼虫" || editingEntry?.type === "幼虫") && (
-            <div className="mt-3 pt-3 border-t border-gray-100">
-              <div className="text-[9px] font-black text-gray-400 block tracking-widest uppercase mb-1.5 px-1">日付区分</div>
+            <div className="mt-2 pt-2 border-t border-gray-100">
+              <div className="text-[9px] font-black text-gray-400 block tracking-widest uppercase mb-1 px-1">日付区分</div>
               <div className="flex bg-gray-50 shadow-inner rounded-xl p-1 gap-1">
                 {(['hatch', 'set', 'extraction'] as const).map((type) => (
                   <button

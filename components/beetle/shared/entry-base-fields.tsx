@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Search, Link as LinkIcon } from "lucide-react";
 import { Field, GenerationRollField, BottomSheetInput } from "@/components/entry-fields";
@@ -38,6 +38,16 @@ export function EntryBaseFields({
 }) {
   const [isLinkedSelectOpen, setIsLinkedSelectOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // モーダルが開いた時に検索窓に自動フォーカス
+  useEffect(() => {
+    if (isLinkedSelectOpen) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 100);
+    }
+  }, [isLinkedSelectOpen]);
 
   const suggestions = useMemo(() => {
     const jSet = new Set<string>();
@@ -187,6 +197,7 @@ export function EntryBaseFields({
               <div className="relative mb-4">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                 <input
+                  ref={searchInputRef}
                   type="text"
                   placeholder="名前や管理名で検索..."
                   value={searchQuery} // Keep value

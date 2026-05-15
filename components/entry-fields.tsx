@@ -342,7 +342,7 @@ export function BottomSheetSelect({
     if (!isOpen) return;
 
     if (selectedRef.current) {
-      selectedRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      selectedRef.current.scrollIntoView({ block: 'center' });
     }
 
     const handleViewport = () => {
@@ -418,7 +418,7 @@ export function BottomSheetSelect({
           <Portal>
             <div 
               ref={containerRef}
-              className="fixed inset-0 z-[100] flex items-end justify-center pointer-events-none overscroll-none"
+              className="fixed inset-0 z-[100] flex items-start justify-center pointer-events-none overscroll-none"
             >
               <motion.div
                 initial={{ opacity: 0 }}
@@ -428,11 +428,11 @@ export function BottomSheetSelect({
                 onClick={() => setIsOpen(false)}
               />
               <motion.div
-                initial={{ y: "100%" }}
+                initial={{ y: "-100%" }}
                 animate={{ y: 0 }}
-                exit={{ y: "100%" }}
+                exit={{ y: "-100%" }}
                 transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="bg-white w-full max-w-md rounded-t-3xl p-6 shadow-2xl space-y-4 pointer-events-auto z-10"
+                className="bg-white w-full max-w-md rounded-b-3xl p-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] shadow-2xl space-y-4 pointer-events-auto z-10"
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex justify-between items-center mb-4">
@@ -471,7 +471,6 @@ export function BottomSheetSelect({
                     </button>
                   ))}
                 </div>
-                <div className="h-[env(safe-area-inset-bottom,16px)]" />
               </motion.div>
             </div>
           </Portal>
@@ -510,17 +509,14 @@ export function BottomSheetInput({
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // ボトムシートが開いた時の自動フォーカスを抑制（ユーザー要望）
-    /*
+    // 入力ボトムシートが開いた際に自動でフォーカスを当て、キーボードを即座に表示する
     const focusTimer = setTimeout(() => {
       if (isOpen && inputRef.current) {
-        inputRef.current.focus();
-        inputRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        inputRef.current.focus({ preventScroll: true });
       }
-    }, 50);
-    */
-    
-    // iOS キーボード展開時のスクロール追従・中央配置
+    }, 150);
+
+    // キーボード展開時のレイアウト固定
     const handleViewport = () => {
       if (!window.visualViewport || !isOpen) return;
       
@@ -529,11 +525,6 @@ export function BottomSheetInput({
         containerRef.current.style.top = `${window.visualViewport.offsetTop}px`;
       }
 
-      if (document.activeElement === inputRef.current) {
-        requestAnimationFrame(() => {
-          inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        });
-      }
     };
 
     const handleSync = (e: any) => {
@@ -574,7 +565,7 @@ export function BottomSheetInput({
     document.addEventListener('focusout', handleFocusOut);
 
     return () => {
-      // clearTimeout(focusTimer);
+      clearTimeout(focusTimer);
       window.removeEventListener('app:close-bottom-sheets', handleSync);
       window.removeEventListener('app:close-all-sheets', handleGlobalClose);
       window.visualViewport?.removeEventListener('resize', handleViewport);
@@ -620,7 +611,7 @@ export function BottomSheetInput({
           <Portal>
             <div 
               ref={containerRef}
-              className="fixed inset-0 z-[100] flex items-end justify-center pointer-events-none overscroll-none"
+              className="fixed inset-0 z-[100] flex items-start justify-center pointer-events-none overscroll-none"
             >
               <motion.div
                 initial={{ opacity: 0 }}
@@ -630,11 +621,11 @@ export function BottomSheetInput({
                 onClick={() => setIsOpen(false)}
               />
               <motion.div
-                initial={{ y: "100%" }}
+                initial={{ y: "-100%" }}
                 animate={{ y: 0 }}
-                exit={{ y: "100%" }}
+                exit={{ y: "-100%" }}
                 transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="bg-white w-full max-w-md rounded-t-3xl p-6 shadow-2xl space-y-4 pointer-events-auto z-10"
+                className="bg-white w-full max-w-md rounded-b-3xl p-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] shadow-2xl space-y-4 pointer-events-auto z-10"
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex justify-between items-center mb-2">
@@ -715,7 +706,6 @@ export function BottomSheetInput({
                     </div>
                   </div>
                 )}
-                <div className="h-[env(safe-area-inset-bottom,16px)]" />
               </motion.div>
             </div>
           </Portal>

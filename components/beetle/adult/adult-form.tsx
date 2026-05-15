@@ -76,8 +76,8 @@ export function AdultForm({
         onSubmit(valuesRef.current);
       }}
     >
-      <div className="flex-1 overflow-y-auto px-1 space-y-3 mb-2">
-        <div className="bg-white rounded-2xl p-3 border border-gray-100 shadow-sm space-y-2">
+      <div className="flex-1 overflow-y-auto px-1 space-y-2 mb-2">
+        <div className="bg-white rounded-2xl p-2 border border-gray-100 shadow-sm space-y-2">
         <EntryBaseFields
           {...values}
           managementName={values.managementName || ""}
