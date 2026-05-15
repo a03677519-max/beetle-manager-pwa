@@ -1831,7 +1831,7 @@ export function BeetleManager() {
                     newEntries.forEach(entry => {
                       let date = "";
                       if (entry.type === "成虫") {
-                        date = entry.actualEmergenceDate || entry.emergenceDate || entry.createdAt;
+                        date = entry.emergenceDate || entry.createdAt;
                       } else if (entry.type === "幼虫") {
                         date = entry.extractionDate && entry.extractionDate !== "-" ? entry.extractionDate : (entry.hatchDate || entry.createdAt);
                       } else if (entry.type === "産卵セット") {
