@@ -1973,7 +1973,7 @@ export function BeetleManager() {
                       </div>
                     )}
                   </div>
-                ))}
+                }))()}
               </div>
             </motion.div>
           ) : (
