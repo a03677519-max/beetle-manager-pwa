@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { AnimatePresence, motion, Reorder } from "framer-motion";
-import { Search, Clipboard, Camera, Loader2, Crop, Check, X as CloseIcon, Trash2, Edit, CheckSquare, Square, ArrowUpDown, ChevronDown, ChevronUp, Settings, ChevronLeft, ChevronRight, FileSpreadsheet, Hash } from "lucide-react";
+import { Search, Clipboard, Camera, Loader2, Crop, Check, X as CloseIcon, Trash2, Edit, CheckSquare, Square, ArrowUpDown, ChevronDown, ChevronUp, Settings, ChevronLeft, ChevronRight, FileSpreadsheet, Hash, RefreshCw } from "lucide-react";
 import { Navbar } from "@/components/layout/navbar";
 import { Modal } from "./ui/modal"; // Ensure Modal is imported
 import { useSwitchBot } from "@/components/use-switchbot";
@@ -165,6 +165,9 @@ export function BeetleManager() {
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [showSort, setShowSort] = useState(false);
   const [isBulkEditing, setIsBulkEditing] = useState(false);
+  const [lastSelectedId, setLastSelectedId] = useState<string | null>(null);
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  const isLongPressActive = useRef(false);
 
   // ソート値取得ヘルパー関数 (useMemo/useCallback の外で定義し、依存配列から参照可能にする)
   const getSortValue = useCallback((e: BeetleEntry, key: string): string | number => {
@@ -316,11 +319,108 @@ export function BeetleManager() {
     );
   };
 
-  const handleToggleSelect = (id: string) => {
+  const handleToggleSelect = useCallback((id: string) => {
     setSelectedIds(prev => 
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
-  };
+    setLastSelectedId(id);
+  }, []);
+
+  const startLongPress = useCallback((id: string, currentList: BeetleEntry[]) => {    
+    isLongPressActive.current = false;
+    longPressTimer.current = setTimeout(() => {
+      isLongPressActive.current = true;
+      
+      if (lastSelectedId && lastSelectedId !== id) {
+        const indexA = currentList.findIndex(e => e.id === lastSelectedId);
+        const indexB = currentList.findIndex(e => e.id === id);
+        
+        if (indexA !== -1 && indexB !== -1) {
+          const start = Math.min(indexA, indexB);
+          const end = Math.max(indexA, indexB);
+          const rangeIds = currentList.slice(start, end + 1).map(e => e.id);
+          setSelectedIds(prev => Array.from(new Set([...prev, ...rangeIds])));
+        }
+      } else { // 単一の長押しの場合、ここで選択状態をトグルする
+        handleToggleSelect(id);
+      }
+      setLastSelectedId(id);
+      if (typeof window !== 'undefined' && window.navigator?.vibrate) {
+        window.navigator.vibrate(50);
+      }
+    }, 600);
+  }, [isSelectionMode, lastSelectedId, handleToggleSelect]);
+
+  // なぞり選択用の状態管理
+  const isDraggingRef = useRef(false);
+  const dragModeRef = useRef<'add' | 'remove' | null>(null);
+
+  const handlePointerDown = useCallback((id: string, currentList: BeetleEntry[]) => {
+    if (!isSelectionMode) return;
+    
+    isDraggingRef.current = true;
+    // 最初に触れたカードが選択済みなら「解除モード」、未選択なら「追加モード」にする
+    const isSelected = selectedIds.includes(id);
+    dragModeRef.current = isSelected ? 'remove' : 'add';
+
+    startLongPress(id, currentList); // 長押しタイマーを開始
+  }, [isSelectionMode, selectedIds, handleToggleSelect, startLongPress]);
+
+  const cancelLongPress = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null; // タイマーはクリアするが、isLongPressActiveはhandleEntryClickで処理されるまで残す
+    }
+  }, []);
+
+  const handlePointerEnter = useCallback((id: string) => {
+    if (!isDraggingRef.current || !dragModeRef.current) return;
+
+    // 他の要素に入った（なぞり選択が開始された）場合は長押し判定をキャンセル
+    cancelLongPress();
+
+    setSelectedIds(prev => {
+      if (dragModeRef.current === 'add') {
+        if (prev.includes(id)) return prev;
+        return [...prev, id];
+      } else {
+        if (!prev.includes(id)) return prev;
+        return prev.filter(i => i !== id);
+      }
+    });
+    setLastSelectedId(id);
+    
+    // 軽くバイブレーション（モバイル対応）
+    if (typeof window !== 'undefined' && window.navigator?.vibrate) {
+      window.navigator.vibrate(10);
+    }
+  }, [cancelLongPress, setSelectedIds, setLastSelectedId]);
+
+  const handleEntryClick = useCallback((entry: BeetleEntry) => { // Short click handler
+    if (isLongPressActive.current) {
+      isLongPressActive.current = false;
+      return;
+    }
+    if (isSelectionMode) {
+      handleToggleSelect(entry.id); // 短いタップで選択状態をトグル
+    } else {
+      setSelectedEntry(entry);
+    }
+  }, []);
+
+  // なぞり選択の終了を検知するグローバルリスナー
+  useEffect(() => {
+    const handleGlobalPointerUp = () => {
+      isDraggingRef.current = false;
+      dragModeRef.current = null;
+      // ここで reset しない（handleEntryClick で消費・リセットするため）
+      cancelLongPress();
+    };
+    window.addEventListener('pointerup', handleGlobalPointerUp);
+    return () => {
+      window.removeEventListener('pointerup', handleGlobalPointerUp);
+    };
+  }, []);
 
   const handleBulkCopyToExcel = async (ids?: string[]) => {
     const targetIds = ids || entries.map(e => e.id);
@@ -582,6 +682,7 @@ export function BeetleManager() {
   const handleToggleSelectionMode = () => {
     setIsSelectionMode(!isSelectionMode);
     setSelectedIds([]);
+    setLastSelectedId(null);
   };
 
   const handleSelectAll = () => {
@@ -590,6 +691,7 @@ export function BeetleManager() {
 
   const handleDeselectAll = () => {
     setSelectedIds([]);
+    setLastSelectedId(null);
   };
 
   const [taskSortConfig, setTaskSortConfig] = useState<{ primary: "urgency" | "type" | "days" | "name"; secondary: "urgency" | "type" | "days" | "name" }>({ primary: "urgency", secondary: "name" });
@@ -1171,6 +1273,15 @@ export function BeetleManager() {
             >
               <Hash size={12} />
               <span>一括採番</span>
+            </button>
+            <button
+              onClick={handleGitHubSync}
+              className={`flex items-center gap-1 px-3 py-1.5 bg-white border border-[#E8E2DA] rounded-full text-[10px] font-black ${isSyncing ? 'text-orange-400' : 'text-gray-500 hover:text-blue-600'} transition-all shadow-sm active:scale-95`}
+              disabled={isSyncing}
+              title="データをGitHubにバックアップします"
+            >
+              {isSyncing ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+              <span>同期</span>
             </button>
             <button
               onClick={() => handleBulkCopyToExcel()}
@@ -1802,28 +1913,39 @@ export function BeetleManager() {
               </div>
 
               <div className="px-6 space-y-4">
-                {[...groupedEntries[selectedSpecies]].sort((a, b) => {
-                  const compare = (key: string, direction: "asc" | "desc") => {
-                    const vA = getSortValue(a, key);
-                    const vB = getSortValue(b, key);
-                    const res = typeof vA === "string" ? String(vA).localeCompare(String(vB), "ja", { numeric: true }) : ((vA as number) - (vB as number));
-                    return direction === "asc" ? res : -res;
-                  };
+                {(() => {
+                  const sortedList = [...groupedEntries[selectedSpecies]].sort((a, b) => {
+                    const compare = (key: string, direction: "asc" | "desc") => {
+                      const vA = getSortValue(a, key);
+                      const vB = getSortValue(b, key);
+                      const res = typeof vA === "string" ? String(vA).localeCompare(String(vB), "ja", { numeric: true }) : ((vA as number) - (vB as number));
+                      return direction === "asc" ? res : -res;
+                    };
+                    const primaryCmp = compare(speciesSortConfig.primary.key, speciesSortConfig.primary.direction);
+                    if (primaryCmp !== 0) return primaryCmp;
+                    return compare(speciesSortConfig.secondary.key, speciesSortConfig.secondary.direction);
+                  });
 
-                  const primaryCmp = compare(speciesSortConfig.primary.key, speciesSortConfig.primary.direction);
-                  if (primaryCmp !== 0) return primaryCmp;
-                  
-                  return compare(speciesSortConfig.secondary.key, speciesSortConfig.secondary.direction);
-                }).map((entry) => (
-                  <div key={entry.id} className="space-y-2">
-                    <EntryCard
-                      entry={entry}
-                      onOpen={setSelectedEntry}
-                      onDelete={(e, id) => {
-                        e.stopPropagation();
-                        if (window.confirm("本当に削除しますか？")) deleteEntry(id);
-                      }}
-                    />
+                  return sortedList.map((entry) => (
+                    <div 
+                      key={entry.id} 
+                      className={`space-y-2 ${isSelectionMode ? 'touch-none select-none' : ''}`}
+                      onPointerDown={() => handlePointerDown(entry.id, sortedList)}
+                      onPointerEnter={() => handlePointerEnter(entry.id)}
+                      onPointerUp={cancelLongPress}
+                      onPointerLeave={cancelLongPress}
+                      onContextMenu={(e) => { if (isSelectionMode) e.preventDefault(); }}
+                    >
+                      <EntryCard
+                        entry={entry}
+                        onOpen={() => handleEntryClick(entry)}
+                        isSelected={selectedIds.includes(entry.id)}
+                        isSelectionMode={isSelectionMode}
+                        onDelete={(e, id) => {
+                          e.stopPropagation();
+                          if (window.confirm("本当に削除しますか？")) deleteEntry(id);
+                        }}
+                      />
                     {entry.type === "産卵セット" && (
                       <div className="px-2 space-y-2">
                         {/* 履歴のリスト表示 */}
@@ -1982,7 +2104,7 @@ export function BeetleManager() {
               if (!parentEntryId) return;
               const entry = entries.find(e => e.id === parentEntryId) as any;
               if (!entry) return;
-
+              
               let updatedSets;
               const { parentId, sets, useDifferentMethod, ...cleanSet } = submittedSet as any; // Remove useDifferentMethod as it's a UI flag
 
@@ -2002,20 +2124,22 @@ export function BeetleManager() {
                   cohabitation: cleanSet.cohabitation,
                   memo: cleanSet.memo,
                 } as any);
-              }
-              else if (editingChildSet && editingChildSet.id) { // Editing an existing child set
-                // 編集の場合
-                updatedSets = (entry.sets || []).map((s: any) => 
-                  s.id === submittedSet.id ? { ...cleanSet, id: s.id } : s
-                );
               } else {
-                // 新規追加の場合
-                updatedSets = [...(entry.sets || []), { ...cleanSet, id: createId() }];
+                // Child sets logic
+                if (editingChildSet && editingChildSet.id) { // Editing an existing child set
+                  updatedSets = (entry.sets || []).map((s: any) => 
+                    s.id === submittedSet.id ? { ...cleanSet, id: s.id } : s
+                  );
+                } else {
+                  // New child set
+                  updatedSets = [...(entry.sets || []), { ...cleanSet, id: createId() }];
+                }
+                // 子セットの配列が存在する場合のみソートと更新を実行
+                if (updatedSets) {
+                  updatedSets.sort((a: any, b: any) => (a.setDate || "").localeCompare(b.setDate || ""));
+                  updateSpawnSet(parentEntryId, { ...entry, sets: updatedSets } as any);
+                }
               }
-              
-              // 日付でソート
-              updatedSets.sort((a: any, b: any) => (a.setDate || "").localeCompare(b.setDate || ""));
-              updateSpawnSet(parentEntryId, { ...entry, sets: updatedSets } as any);
               setIsAddingSecondSet(false);
               setEditingChildSet(null);
             }}
