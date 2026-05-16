@@ -458,7 +458,7 @@ export function BeetleManager() {
   };
 
   const handleRegenerateAllNames = useCallback(() => {
-    if (!window.confirm("全個体の管理名を現在の規則（設定画面で変更可能）で一括更新します。よろしいですか？")) return;
+    if (!window.confirm("全個体の管理名を現在のテンプレート規則で一括更新し、保存します。よろしいですか？\n※カスタム名は維持されつつ、連番形式が統一されます。")) return;
     
     createBackup(); // 一括更新前にバックアップを作成
     const sorted = [...entries].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
@@ -1923,6 +1923,11 @@ export function BeetleManager() {
                   requestPersistence={requestPersistence}
                   handleSync={handleGitHubSync}
                   isSyncing={isSyncing}
+          onRegenerateNames={() => {
+            // テンプレート切り替え後に確実に保存・反映させるためのアクション
+            handleRegenerateAllNames();
+            // 同期設定があれば自動でプッシュを促す等の拡張も可能
+          }}
                   onRegenerateNames={handleRegenerateAllNames}
                   onExcelExportAll={() => handleBulkCopyToExcel()}
                   onAddSpawnTemplate={(template) => {
