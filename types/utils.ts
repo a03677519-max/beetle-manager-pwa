@@ -74,8 +74,14 @@ export function generateUniqueMName(
   let prefix: string;
   // 既存の管理名がある場合はそれを活かす（末尾の数字は上書き対象として除去）
   if (currentName && currentName.trim() !== "" && currentName !== "-") {
-    // すでに採番済みの連番（_01 や -01 等）を削除し、01_01 のようにならないように上書きする
-    prefix = currentName.replace(/[_-]\d+$/, "");
+    const base = currentName.split('_')[0];
+    // 日付パターン(6桁 or 8桁)で始まる場合は、自動採番されたものとみなしてテンプレートから再生成を優先する
+    if (/^\d{6,8}/.test(base)) {
+        prefix = resolve(format).replace(/[_-]?NN$/, "");
+    } else {
+        // それ以外（ユーザー入力のベース名など）は最初のアンダースコア以前をベースとする
+        prefix = base;
+    }
   } else {
     // テンプレートから生成。連番部分は後で付けるので除去。
     prefix = resolve(format).replace(/[_-]?NN$/, "");
@@ -109,6 +115,23 @@ export const createDateOptions = () => {
   const months = ["-", ...Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'))];
   const days = ["-", ...Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0')), "上", "中", "下"];
   return { years, months, days };
+};
+
+export const daysBetween = (date1: string, date2: string): number | null => {
+  if (!date1 || date1 === "-" || !date2 || date2 === "-") return null;
+  const d1 = new Date(date1);
+  const d2 = new Date(date2);
+  if (isNaN(d1.getTime()) || isNaN(d2.getTime())) return null;
+  const diffTime = Math.abs(d2.getTime() - d1.getTime());
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+};
+
+export const addDays = (date: string, days: number): string => {
+  if (!date || date === "-") return "-";
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return "-";
+  d.setDate(d.getDate() + days);
+  return d.toISOString().split('T')[0];
 };
 
 export const daysBetween = (date1: string, date2: string): number | null => {

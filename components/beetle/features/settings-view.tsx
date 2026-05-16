@@ -1,6 +1,6 @@
 "use client";
 
-import { X, Hash, Type, ChevronRight, Info, RotateCcw, Trash2 } from "lucide-react";
+import { X, Hash, Type, ChevronRight, Info, RotateCcw, Trash2, Eraser, RotateCw } from "lucide-react";
 import { MANAGEMENT_NAME_PRESETS } from "@/store/use-beetle-store";
 import { useState } from "react";
 import type { EntryType } from "@/types/beetle";
@@ -11,7 +11,8 @@ export function SettingsView({
   onUpdateManagementNameFormat,
   backupEntries,
   onRestoreBackup,
-  onClearBackup
+  onClearBackup,
+  onCleanupManagementNames
 }: any) {
   const types: EntryType[] = ["成虫", "幼虫", "産卵セット"];
   const [showCustom, setShowCustom] = useState<Record<string, boolean>>({});
@@ -86,6 +87,25 @@ export function SettingsView({
               </div>
             </div>
           ))}
+        </section>
+
+        {/* 管理名の整理 */}
+        <section className="space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Eraser size={18} className="text-[#FF9800]" />
+            <h3 className="font-black text-[#4A3F35]">管理名のクリーンアップ</h3>
+          </div>
+          <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm space-y-3">
+            <p className="text-[11px] text-gray-500 font-bold leading-relaxed">
+              管理名の「_（アンダースコア）」以降をすべて削除し、ベース名のみを残します。自動採番の重複（01_01等）を解消する際に使用してください。
+            </p>
+            <button 
+              onClick={() => { if(window.confirm("全個体の管理名からアンダースコア以降を削除します。よろしいですか？")) onCleanupManagementNames(); }}
+              className="w-full flex items-center justify-center gap-2 py-3 bg-red-50 text-red-500 rounded-xl text-xs font-black shadow-sm active:scale-95 transition-all"
+            >
+              <Eraser size={14} /> 一括クリーンアップ実行
+            </button>
+          </div>
         </section>
 
         {/* バックアップ管理 */}
