@@ -35,6 +35,15 @@ import { AnalysisView } from "./beetle/features/analysis-view";
 import { TaskView } from "./beetle/features/task-view";
 import { SettingsView } from "./beetle/features/settings-view"; // 新設を想定
 
+const recordColors = [
+  "bg-white/70",
+  "bg-blue-50/70",
+  "bg-emerald-50/70",
+  "bg-amber-50/70",
+  "bg-rose-50/70",
+  "bg-indigo-50/70",
+];
+
 export function BeetleManager() {
   const entries = useBeetleStore((state) => state.entries);
   const selectedType = useBeetleStore((state) => state.selectedType);
@@ -121,6 +130,13 @@ export function BeetleManager() {
   const [isOcrProcessing, setIsOcrProcessing] = useState(false);
   const [isAutoFillEnabled, setIsAutoFillEnabled] = useState(false);
   const [spawnTemplate, setSpawnTemplate] = useState<any>(null);
+
+  const closeRegistrationModal = useCallback(() => {
+    setIsCreating(false);
+    startEditing(null);
+    setPastedData(null);
+    setSpawnTemplate(null);
+  }, [startEditing]);
 
   // サブタイプ（日付区分）用のステート
   const [larvaDateType, setLarvaDateType] = useState<"hatch" | "set" | "extraction">("hatch");
@@ -360,22 +376,32 @@ export function BeetleManager() {
             const typeEntries = speciesEntries.filter(e => e.type === type);
             if (typeEntries.length === 0) continue;
 
-            // ヘッダー作成
-            let headers: string[] = ["管理名", "和名", "学名", "累代"];
+          // ヘッダー作成
+          let headers: string[] = ["状態", "管理名", "和名", "学名", "産地", "累代"];
             if (type === "成虫") {
-              headers.push("性別", "サイズ", "羽化日", "後食日", "区分", "メモ");
+            headers.push("性別", "サイズ(mm)", "羽化日", "後食日", "区分", "死亡日", "販売日", "幼虫時データ", "メモ", "紐付けID");
             } else if (type === "幼虫") {
-              headers.push("孵化/割出日");
+            headers.push("孵化/割出日", "羽化予定日", "羽化実績日", "羽化区分", "死亡日", "販売日");
               for (let i = 1; i <= maxLarvaLogs; i++) {
-                headers.push(`${i}回目計測日`, `${i}回目体重`, `${i}回目令数`);
+                headers.push(
+                  `${i}回目_日付`, `${i}回目_マット`, `${i}回目_水分`, `${i}回目_詰圧`,
+                  `${i}回目_ボトル`, `${i}回目_ステージ`, `${i}回目_体重(g)`, `${i}回目_性別`, `${i}回目_温度(℃)`
+                );
               }
-              headers.push("メモ");
+            headers.push("メモ", "紐付けID");
             } else if (type === "産卵セット") {
-              headers.push("セット開始日");
-              for (let i = 1; i <= maxSpawnSets + 1; i++) {
-                headers.push(`${i}回目日付`, `${i}回目回収`);
+            headers.push(
+              "セット開始日", "セット終了日", "卵数", "幼虫数", "使用マット",
+              "容器サイズ", "詰圧", "水分", "温度(℃)", "同居"
+            );
+            // 1回目のセットはメインフィールドで表現されるため、2回目以降の履歴のみを動的に追加
+            for (let i = 2; i <= maxSpawnSets + 1; i++) { // +1 for the main set if it's treated as "1回目"
+              headers.push(
+                `${i}回目_開始日`, `${i}回目_終了日`, `${i}回目_卵数`, `${i}回目_幼虫数`,
+                `${i}回目_マット`, `${i}回目_容器`, `${i}回目_詰圧`, `${i}回目_水分`, `${i}回目_メモ`
+              );
               }
-              headers.push("メモ");
+            headers.push("メモ", "紐付けID");
             }
 
             const headerRow = sheet.getRow(currentRow++);
@@ -391,30 +417,57 @@ export function BeetleManager() {
             for (const entry of typeEntries) {
               const dataRow = sheet.getRow(currentRow++);
               const e = entry as any;
-              let rowData: any[] = [e.managementName || "-", e.japaneseName, e.scientificName, formatGeneration(e.generation)];
+
+              // 状態の判定
+              const isDeceased = !!e.deathDate && e.deathDate !== "-";
+              const isSold = ((e.soldDate && e.soldDate !== "-") || e.status === "販売済み");
+              let statusText = "飼育中";
+              if (isDeceased) statusText = "死亡";
+              else if (isSold) statusText = "販売済み";
+              else if (type === "幼虫" && e.actualEmergenceDate) statusText = "羽化済み";
+              else if (type === "産卵セット" && isSpawnSetFinished(e)) statusText = "終了";
+
+              let rowData: any[] = [statusText, e.managementName || "-", e.japaneseName, e.scientificName, e.locality || "-", formatGeneration(e.generation)];
 
               if (type === "成虫") {
-                rowData.push(e.gender, e.size ? `${e.size}mm` : "-", formatDate(e.emergenceDate), formatDate(e.feedingDate), e.emergenceType, e.memo || "");
+                rowData.push(
+                  e.gender, e.size ? `${e.size}mm` : "-", formatDate(e.emergenceDate), formatDate(e.feedingDate), 
+                  e.emergenceType, formatDate(e.deathDate), formatDate(e.soldDate), e.larvaMemo || "", e.memo || "", (e.linkedEntryIds || []).join(",")
+                );
               } else if (type === "幼虫") {
-                rowData.push(formatDate(e.hatchDate || e.extractionDate));
+                rowData.push(
+                  formatDate(e.hatchDate || e.extractionDate), formatDate(e.plannedEmergenceDate), 
+                  formatDate(e.actualEmergenceDate), e.emergenceType, formatDate(e.deathDate), formatDate(e.soldDate)
+                );
                 // 計測ログを日付の昇順（古い順）にソートして出力
                 const logs = [...(e.logs || [])].sort((a, b) => (a.date || "").localeCompare(b.date || ""));
                 for (let i = 0; i < maxLarvaLogs; i++) {
                   const log = logs[i];
-                  rowData.push(log ? formatDate(log.date) : "", log ? `${log.weight}g` : "", log ? log.stage : "");
+                  if (log) {
+                    rowData.push(formatDate(log.date), log.substrate || "", log.moisture || "", log.pressure || "", log.bottleSize || "", log.stage || "", log.weight ? `${log.weight}g` : "", log.gender || "", log.temperature || "");
+                  } else {
+                    rowData.push("", "", "", "", "", "", "", "", "");
+                  }
                 }
-                rowData.push(e.memo || "");
+                rowData.push(e.memo || "", (e.linkedEntryIds || []).join(","));
               } else {
-                rowData.push(formatDate(e.setDate));
-                // 産卵セットの履歴（メインフィールドを1回目とする）
-                rowData.push(formatDate(e.setEndDate || e.setDate), (e.eggCount || 0) + (e.larvaCount || 0));
+                // 産卵セット本体（1回目）
+                rowData.push(
+                  formatDate(e.setDate), formatDate(e.setEndDate), e.eggCount || 0, e.larvaCount || 0, 
+                  e.substrate || "", e.containerSize || "", e.pressure || "", e.moisture || "", e.temperature || "", e.cohabitation || ""
+                );
+                
                 // 産卵セットの履歴を日付の昇順（古い順）にソートして出力
                 const sets = [...(e.sets || [])].sort((a, b) => (a.setDate || "").localeCompare(b.setDate || ""));
                 for (let i = 0; i < maxSpawnSets; i++) {
                   const s = sets[i];
-                  rowData.push(s ? formatDate(s.setEndDate || s.setDate) : "", s ? (s.eggCount || 0) + (s.larvaCount || 0) : "");
+                  if (s) {
+                    rowData.push(formatDate(s.setDate), formatDate(s.setEndDate), s.eggCount || 0, s.larvaCount || 0, s.substrate || "", s.containerSize || "", s.pressure || "", s.moisture || "", s.memo || "");
+                  } else {
+                    rowData.push("", "", "", "", "", "", "", "", "");
+                  }
                 }
-                rowData.push(e.memo || "");
+                rowData.push(e.memo || "", (e.linkedEntryIds || []).join(","));
               }
 
               rowData.forEach((val, i) => {
@@ -1409,7 +1462,7 @@ export function BeetleManager() {
           {/* Row 1: Actions & Auto-fill (縮小版) */}
           <div className="flex items-center justify-between gap-4 mb-1">
             <button 
-              onClick={() => { setIsCreating(false); startEditing(null); }}
+              onClick={closeRegistrationModal}
               className="text-gray-400 font-bold text-[10px] px-1 hover:bg-gray-50 rounded-lg transition-colors whitespace-nowrap"
             >
               閉じる
@@ -1429,7 +1482,7 @@ export function BeetleManager() {
 
             <button 
               type="submit" 
-              form={editingEntry ? "edit-form" : "create-form"}
+              form="registration-form"
               className="bg-[#2D5A27] text-white px-4 py-1 rounded-lg font-black text-[10px] shadow-sm hover:brightness-110 active:scale-95 transition-all select-none whitespace-nowrap"
             >
               保存
@@ -1514,20 +1567,20 @@ export function BeetleManager() {
 
         {isCreating && !editingEntry && createType === "成虫" ? (
           <AdultForm
-            id="create-form"
+            id="registration-form"
             initialValues={pastedData && pastedData.type === "成虫" ? { ...emptyAdultForm, ...pastedData } : getInitialValues("成虫", emptyAdultForm)}
             onSubmit={(value) => {
               const mName = generateUniqueMName(value.emergenceDate || today(), value.scientificName, entries, "成虫", managementNameFormats["成虫"], value.managementName);
               addAdult({ ...value, managementName: mName });
-              setIsCreating(false);
+              closeRegistrationModal();
             }}
-            onCancel={() => setIsCreating(false)}
+            onCancel={closeRegistrationModal}
           />
         ) : null}
 
         {isCreating && !editingEntry && createType === "幼虫" ? (
           <LarvaForm
-            id="create-form"
+            id="registration-form"
             initialValues={pastedData && pastedData.type === "幼虫" ? { ...emptyLarvaForm, ...pastedData } : getInitialValues("幼虫", emptyLarvaForm)}
             dateType={larvaDateType}
             onDateTypeChange={setLarvaDateType}
@@ -1543,22 +1596,22 @@ export function BeetleManager() {
               // 次のループの判定用に管理名だけ仮追加した配列を作る
               currentEntries.push({ managementName: mName, scientificName: values.scientificName, type: "幼虫" } as any);
               }
-              setIsCreating(false);
+              closeRegistrationModal();
             }}
-            onCancel={() => setIsCreating(false)}
+            onCancel={closeRegistrationModal}
           />
         ) : null}
         {isCreating && !editingEntry && createType === "産卵セット" ? (
           <SpawnSetForm
-            id="create-form"
+            id="registration-form"
             initialValues={pastedData && pastedData.type === "産卵セット" ? { ...emptySpawnSetForm, ...pastedData } : (spawnTemplate ? { ...emptySpawnSetForm, ...spawnTemplate } : getInitialValues("産卵セット", emptySpawnSetForm))}
             allEntries={entries}
             onSubmit={(value) => {
               const mName = generateUniqueMName(value.setDate || today(), value.scientificName, entries, "産卵セット", managementNameFormats["産卵セット"], value.managementName);
               addSpawnSet({ ...value, managementName: mName });
-              setIsCreating(false);
+              closeRegistrationModal();
             }}
-            onCancel={() => setIsCreating(false)}
+            onCancel={closeRegistrationModal}
             onFetchTemperature={fetchCurrentTemperature}
             isFetchingTemperature={isFetching}
           />
@@ -1566,24 +1619,24 @@ export function BeetleManager() {
 
         {editingEntry?.type === "成虫" ? (
           <AdultForm
-            id="edit-form"
+            id="registration-form"
             initialValues={editingEntry}
             onSubmit={(value) => {
-              updateAdult(editingEntry.id, value);
-              startEditing(null);
+              updateAdult(editingEntry!.id, value);
+              closeRegistrationModal();
             }}
-            onCancel={() => startEditing(null)}
+            onCancel={closeRegistrationModal}
           />
         ) : null}
         {editingEntry?.type === "幼虫" ? (
           <LarvaForm
-            id="edit-form"
+            id="registration-form"
             initialValues={editingEntry}
             dateType={larvaDateType}
             onDateTypeChange={setLarvaDateType}
             allEntries={entries}
             onSubmit={(value, count) => {
-              updateLarva(editingEntry.id, value);
+              updateLarva(editingEntry!.id, value);
               if (count > 1) {
                 let currentEntries = [...entries];
                 for (let i = 1; i < count; i++) {
@@ -1595,21 +1648,21 @@ export function BeetleManager() {
                   currentEntries.push({ managementName: mName, scientificName: value.scientificName, type: "幼虫" } as any);
                 }
               }
-              startEditing(null);
+              closeRegistrationModal();
             }}
-            onCancel={() => startEditing(null)}
+            onCancel={closeRegistrationModal}
           />
         ) : null}
         {editingEntry?.type === "産卵セット" ? (
           <SpawnSetForm
-            id="edit-form"
+            id="registration-form"
             initialValues={editingEntry}
             allEntries={entries}
             onSubmit={(value) => {
-              updateSpawnSet(editingEntry.id, value);
-              startEditing(null);
+              updateSpawnSet(editingEntry!.id, value);
+              closeRegistrationModal();
             }}
-            onCancel={() => startEditing(null)}
+            onCancel={closeRegistrationModal}
             onFetchTemperature={fetchCurrentTemperature}
             isFetchingTemperature={isFetching}
           />
@@ -1762,13 +1815,13 @@ export function BeetleManager() {
                               initial={{ opacity: 0, y: 20, scale: 0.95 }}
                               whileInView={{ opacity: 1, y: 0, scale: 1 }}
                               viewport={{ once: true, margin: "0px 20px 0px 20px" }}
-                              transition={{ 
+                              transition={{
                                 duration: 0.5, 
                                 delay: Math.min(idx * 0.08, 0.4), 
                                 ease: "easeOut" 
                               }}
                               onClick={() => handleEditSet(entry.id, record)}
-                              className="flex-shrink-0 w-[130px] bg-white/60 border border-white rounded-[24px] p-4 shadow-sm active:scale-[0.98] transition-all cursor-pointer flex flex-col justify-between"
+                              className={`flex-shrink-0 w-[130px] ${recordColors[idx % recordColors.length]} rounded-[24px] p-4 shadow-sm active:scale-[0.98] transition-all cursor-pointer flex flex-col justify-between`}
                             >
                               <div>
                                 <div className="text-[10px] font-black text-[#FF9800] mb-1.5 uppercase tracking-wider">{record.label}</div>
