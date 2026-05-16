@@ -501,8 +501,8 @@ export function BeetleManager() {
     createBackup();
     const processed = entries.map(entry => {
       let mName = entry.managementName || "";
-      // 自動採番と思われる形式（日付＋英字略称：240516Dhh等）またはタグ残骸がある場合は完全に消去（空白化）
-      const isYearJunk = /([_-]|^)(\d{4,8})[A-Za-z.]*([_-]|$)/.test(mName);
+      // 自動採番と思われる形式（日付YYMMDD/YYYYMMDD＋略称）またはタグ残骸を消去
+      const isYearJunk = /([_-]|^)(\d{2,4})(\d{4,6})[A-Za-z.]*([_-]|$)/.test(mName);
       const hasArtifacts = mName.includes("NN") || mName.includes("{");
 
       if (isYearJunk || hasArtifacts) {
@@ -541,7 +541,7 @@ export function BeetleManager() {
       
       if (values.managementName !== undefined) {
         let mName = values.managementName;
-        if (mName && /^(\d{4,8})[A-Za-z.]*/.test(mName)) mName = "";
+        if (mName && /^(\d{2,4})\d{4,6}[A-Za-z.]*/.test(mName)) mName = "";
         patch.managementName = mName;
       }
       
@@ -1923,11 +1923,6 @@ export function BeetleManager() {
                   requestPersistence={requestPersistence}
                   handleSync={handleGitHubSync}
                   isSyncing={isSyncing}
-          onRegenerateNames={() => {
-            // テンプレート切り替え後に確実に保存・反映させるためのアクション
-            handleRegenerateAllNames();
-            // 同期設定があれば自動でプッシュを促す等の拡張も可能
-          }}
                   onRegenerateNames={handleRegenerateAllNames}
                   onExcelExportAll={() => handleBulkCopyToExcel()}
                   onAddSpawnTemplate={(template) => {
@@ -2029,6 +2024,7 @@ export function BeetleManager() {
           managementNameFormats={managementNameFormats}
           onUpdateManagementNameFormat={setManagementNameFormat}
           onCleanupManagementNames={handleCleanupManagementNames}
+          onRegenerateNames={handleRegenerateAllNames}
         />
       )}
     </div>
