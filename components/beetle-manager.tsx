@@ -460,6 +460,7 @@ export function BeetleManager() {
   const handleRegenerateAllNames = useCallback(() => {
     if (!window.confirm("全個体の管理名を現在の規則（設定画面で変更可能）で一括更新します。よろしいですか？")) return;
     
+    createBackup(); // 一括更新前にバックアップを作成
     const sorted = [...entries].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
     const processed: BeetleEntry[] = [];
     
@@ -479,7 +480,13 @@ export function BeetleManager() {
         entry.scientificName, 
         processed, 
         entry.type,
-        managementNameFormats[entry.type]
+        managementNameFormats[entry.type],
+        entry.managementName,
+        {
+          japaneseName: entry.japaneseName,
+          locality: entry.locality,
+          generation: formatGeneration(entry.generation)
+        }
       );
       processed.push({ ...entry, managementName: newName });
     });
@@ -488,6 +495,27 @@ export function BeetleManager() {
     window.alert("管理名の一括更新が完了しました。");
   }, [entries, managementNameFormats, importData]);
 
+  // 設定画面から呼び出されるクリーンアップ機能の実装
+  const handleCleanupManagementNames = useCallback(() => {
+    if (!window.confirm("日付（24/25/2026等）で始まる管理名の初期化と、連番（_01等）の除去を一括で行います。よろしいですか？")) return;
+    createBackup();
+    const processed = entries.map(entry => {
+      let mName = entry.managementName || "";
+      // 自動採番と思われる形式（日付＋英字略称：240516Dhh等）またはタグ残骸がある場合は完全に消去（空白化）
+      const isYearJunk = /([_-]|^)(\d{4,8})[A-Za-z.]*([_-]|$)/.test(mName);
+      const hasArtifacts = mName.includes("NN") || mName.includes("{");
+
+      if (isYearJunk || hasArtifacts) {
+        mName = "";
+      } else {
+        // それ以外の名前は、末尾の連番数字やゴミだけを削ぎ落としてベース名に戻す
+        mName = mName.replace(/NN/g, "").replace(/([_-]?\d+)+$/, "").replace(/[_-]{2,}/g, "_").replace(/^[_-]+|[_-]+$/g, "");
+      }
+      return { ...entry, managementName: mName };
+    });
+    importData(processed);
+    window.alert("管理名のクリーンアップ（連番除去と特定年リセット）が完了しました。");
+  }, [entries, importData, createBackup]);
 
   const handleBulkDelete = () => {
     if (selectedIds.length === 0) return;
@@ -507,9 +535,15 @@ export function BeetleManager() {
       if (!entry) return;
       
       const patch: any = {};
-      if (values.japaneseName && values.japaneseName.trim() !== "") patch.japaneseName = values.japaneseName;
-      if (values.scientificName && values.scientificName.trim() !== "") patch.scientificName = values.scientificName;
-      if (values.locality && values.locality.trim() !== "") patch.locality = values.locality;
+      if (values.japaneseName !== undefined && values.japaneseName.trim() !== "") patch.japaneseName = values.japaneseName;
+      if (values.scientificName !== undefined && values.scientificName.trim() !== "") patch.scientificName = values.scientificName;
+      if (values.locality !== undefined && values.locality.trim() !== "") patch.locality = values.locality;
+      
+      if (values.managementName !== undefined) {
+        let mName = values.managementName;
+        if (mName && /^(\d{4,8})[A-Za-z.]*/.test(mName)) mName = "";
+        patch.managementName = mName;
+      }
       
       // 累代: デフォルトの状態（- / - / 空）でない場合のみ更新対象にする
       if (values.generation && (
@@ -1517,7 +1551,19 @@ export function BeetleManager() {
             id="create-form"
             initialValues={pastedData && pastedData.type === "成虫" ? { ...emptyAdultForm, ...pastedData } : getInitialValues("成虫", emptyAdultForm)}
             onSubmit={(value) => {
-              const mName = generateUniqueMName(value.emergenceDate || today(), value.scientificName, entries, "成虫", managementNameFormats["成虫"], value.managementName);
+              const mName = generateUniqueMName(
+                value.emergenceDate || today(), 
+                value.scientificName, 
+                entries, 
+                "成虫", 
+                managementNameFormats["成虫"], 
+                value.managementName,
+                {
+                  japaneseName: value.japaneseName,
+                  locality: value.locality,
+                  generation: formatGeneration(value.generation)
+                }
+              );
               addAdult({ ...value, managementName: mName });
               setIsCreating(false);
             }}
@@ -1536,7 +1582,19 @@ export function BeetleManager() {
               let currentEntries = [...entries];
               for (let index = 0; index < count; index += 1) {
                 const targetDate = values.extractionDate && values.extractionDate !== "-" ? values.extractionDate : (values.hatchDate || today());
-                const mName = generateUniqueMName(targetDate, values.scientificName, currentEntries, "幼虫", managementNameFormats["幼虫"], values.managementName);
+                const mName = generateUniqueMName(
+                  targetDate, 
+                  values.scientificName, 
+                  currentEntries, 
+                  "幼虫", 
+                  managementNameFormats["幼虫"], 
+                  values.managementName,
+                  {
+                    japaneseName: values.japaneseName,
+                    locality: values.locality,
+                    generation: formatGeneration(values.generation)
+                  }
+                );
                 // IDや作成日などのメタデータを除去して新規登録
                 const { id, createdAt, ...cleanValues } = values as any;
                 addLarva({ ...cleanValues, managementName: mName });
@@ -1554,7 +1612,19 @@ export function BeetleManager() {
             initialValues={pastedData && pastedData.type === "産卵セット" ? { ...emptySpawnSetForm, ...pastedData } : (spawnTemplate ? { ...emptySpawnSetForm, ...spawnTemplate } : getInitialValues("産卵セット", emptySpawnSetForm))}
             allEntries={entries}
             onSubmit={(value) => {
-              const mName = generateUniqueMName(value.setDate || today(), value.scientificName, entries, "産卵セット", managementNameFormats["産卵セット"], value.managementName);
+              const mName = generateUniqueMName(
+                value.setDate || today(), 
+                value.scientificName, 
+                entries, 
+                "産卵セット", 
+                managementNameFormats["産卵セット"], 
+                value.managementName,
+                {
+                  japaneseName: value.japaneseName,
+                  locality: value.locality,
+                  generation: formatGeneration(value.generation)
+                }
+              );
               addSpawnSet({ ...value, managementName: mName });
               setIsCreating(false);
             }}
@@ -1588,7 +1658,19 @@ export function BeetleManager() {
                 let currentEntries = [...entries];
                 for (let i = 1; i < count; i++) {
                   const targetDate = value.extractionDate && value.extractionDate !== "-" ? value.extractionDate : (value.hatchDate || today());
-                  const mName = generateUniqueMName(targetDate, value.scientificName, currentEntries, "幼虫", managementNameFormats["幼虫"]);
+                  const mName = generateUniqueMName(
+                    targetDate, 
+                    value.scientificName, 
+                    currentEntries, 
+                    "幼虫", 
+                    managementNameFormats["幼虫"],
+                    undefined,
+                    {
+                      japaneseName: value.japaneseName,
+                      locality: value.locality,
+                      generation: formatGeneration(value.generation)
+                    }
+                  );
                   
                   const { id, photos, createdAt, ...rest } = value;
                   addLarva({ ...rest as any, managementName: mName, photos: [] });
@@ -1941,6 +2023,7 @@ export function BeetleManager() {
           onClearBackup={clearBackup}
           managementNameFormats={managementNameFormats}
           onUpdateManagementNameFormat={setManagementNameFormat}
+          onCleanupManagementNames={handleCleanupManagementNames}
         />
       )}
     </div>

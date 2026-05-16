@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
-import { createId, today, generateUniqueMName } from "@/types/utils";
+import { createId, today, generateUniqueMName, formatGeneration } from "@/types/utils";
 import type {
   AdultFormValues,
   AdultBeetle,
@@ -122,9 +122,9 @@ export const emptySpawnSetForm: SpawnSetFormValues = {
 
 export const MANAGEMENT_NAME_PRESETS = [
   { label: "日付_連番 (20240101_01)", value: "YYYYMMDD_NN" },
-  { label: "学名略称_日付_連番 (D.H.H_20240101_01)", value: "{SHORT_SCI}_YYYYMMDD_NN" },
-  { label: "日付_学名略称_連番 (20240101_D.H.H_01)", value: "YYYYMMDD_{SHORT_SCI}_NN" },
-  { label: "短縮日付学名略称_連番 (240101D.H.H_01)", value: "YYMMDD{SHORT_SCI}_NN" },
+  { label: "学名略称_日付_連番 (Dhh_20240101_01)", value: "{SHORT_SCI}_YYYYMMDD_NN" },
+  { label: "日付_学名略称_連番 (20240101_Dhh_01)", value: "YYYYMMDD_{SHORT_SCI}_NN" },
+  { label: "短縮日付学名略称_連番 (240101Dhh_01)", value: "YYMMDD{SHORT_SCI}_NN" },
   { label: "和名_日付_連番 (ヘラクレス_20240101_01)", value: "{JPN}_YYYYMMDD_NN" },
   { label: "産地_累代_連番 (グアドループ_CBF1_01)", value: "{LOC}_{GEN}_NN" },
   { label: "自由入力 (カスタム)", value: "CUSTOM" },
@@ -242,7 +242,12 @@ export const useBeetleStore = create<BeetleState>()(
             state.entries.filter(e => e.id !== larvaId), // Filter out the current larva to avoid self-collision
             "成虫",
             state.managementNameFormats["成虫"],
-            adultInput.managementName || larva.managementName
+            adultInput.managementName || larva.managementName,
+            {
+              japaneseName: adultInput.japaneseName,
+              locality: adultInput.locality,
+              generation: formatGeneration(adultInput.generation)
+            }
           );
 
           const nextNumber = Math.max(0, ...state.entries.filter(e => e.scientificName === adultInput.scientificName && e.type === "成虫").map(e => e.entryNumber || 0)) + 1;
