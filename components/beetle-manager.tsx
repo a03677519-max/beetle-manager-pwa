@@ -457,14 +457,25 @@ export function BeetleManager() {
     }
   };
 
-  const handleRegenerateAllNames = useCallback(() => {
-    if (!window.confirm("全個体の管理名を現在のテンプレート規則で一括更新し、保存します。よろしいですか？\n※カスタム名は維持されつつ、連番形式が統一されます。")) return;
+  const handleRegenerateAllNames = useCallback((onlyEmpty: boolean = false) => {
+    const confirmMsg = onlyEmpty 
+      ? "管理名が空欄の個体のみに現在のテンプレート規則で採番し、保存します。よろしいですか？"
+      : "全個体の管理名を現在のテンプレート規則で一括更新し、保存します。よろしいですか？\n※カスタム名は維持されつつ、連番形式が統一されます。";
+    
+    if (!window.confirm(confirmMsg)) return;
     
     createBackup(); // 一括更新前にバックアップを作成
     const sorted = [...entries].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
     const processed: BeetleEntry[] = [];
     
     sorted.forEach(entry => {
+      // 「空欄のみ」モードかつ既に名前がある場合はスキップ
+      const hasName = entry.managementName && entry.managementName !== "-" && entry.managementName.trim() !== "";
+      if (onlyEmpty && hasName) {
+        processed.push(entry);
+        return;
+      }
+
       let date: string;
       if (entry.type === "成虫") {
         date = (entry as AdultBeetle).emergenceDate || entry.createdAt || today();
@@ -501,8 +512,8 @@ export function BeetleManager() {
     createBackup();
     const processed = entries.map(entry => {
       let mName = entry.managementName || "";
-      // 自動採番と思われる形式（日付YYMMDD/YYYYMMDD＋略称）またはタグ残骸を消去
-      const isYearJunk = /([_-]|^)(\d{2,4})(\d{4,6})[A-Za-z.]*([_-]|$)/.test(mName);
+      // 自動採番と思われる形式（日付、または202x/2x等の年号から始まる）またはタグ残骸を消去
+      const isYearJunk = /([_-]|^)(\d{2,4})(\d{2,6})?[A-Za-z.]*([_-]|$)/.test(mName);
       const hasArtifacts = mName.includes("NN") || mName.includes("{");
 
       if (isYearJunk || hasArtifacts) {
@@ -541,7 +552,7 @@ export function BeetleManager() {
       
       if (values.managementName !== undefined) {
         let mName = values.managementName;
-        if (mName && /^(\d{2,4})\d{4,6}[A-Za-z.]*/.test(mName)) mName = "";
+        if (mName && /^(\d{2,4})(\d{2,6})?[A-Za-z.]*/.test(mName)) mName = "";
         patch.managementName = mName;
       }
       
@@ -1923,7 +1934,8 @@ export function BeetleManager() {
                   requestPersistence={requestPersistence}
                   handleSync={handleGitHubSync}
                   isSyncing={isSyncing}
-                  onRegenerateNames={handleRegenerateAllNames}
+          onRegenerateNames={() => handleRegenerateAllNames(false)}
+          onFillEmptyNames={() => handleRegenerateAllNames(true)}
                   onExcelExportAll={() => handleBulkCopyToExcel()}
                   onAddSpawnTemplate={(template) => {
                     setSpawnTemplate(template);
@@ -2025,6 +2037,7 @@ export function BeetleManager() {
           onUpdateManagementNameFormat={setManagementNameFormat}
           onCleanupManagementNames={handleCleanupManagementNames}
           onRegenerateNames={handleRegenerateAllNames}
+          onSaveManagementNameFormats={() => window.alert("管理名テンプレートが保存されました。")}
         />
       )}
     </div>

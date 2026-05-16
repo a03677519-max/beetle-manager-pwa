@@ -30,6 +30,7 @@ interface AnalysisViewProps {
   handleSync: () => void;
   isSyncing?: boolean;
   onRegenerateNames?: () => void;
+  onFillEmptyNames?: () => void;
   onExcelExportAll?: () => void;
   onAddSpawnTemplate?: (template: Partial<SpawnSet>) => void;
 }
@@ -104,6 +105,7 @@ export function AnalysisView({
   handleSync,
   isSyncing,
   onRegenerateNames,
+  onFillEmptyNames,
   onExcelExportAll,
   onAddSpawnTemplate
 }: AnalysisViewProps) {
@@ -577,6 +579,14 @@ export function AnalysisView({
             className="w-full mb-3 flex items-center justify-center gap-2 bg-gray-100 text-gray-600 py-3 rounded-xl text-xs font-bold active:scale-95 transition-all"
           >
             管理名を新規則で一括更新
+          </button>
+        )}
+        {onFillEmptyNames && (
+          <button 
+            onClick={onFillEmptyNames}
+            className="w-full mb-3 flex items-center justify-center gap-2 bg-[#FF9800]/5 text-[#FF9800] py-3 rounded-xl text-xs font-bold border border-[#FF9800]/10 active:scale-95 transition-all"
+          >
+            空欄の管理名のみ一括採番
           </button>
         )}
         <div className="grid grid-cols-2 gap-3"> {/* Keep grid layout */}
