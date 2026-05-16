@@ -69,33 +69,40 @@ export function generateUniqueMName(
     return r;
   };
 
-  // 「2026」や「26」で始まる管理名は、過去の自動採番の残りや意図しない値とみなしてリセット（空白扱い）する
+  // 特定の年（2026等）で始まる管理名は、過去の自動採番の残りや意図しない値とみなしてリセット（空白扱い）する
   let effectiveName = currentName;
-  if (effectiveName && (effectiveName.startsWith("2026") || effectiveName.startsWith("26"))) {
+  if (effectiveName && effectiveName.match(/^(2026|26)([_-]|$)/)) {
     return "";
   }
 
   let prefix: string;
   // 既存の管理名がある場合はそれを活かす（末尾の数字は上書き対象として除去）
   if (effectiveName && effectiveName.trim() !== "" && effectiveName !== "-") {
-    // 末尾の _01 や -01 といった連番パターンのみを除去してベースとする
-    const base = effectiveName.replace(/[_-]\d+$/, "");
-    // 日付パターン(4〜8桁)で始まる場合は、自動採番されたものとみなしてテンプレートから再生成を優先する
-    if (/^\d{4,8}/.test(base)) {
-        prefix = resolve(format).replace(/[_-]?NN$/, "");
+    // 末尾の _01 や -01 、または単純な数字のみの連番パターンを除去してベースとする
+    const base = effectiveName.replace(/[_-]?\d+$/, "");
+    // ベース名自体に日付パターン(4〜8桁)が含まれる場合は、自動採番されたものとみなしてテンプレートからの再生成を優先する
+    if (/\d{4,8}/.test(base)) {
+        prefix = resolve(format).replace(/[_-]?NN/g, "");
     } else {
         prefix = base;
     }
   } else {
     // テンプレートから生成。連番部分は後で付けるので除去。
-    prefix = resolve(format).replace(/[_-]?NN$/, "");
+    prefix = resolve(format).replace(/[_-]?NN/g, "");
   }
+
+  // 前後の不要な記号を掃除
+  prefix = prefix.replace(/^[_-]|[_-]$/g, "");
+
+  // テンプレートから使用すべきセパレータを推測（デフォルトはアンダースコア）
+  const separatorMatch = format.match(/([_-])NN/);
+  const sep = separatorMatch ? separatorMatch[1] : "_";
 
   // 重複しない連番を見つける
   let count = 1;
   while (true) {
     const nn = String(count).padStart(2, '0');
-    const candidate = `${prefix}_${nn}`;
+    const candidate = `${prefix}${sep}${nn}`;
     const collision = entries.some(e => e.managementName === candidate && e.type === type);
     if (!collision) return candidate;
     count++;
