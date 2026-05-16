@@ -1,6 +1,6 @@
 "use client";
 
-import { X, Hash, Type, ChevronRight, Info } from "lucide-react";
+import { X, Hash, Type, ChevronRight, Info, RotateCcw, Trash2 } from "lucide-react";
 import { MANAGEMENT_NAME_PRESETS } from "@/store/use-beetle-store";
 import { useState } from "react";
 import type { EntryType } from "@/types/beetle";

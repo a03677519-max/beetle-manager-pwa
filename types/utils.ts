@@ -108,3 +108,20 @@ export const createDateOptions = () => {
   const days = ["-", ...Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0')), "上", "中", "下"];
   return { years, months, days };
 };
+
+export const daysBetween = (date1: string, date2: string): number | null => {
+  if (!date1 || date1 === "-" || !date2 || date2 === "-") return null;
+  const d1 = new Date(date1);
+  const d2 = new Date(date2);
+  if (isNaN(d1.getTime()) || isNaN(d2.getTime())) return null;
+  const diffTime = Math.abs(d2.getTime() - d1.getTime());
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+};
+
+export const addDays = (date: string, days: number): string => {
+  if (!date || date === "-") return "-";
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return "-";
+  d.setDate(d.getDate() + days);
+  return d.toISOString().split('T')[0];
+};
