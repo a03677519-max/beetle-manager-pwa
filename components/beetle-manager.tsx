@@ -332,16 +332,17 @@ export function BeetleManager() {
       const ExcelJS = (await import("exceljs")).default;
       const workbook = new ExcelJS.Workbook();
 
-      try {
-        const targetEntries = ids ? entries.filter(e => ids.includes(e.id)) : entries;
+      const targetEntries = ids ? entries.filter(e => ids.includes(e.id)) : entries;
         if (targetEntries.length === 0) return;
 
+        // 最大ログ数/履歴数の算出
         let maxLarvaLogs = 0;
         let maxSpawnSets = 0;
         targetEntries.forEach(entry => {
           if (entry.type === "幼虫") maxLarvaLogs = Math.max(maxLarvaLogs, (entry as any).logs?.length || 0);
           if (entry.type === "産卵セット") maxSpawnSets = Math.max(maxSpawnSets, (entry as any).sets?.length || 0);
         });
+
         const groups = targetEntries.reduce((acc, e) => {
           const key = e.scientificName || "Unknown";
           if (!acc[key]) acc[key] = [];
@@ -360,7 +361,7 @@ export function BeetleManager() {
             if (typeEntries.length === 0) continue;
 
             // ヘッダー作成
-            let headers: string[] = ["状態", "管理名", "和名", "学名", "累代"];
+            let headers: string[] = ["管理名", "和名", "学名", "累代"];
             if (type === "成虫") {
               headers.push("性別", "サイズ", "羽化日", "後食日", "区分", "メモ");
             } else if (type === "幼虫") {
@@ -390,17 +391,7 @@ export function BeetleManager() {
             for (const entry of typeEntries) {
               const dataRow = sheet.getRow(currentRow++);
               const e = entry as any;
-
-              // 状態の判定
-              const isDeceased = !!e.deathDate && e.deathDate !== "-";
-              const isSold = ((e.soldDate && e.soldDate !== "-") || e.status === "販売済み");
-              let statusText = "飼育中";
-              if (isDeceased) statusText = "死亡";
-              else if (isSold) statusText = "販売済み";
-              else if (type === "幼虫" && e.actualEmergenceDate) statusText = "羽化済み";
-              else if (type === "産卵セット" && isSpawnSetFinished(e)) statusText = "終了";
-
-              let rowData: any[] = [statusText, e.managementName || "-", e.japaneseName, e.scientificName, formatGeneration(e.generation)];
+              let rowData: any[] = [e.managementName || "-", e.japaneseName, e.scientificName, formatGeneration(e.generation)];
 
               if (type === "成虫") {
                 rowData.push(e.gender, e.size ? `${e.size}mm` : "-", formatDate(e.emergenceDate), formatDate(e.feedingDate), e.emergenceType, e.memo || "");
@@ -429,25 +420,8 @@ export function BeetleManager() {
               rowData.forEach((val, i) => {
                 dataRow.getCell(i + 1).value = val;
               });
-
-              // 状態に応じた行の色付け（死亡は薄い赤、販売済みは薄い青）
-              if (statusText === "死亡" || statusText === "販売済み") {
-                const argb = statusText === "死亡" ? "FFFFEBEE" : "FFE3F2FD";
-                for (let i = 1; i <= headers.length; i++) {
-                  const cell = dataRow.getCell(i);
-                  cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb } };
-                }
-              }
             }
             currentRow++; // セクション間の空行
-          }
-
-          // オートフィルターを設定（A1セルから最終データセルまで）
-          if (currentRow > 1) {
-            sheet.autoFilter = {
-              from: { row: 1, column: 1 },
-              to: { row: currentRow - 1, column: sheet.columnCount }
-            };
           }
 
           // セルの幅を自動調整（全角2、半角1として計算）
@@ -475,13 +449,13 @@ export function BeetleManager() {
         a.download = `beetle_manager_${today().replace(/-/g, "")}.xlsx`;
         a.click();
         window.URL.revokeObjectURL(url);
-      } catch (error) {
-        console.error(error);
-        window.alert("エクセルファイルの生成に失敗しました。");
-      } finally {
-        setIsSyncing(false);
-      }
-    };
+    } catch (error) {
+      console.error(error);
+      window.alert("エクセルファイルの生成に失敗しました。");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const handleRegenerateAllNames = useCallback(() => {
     if (!window.confirm("全個体の管理名を現在の規則（設定画面で変更可能）で一括更新します。よろしいですか？")) return;
