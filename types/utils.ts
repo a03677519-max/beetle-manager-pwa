@@ -56,11 +56,12 @@ export function generateUniqueMName(
 ) {
   const d = date ? new Date(date) : new Date();
   const yyyy = String(d.getFullYear());
+  const yy = yyyy.slice(-2);
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   const dd = String(d.getDate()).padStart(2, '0');
 
   const resolve = (tpl: string) => {
-    let r = tpl.replace(/YYYY/g, yyyy).replace(/MM/g, mm).replace(/DD/g, dd);
+    let r = tpl.replace(/YYYY/g, yyyy).replace(/YY/g, yy).replace(/MM/g, mm).replace(/DD/g, dd);
     r = r.replace(/{SHORT_SCI}/g, getShortenedSciName(sciName));
     if (metadata) {
       r = r.replace(/{JPN}/g, metadata.japaneseName || "");
@@ -73,10 +74,11 @@ export function generateUniqueMName(
   let prefix: string;
   // 既存の管理名がある場合はそれを活かす（末尾の数字は上書き対象として除去）
   if (currentName && currentName.trim() !== "" && currentName !== "-") {
-    prefix = currentName.replace(/_\d+$/, "");
+    // すでに採番済みの連番（_01 や -01 等）を削除し、01_01 のようにならないように上書きする
+    prefix = currentName.replace(/[_-]\d+$/, "");
   } else {
     // テンプレートから生成。連番部分は後で付けるので除去。
-    prefix = resolve(format).replace(/_?NN$/, "");
+    prefix = resolve(format).replace(/[_-]?NN$/, "");
   }
 
   // 重複しない連番を見つける
