@@ -24,10 +24,9 @@ export const isSpawnSetFinished = (entry: any) => {
 export const getShortenedSciName = (sciName: string) => {
   if (!sciName) return "";
   const parts = sciName.trim().split(/\s+/);
-  if (parts.length >= 2) {
-    return parts.map(p => p[0].toUpperCase()).join(".");
-  }
-  return sciName.slice(0, 3).toUpperCase();
+  return parts
+    .map((p, i) => (i === 0 ? p[0]?.toUpperCase() : p[0]?.toLowerCase()) || "")
+    .join("");
 };
 
 export const parseAmbiguousDate = (str: string): Date | null => {
@@ -63,23 +62,28 @@ export function generateUniqueMName(
   const resolve = (tpl: string) => {
     let r = tpl.replace(/YYYY/g, yyyy).replace(/YY/g, yy).replace(/MM/g, mm).replace(/DD/g, dd);
     r = r.replace(/{SHORT_SCI}/g, getShortenedSciName(sciName));
-    if (metadata) {
-      r = r.replace(/{JPN}/g, metadata.japaneseName || "");
-      r = r.replace(/{LOC}/g, metadata.locality || "");
-      r = r.replace(/{GEN}/g, metadata.generation || "");
-    }
+    // メタデータが渡されていない場合でもタグが残らないように空文字置換
+    r = r.replace(/{JPN}/g, metadata?.japaneseName || "");
+    r = r.replace(/{LOC}/g, metadata?.locality || "");
+    r = r.replace(/{GEN}/g, metadata?.generation || "");
     return r;
   };
 
+  // 「2026」や「26」で始まる管理名は、過去の自動採番の残りや意図しない値とみなしてリセット（空白扱い）する
+  let effectiveName = currentName;
+  if (effectiveName && (effectiveName.startsWith("2026") || effectiveName.startsWith("26"))) {
+    return "";
+  }
+
   let prefix: string;
   // 既存の管理名がある場合はそれを活かす（末尾の数字は上書き対象として除去）
-  if (currentName && currentName.trim() !== "" && currentName !== "-") {
-    const base = currentName.split('_')[0];
-    // 日付パターン(6桁 or 8桁)で始まる場合は、自動採番されたものとみなしてテンプレートから再生成を優先する
-    if (/^\d{6,8}/.test(base)) {
+  if (effectiveName && effectiveName.trim() !== "" && effectiveName !== "-") {
+    // 末尾の _01 や -01 といった連番パターンのみを除去してベースとする
+    const base = effectiveName.replace(/[_-]\d+$/, "");
+    // 日付パターン(4〜8桁)で始まる場合は、自動採番されたものとみなしてテンプレートから再生成を優先する
+    if (/^\d{4,8}/.test(base)) {
         prefix = resolve(format).replace(/[_-]?NN$/, "");
     } else {
-        // それ以外（ユーザー入力のベース名など）は最初のアンダースコア以前をベースとする
         prefix = base;
     }
   } else {
