@@ -1722,40 +1722,76 @@ export function BeetleManager() {
                   
                   return compare(speciesSortConfig.secondary.key, speciesSortConfig.secondary.direction);
                 }).map((entry) => (
-                  <div key={entry.id} className="space-y-2">
-                    <EntryCard
-                      entry={entry}
-                      onOpen={setSelectedEntry}
-                      onDelete={(e, id) => {
-                        e.stopPropagation();
-                        if (window.confirm("本当に削除しますか？")) deleteEntry(id);
-                      }}
-                    />
-                    {entry.type === "産卵セット" && (
-                      <div className="px-2 space-y-2">
-                        {/* 履歴のリスト表示 */}
-                        {(entry as SpawnSet).sets && (entry as SpawnSet).sets.length > 0 && (
-                          <div className="space-y-1.5">
-                            {(entry as SpawnSet).sets.map((s, idx) => (
-                              <div key={s.id} className="text-[10px] font-bold text-[#8B7D7B] bg-white/40 rounded-lg p-2 border border-white/60 flex justify-between items-center shadow-sm">
-                                <span>セット{idx + 2}: {s.setDate}〜 (回収: {(s.eggCount || 0) + (s.larvaCount || 0)})</span>
-                                <ChevronRight size={12} className="opacity-40" />
+                  <div key={entry.id} className="w-full">
+                    {entry.type === "産卵セット" ? (
+                      <div className="flex gap-3 overflow-x-auto no-scrollbar pb-3 px-1 -mx-1">
+                        {/* 1. 登録カード + 追加ボタンのグループ */}
+                        <div className="flex-shrink-0 w-[260px] flex flex-col gap-2">
+                          <EntryCard
+                            entry={entry}
+                            onOpen={setSelectedEntry}
+                            onDelete={(e, id) => {
+                              e.stopPropagation();
+                              if (window.confirm("本当に削除しますか？")) deleteEntry(id);
+                            }}
+                          />
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedEntry(entry);
+                              setIsAddingSecondSet(true);
+                            }}
+                            className="w-full py-3 bg-[#FF9800]/10 text-[#FF9800] text-[11px] font-black rounded-2xl border border-[#FF9800]/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-sm"
+                          >
+                            <Clipboard size={14} />
+                            履歴を追加登録
+                          </button>
+                        </div>
+
+                        {/* 2. 産卵履歴カード (降順ソート: 最新が左) */}
+                        {(() => {
+                          const s = entry as SpawnSet;
+                          const allRecords = [
+                            { id: "primary", setDate: s.setDate, setEndDate: s.setEndDate, eggCount: s.eggCount, larvaCount: s.larvaCount, label: "1回目" },
+                            ...(s.sets || []).map((set: any, i: number) => ({ ...set, label: `${i + 2}回目` }))
+                          ].filter(r => r.setDate && r.setDate !== "-");
+
+                          return allRecords.sort((a, b) => (b.setDate || "").localeCompare(a.setDate || "")).map((record, idx) => (
+                            <motion.div 
+                              key={record.id}
+                              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                              whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                              viewport={{ once: true, margin: "0px 20px 0px 20px" }}
+                              transition={{ 
+                                duration: 0.5, 
+                                delay: Math.min(idx * 0.08, 0.4), 
+                                ease: "easeOut" 
+                              }}
+                              onClick={() => handleEditSet(entry.id, record)}
+                              className="flex-shrink-0 w-[130px] bg-white/60 border border-white rounded-[24px] p-4 shadow-sm active:scale-[0.98] transition-all cursor-pointer flex flex-col justify-between"
+                            >
+                              <div>
+                                <div className="text-[10px] font-black text-[#FF9800] mb-1.5 uppercase tracking-wider">{record.label}</div>
+                                <div className="text-[12px] font-bold text-[#4A3F35] leading-tight mb-1">{record.setDate}〜</div>
+                                <div className="text-[10px] text-gray-400 font-medium">{record.setEndDate && record.setEndDate !== "-" ? `〜 ${record.setEndDate}` : "継続中"}</div>
                               </div>
-                            ))}
-                          </div>
-                        )}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedEntry(entry);
-                            setIsAddingSecondSet(true);
-                          }}
-                          className="w-full py-2 bg-[#FF9800]/10 text-[#FF9800] text-[11px] font-black rounded-xl border border-[#FF9800]/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-                        >
-                          <Clipboard size={12} />
-                          履歴を追加登録
-                        </button>
+                              <div className="mt-4 flex items-center justify-between">
+                                <div className="text-[11px] font-black bg-white/80 px-2.5 py-1 rounded-xl text-[#8B7D7B] shadow-inner">回収: {(record.eggCount || 0) + (record.larvaCount || 0)}</div>
+                                <Edit size={12} className="text-gray-300" />
+                              </div>
+                            </motion.div>
+                          ));
+                        })()}
                       </div>
+                    ) : (
+                      <EntryCard
+                        entry={entry}
+                        onOpen={setSelectedEntry}
+                        onDelete={(e, id) => {
+                          e.stopPropagation();
+                          if (window.confirm("本当に削除しますか？")) deleteEntry(id);
+                        }}
+                      />
                     )}
                   </div>
                 ))}

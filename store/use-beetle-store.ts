@@ -120,6 +120,35 @@ export const emptySpawnSetForm: SpawnSetFormValues = {
   cohabitation: "なし",
 };
 
+/**
+ * 管理名のプリセットテンプレート定義
+ * 以下のプレースホルダーが利用可能であることを想定:
+ * {SHORT_SCI}: 学名略称 (例: D.H.H)
+ * {JPN}: 和名
+ * {LOC}: 産地
+ * {GEN}: 累代
+ * YYYY/MM/DD: 日付
+ * NN: 連番
+ */
+export const MANAGEMENT_NAME_PRESETS = [
+  { label: "日付_連番 (20240101_01)", value: "YYYYMMDD_NN" },
+  { label: "学名略称_日付_連番 (D.H.H_20240101_01)", value: "{SHORT_SCI}_YYYYMMDD_NN" },
+  { label: "和名_日付_連番 (ヘラクレス_20240101_01)", value: "{JPN}_YYYYMMDD_NN" },
+  { label: "産地_累代_連番 (グアドループ_CBF1_01)", value: "{LOC}_{GEN}_NN" },
+];
+
+/**
+ * 学名から略称を生成する (例: Dynastes hercules hercules -> D.H.H)
+ */
+export const getShortenedSciName = (sciName: string) => {
+  if (!sciName) return "";
+  const parts = sciName.split(/\s+/);
+  if (parts.length >= 2) {
+    return parts.map(p => p[0].toUpperCase()).join(".");
+  }
+  return sciName.slice(0, 3).toUpperCase();
+};
+
 export const useBeetleStore = create<BeetleState>()(
   persist(
     (set) => ({
