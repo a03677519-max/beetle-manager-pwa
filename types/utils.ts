@@ -71,7 +71,7 @@ export function generateUniqueMName(
 
   // 特定の年（2026等）で始まる管理名は、過去の自動採番の残りや意図しない値とみなしてリセット（空白扱い）する
   let effectiveName = currentName;
-  if (effectiveName && effectiveName.match(/^(2026|26)([_-]|$)/)) {
+  if (effectiveName && effectiveName.match(/^(2026|26)\d*[_-]?/)) {
     return "";
   }
 
@@ -79,8 +79,8 @@ export function generateUniqueMName(
   // 既存の管理名がある場合はそれを活かす（末尾の数字は上書き対象として除去）
   if (effectiveName && effectiveName.trim() !== "" && effectiveName !== "-") {
     // 末尾の連番(_01)や、誤って残ったタグ(NN)を、末尾から続く限りすべて除去してベースとする
-    // 例: "MyBeetle_01_NN" -> "MyBeetle"
-    const base = effectiveName.replace(/([_-]?(\d+|NN))+$/, "");
+    // 例: "MyBeetle_01_NN" -> "MyBeetle", "Dhh_20260516_NN" -> "Dhh_20260516"
+    const base = effectiveName.replace(/([_-]?(\d+|NN))+$/, "").replace(/NN/g, "");
 
     // ベース名自体に日付パターン(4〜8桁)が含まれる場合は、自動採番されたものとみなしてテンプレートからの再生成を優先する
     if (/\d{4,8}/.test(base)) {
