@@ -1165,7 +1165,7 @@ export function BeetleManager() {
           <p className="text-[11px] font-black text-[#B0A495] uppercase tracking-[0.3em]">Breeding Dashboard</p>
           <div className="flex gap-2 items-center">
             <button 
-              onClick={handleRegenerateAllNames}
+              onClick={() => handleRegenerateAllNames(false)}
               className="flex items-center gap-1 px-3 py-1.5 bg-white border border-[#E8E2DA] rounded-full text-[10px] font-black text-gray-500 hover:text-[#FF9800] transition-all shadow-sm active:scale-95"
               title="規則に従って全個体の名前を付け直します"
             >
@@ -2036,7 +2036,7 @@ export function BeetleManager() {
           managementNameFormats={managementNameFormats}
           onUpdateManagementNameFormat={setManagementNameFormat}
           onCleanupManagementNames={handleCleanupManagementNames}
-          onRegenerateNames={handleRegenerateAllNames}
+          onRegenerateNames={() => handleRegenerateAllNames(false)}
           onSaveManagementNameFormats={() => window.alert("管理名テンプレートが保存されました。")}
         />
       )}
