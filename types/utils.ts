@@ -78,20 +78,22 @@ export function generateUniqueMName(
   let prefix: string;
   // 既存の管理名がある場合はそれを活かす（末尾の数字は上書き対象として除去）
   if (effectiveName && effectiveName.trim() !== "" && effectiveName !== "-") {
-    // 末尾の連番(_01)や、誤って残ったタグ(NN)を除去してベースとする
-    const base = effectiveName.replace(/[_-]?\d+$/, "").replace(/[_-]?NN/g, "");
+    // 末尾の連番(_01)や、誤って残ったタグ(NN)を、末尾から続く限りすべて除去してベースとする
+    // 例: "MyBeetle_01_NN" -> "MyBeetle"
+    const base = effectiveName.replace(/([_-]?(\d+|NN))+$/, "");
+
     // ベース名自体に日付パターン(4〜8桁)が含まれる場合は、自動採番されたものとみなしてテンプレートからの再生成を優先する
     if (/\d{4,8}/.test(base)) {
-        prefix = resolve(format).replace(/[_-]?NN/g, "");
+        prefix = resolve(format).replace(/NN/g, "");
     } else {
         prefix = base;
     }
   } else {
     // テンプレートから生成。連番部分は後で付けるので除去。
-    prefix = resolve(format).replace(/[_-]?NN/g, "");
+    prefix = resolve(format).replace(/NN/g, "");
   }
 
-  // 不要な記号の重複や前後残りを掃除
+  // 記号の重複をまとめ、前後の記号を完全に削除（NN除去後に残った "_" などを掃除）
   prefix = prefix.replace(/[_-]{2,}/g, "_").replace(/^[_-]+|[_-]+$/g, "");
 
   // テンプレートから使用すべきセパレータを推測（デフォルトはアンダースコア）
