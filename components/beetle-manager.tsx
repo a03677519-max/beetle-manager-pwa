@@ -6,7 +6,7 @@ import { Search, Clipboard, Camera, Loader2, Crop, Check, X as CloseIcon, Trash2
 import { Navbar } from "@/components/layout/navbar";
 import { Modal } from "./ui/modal"; // Ensure Modal is imported
 import { useSwitchBot } from "@/components/use-switchbot";
-import { formatGeneration, today, isSpawnSetFinished, createId, generateUniqueMName, formatDate } from "@/types/utils";
+import { formatGeneration, today, isSpawnSetFinished, createId, generateUniqueMName, formatDate, getShortenedSciName } from "@/types/utils";
 import { pushDataToGitHub } from "@/lib/github";
 import {
   emptyAdultForm,
@@ -1580,7 +1580,10 @@ export function BeetleManager() {
                 value.emergenceDate || today(), 
                 value.scientificName, 
                 entries, 
-                "成虫", 
+                "成虫",
+                // pass the format directly from store rather than a hardcoded string
+                // managementNameFormats is of type ManagementNameFormatMap which is already indexed by EntryType
+                // so managementNameFormats["成虫"] will correctly pick the format.
                 managementNameFormats["成虫"], 
                 value.managementName,
                 { 
@@ -1609,7 +1612,10 @@ export function BeetleManager() {
                 const targetDate = values.extractionDate && values.extractionDate !== "-" ? values.extractionDate : (values.hatchDate || today());
                 const mName = generateUniqueMName(
                   targetDate, 
-                  values.scientificName, 
+                  values.scientificName,
+                  // pass the format directly from store rather than a hardcoded string
+                  // managementNameFormats is of type ManagementNameFormatMap which is already indexed by EntryType
+                  // so managementNameFormats["幼虫"] will correctly pick the format.
                   currentEntries, 
                   "幼虫", 
                   managementNameFormats["幼虫"], 
@@ -1637,7 +1643,11 @@ export function BeetleManager() {
             initialValues={pastedData && pastedData.type === "産卵セット" ? { ...emptySpawnSetForm, ...pastedData } : (spawnTemplate ? { ...emptySpawnSetForm, ...spawnTemplate } : getInitialValues("産卵セット", emptySpawnSetForm))}
             allEntries={entries}
             onSubmit={(value) => {
-              const mName = generateUniqueMName(value.setDate || today(), value.scientificName, entries, "産卵セット", managementNameFormats["産卵セット"], value.managementName);
+              const mName = generateUniqueMName(value.setDate || today(), value.scientificName, entries, "産卵セット",
+                // pass the format directly from store rather than a hardcoded string
+                // managementNameFormats is of type ManagementNameFormatMap which is already indexed by EntryType
+                // so managementNameFormats["産卵セット"] will correctly pick the format.
+                managementNameFormats["産卵セット"], value.managementName);
               addSpawnSet({ ...value, managementName: mName });
               closeRegistrationModal();
             }}

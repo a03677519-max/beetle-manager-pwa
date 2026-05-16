@@ -1,7 +1,7 @@
 import { BeetleEntry, GenerationValue } from "./beetle";
 
 export const createId = () => Math.random().toString(36).substring(2, 11);
-
+// The `today` function was moved to `lib/utils.ts` to unify date handling.
 export const today = () => new Date().toISOString().split('T')[0];
 
 export const formatDate = (date?: string) => {

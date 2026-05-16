@@ -120,10 +120,25 @@ export const emptySpawnSetForm: SpawnSetFormValues = {
   cohabitation: "なし",
 };
 
+// Moved to types/utils.ts
+// /**
+//  * 管理名のプリセットテンプレート定義
+//  * 以下のプレースホルダーが利用可能であることを想定:
+/**
+ * 管理名のプリセットテンプレート定義
+ * 以下のプレースホルダーが利用可能であることを想定:
+ * {SHORT_SCI}: 学名略称 (例: D.H.H)
+ * {JPN}: 和名
+ * {LOC}: 産地
+ * {GEN}: 累代
+ * YYYY/MM/DD: 日付
+ * NN: 連番
+ */
 export const MANAGEMENT_NAME_PRESETS = [
   { label: "日付_連番 (20240101_01)", value: "YYYYMMDD_NN" },
   { label: "学名略称_日付_連番 (D.H.H_20240101_01)", value: "{SHORT_SCI}_YYYYMMDD_NN" },
   { label: "日付_学名略称_連番 (20240101_D.H.H_01)", value: "YYYYMMDD_{SHORT_SCI}_NN" },
+  // generateUniqueMName (utils.ts) で {SHORT_SCI}, {JPN}, {LOC}, {GEN} などのプレースホルダーを実際の値に置換するロジックが必要です。
   { label: "和名_日付_連番 (ヘラクレス_20240101_01)", value: "{JPN}_YYYYMMDD_NN" },
   { label: "産地_累代_連番 (グアドループ_CBF1_01)", value: "{LOC}_{GEN}_NN" },
   { label: "自由入力 (カスタム)", value: "CUSTOM" },
