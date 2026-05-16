@@ -63,27 +63,27 @@ export function generateUniqueMName(
     let r = tpl.replace(/YYYY/g, yyyy).replace(/YY/g, yy).replace(/MM/g, mm).replace(/DD/g, dd);
     r = r.replace(/{SHORT_SCI}/g, getShortenedSciName(sciName));
     // メタデータが渡されていない場合でもタグが残らないように空文字置換
-    r = r.replace(/{JPN}/g, metadata?.japaneseName || "");
-    r = r.replace(/{LOC}/g, metadata?.locality || "");
-    r = r.replace(/{GEN}/g, metadata?.generation || "");
+    r = r.replace(/{JPN}/g, metadata?.japaneseName || "").replace(/{LOC}/g, metadata?.locality || "").replace(/{GEN}/g, metadata?.generation || "");
     return r;
   };
 
-  // 特定の年（2026等）で始まる管理名は、過去の自動採番の残りや意図しない値とみなしてリセット（空白扱い）する
+  // 管理名が「2026/26」関連か、壊れたテンプレートタグを含む場合はリセット対象とする
   let effectiveName = currentName;
-  if (effectiveName && effectiveName.match(/^(2026|26)\d*[_-]?/)) {
+  const isYearJunk = (s: string) => /([_-]|^)(2026|26)([0-9]{2,6})?([_-]|$)/.test(s);
+  const hasTemplateArtifacts = (s: string) => s.includes("{") || s.includes("}") || s.includes("NN");
+
+  if (effectiveName && (isYearJunk(effectiveName) || hasTemplateArtifacts(effectiveName))) {
     return "";
   }
 
   let prefix: string;
   // 既存の管理名がある場合はそれを活かす（末尾の数字は上書き対象として除去）
   if (effectiveName && effectiveName.trim() !== "" && effectiveName !== "-") {
-    // 末尾の連番(_01)や、誤って残ったタグ(NN)を、末尾から続く限りすべて除去してベースとする
-    // 例: "MyBeetle_01_NN" -> "MyBeetle", "Dhh_20260516_NN" -> "Dhh_20260516"
+    // 末尾の連番やタグを徹底的に除去してベースを抽出
     const base = effectiveName.replace(/([_-]?(\d+|NN))+$/, "").replace(/NN/g, "");
 
-    // ベース名自体に日付パターン(4〜8桁)が含まれる場合は、自動採番されたものとみなしてテンプレートからの再生成を優先する
-    if (/\d{4,8}/.test(base)) {
+    // ベース名自体に日付パターンやタグの残骸がある場合は、テンプレートからの再生成を優先する
+    if (/\d{4,8}/.test(base) || hasTemplateArtifacts(base)) {
         prefix = resolve(format).replace(/NN/g, "");
     } else {
         prefix = base;
