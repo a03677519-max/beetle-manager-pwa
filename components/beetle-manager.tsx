@@ -175,7 +175,8 @@ export function BeetleManager() {
       return (e as any).createdAt || "";
     }
     if (key === "weight") {
-      if (e.type === "幼虫" && (e as LarvaBeetle).logs?.[0]) return (e as LarvaBeetle).logs[0].weight;
+      if (e.type === "幼虫" && (e as LarvaBeetle).logs?.length > 0) return (e as LarvaBeetle).logs[0].weight;
+      if (e.type === "産卵セット") return ((e as any).eggCount || 0) + ((e as any).larvaCount || 0);
       if (e.type === "成虫") return parseFloat((e as any).size || "0") || 0;
       return 0;
     }
@@ -331,191 +332,156 @@ export function BeetleManager() {
       const ExcelJS = (await import("exceljs")).default;
       const workbook = new ExcelJS.Workbook();
 
-      // IDからエクセル内のセル番地を引くためのマップ
-      const entryCellMap = new Map<string, { sheetName: string; row: number }>();
+      try {
+        const targetEntries = ids ? entries.filter(e => ids.includes(e.id)) : entries;
+        if (targetEntries.length === 0) return;
 
-      const getStatusText = (e: any) => {
-        if (e.deathDate && e.deathDate !== "-") return "死亡";
-        if ((e.soldDate && e.soldDate !== "-") || e.status === "販売済み") return "販売済み";
-        if (e.type === "成虫") return e.status || "飼育中";
-        if (e.type === "幼虫") return e.actualEmergenceDate ? "羽化済み" : "飼育中";
-        if (e.type === "産卵セット") return isSpawnSetFinished(e) ? "終了" : "継続中";
-        return "-";
-      };
+        let maxLarvaLogs = 0;
+        let maxSpawnSets = 0;
+        targetEntries.forEach(entry => {
+          if (entry.type === "幼虫") maxLarvaLogs = Math.max(maxLarvaLogs, (entry as any).logs?.length || 0);
+          if (entry.type === "産卵セット") maxSpawnSets = Math.max(maxSpawnSets, (entry as any).sets?.length || 0);
+        });
+        const groups = targetEntries.reduce((acc, e) => {
+          const key = e.scientificName || "Unknown";
+          if (!acc[key]) acc[key] = [];
+          acc[key].push(e);
+          return acc;
+        }, {} as Record<string, BeetleEntry[] >);
 
-      // idsが指定されている場合は現在のフィルタ/ソート順を維持、全抽出の場合は全件
-      const targetEntries = ids ? filteredEntries.filter(e => ids.includes(e.id)) : entries;
+        for (const [sciName, speciesEntries] of Object.entries(groups)) {
+          const sheetName = sciName.replace(/[\\/*?[\]]/g, "").slice(0, 31);
+          const sheet = workbook.addWorksheet(sheetName);
+          let currentRow = 1;
 
-      // 1. 学名ごとにグループ化
-      const groups = targetEntries.reduce((acc, e) => {
-        const key = e.scientificName || "Unknown";
-        if (!acc[key]) acc[key] = [];
-        acc[key].push(e);
-        return acc;
-      }, {} as Record<string, BeetleEntry[] >);
+          const types: EntryType[] = ["成虫", "幼虫", "産卵セット"];
+          for (const type of types) {
+            const typeEntries = speciesEntries.filter(e => e.type === type);
+            if (typeEntries.length === 0) continue;
 
-      // 2. 各学名のシートを作成
-      for (const [sciName, speciesEntries] of Object.entries(groups)) {
-        const sheetName = sciName.replace(/[\\/*?[\]]/g, "").slice(0, 31);
-        const sheet = workbook.addWorksheet(sheetName);
-        let currentRow = 1;
-
-        // 成虫・幼虫・産卵セットの順に出力
-        const types: EntryType[] = ["成虫", "幼虫", "産卵セット"];
-        for (const type of types) {
-          const typeEntries = speciesEntries.filter(e => e.type === type);
-          if (typeEntries.length === 0) continue;
-
-          // セクション見出し
-          const titleRow = sheet.getRow(currentRow++);
-          titleRow.getCell(1).value = `■ ${type}一覧`;
-          titleRow.getCell(1).font = { bold: true, size: 12, color: { argb: "FF795548" } };
-
-          // ヘッダー構成
-          let columns: { header: string; key: string; width: number }[] = [];
-          if (type === "成虫") {
-            columns = [
-              { header: "状態", key: "status", width: 10 },
-              { header: "管理名", key: "mName", width: 18 },
-              { header: "和名", key: "jName", width: 18 },
-              { header: "累代", key: "gen", width: 10 },
-              { header: "性別", key: "gender", width: 8 },
-              { header: "サイズ", key: "size", width: 10 },
-              { header: "羽化日", key: "eDate", width: 14 },
-              { header: "リンク", key: "link", width: 20 },
-              { header: "メモ", key: "memo", width: 30 },
-            ];
-          } else if (type === "幼虫") {
-            columns = [
-              { header: "状態", key: "status", width: 10 },
-              { header: "管理名", key: "mName", width: 18 },
-              { header: "和名", key: "jName", width: 18 },
-              { header: "累代", key: "gen", width: 10 },
-              { header: "最新体重", key: "weight", width: 10 },
-              { header: "孵化/割出日", key: "hDate", width: 14 },
-              { header: "リンク", key: "link", width: 20 },
-              { header: "メモ", key: "memo", width: 30 },
-            ];
-          } else {
-            columns = [
-              { header: "状態", key: "status", width: 10 },
-              { header: "管理名", key: "mName", width: 18 },
-              { header: "和名", key: "jName", width: 18 },
-              { header: "累代", key: "gen", width: 10 },
-              { header: "開始日", key: "sDate", width: 14 },
-              { header: "終了日", key: "seDate", width: 14 },
-              { header: "合計回収", key: "total", width: 10 },
-              { header: "リンク", key: "link", width: 20 },
-              { header: "メモ", key: "memo", width: 30 },
-            ];
-          }
-
-          const headerRow = sheet.getRow(currentRow++);
-          columns.forEach((col, i) => {
-            const cell = headerRow.getCell(i + 1);
-            cell.value = col.header;
-            cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF9F7F5" } };
-            cell.font = { bold: true };
-            cell.border = { bottom: { style: "thin" } };
-            sheet.getColumn(i + 1).width = col.width;
-          });
-
-          // データ行
-          for (const entry of typeEntries) {
-            const dataRow = sheet.getRow(currentRow);
-            const e = entry as any;
-            const status = getStatusText(e);
-
-            entryCellMap.set(entry.id, { sheetName, row: currentRow });
-
-            const rowValues: any = { status };
-            rowValues.mName = e.managementName || "-";
-            rowValues.jName = e.japaneseName;
-            rowValues.gen = formatGeneration(e.generation);
-            rowValues.memo = e.memo || "";
-
+            // ヘッダー作成
+            let headers: string[] = ["状態", "管理名", "和名", "学名", "累代"];
             if (type === "成虫") {
-              rowValues.gender = e.gender;
-              rowValues.size = e.size ? `${e.size}mm` : "-";
-              rowValues.eDate = formatDate(e.emergenceDate);
+              headers.push("性別", "サイズ", "羽化日", "後食日", "区分", "メモ");
             } else if (type === "幼虫") {
-              rowValues.weight = e.logs?.[0]?.weight ? `${e.logs[0].weight}g` : "-";
-              rowValues.hDate = formatDate(e.hatchDate || e.extractionDate);
-            } else {
-              rowValues.sDate = formatDate(e.setDate);
-              rowValues.seDate = formatDate(e.setEndDate);
-              rowValues.total = (e.eggCount || 0) + (e.larvaCount || 0);
+              headers.push("孵化/割出日");
+              for (let i = 1; i <= maxLarvaLogs; i++) {
+                headers.push(`${i}回目計測日`, `${i}回目体重`, `${i}回目令数`);
+              }
+              headers.push("メモ");
+            } else if (type === "産卵セット") {
+              headers.push("セット開始日");
+              for (let i = 1; i <= maxSpawnSets + 1; i++) {
+                headers.push(`${i}回目日付`, `${i}回目回収`);
+              }
+              headers.push("メモ");
             }
 
-            columns.forEach((col, i) => {
-              const cell = dataRow.getCell(i + 1);
-              if (col.key !== "link") {
-                cell.value = rowValues[col.key];
-                if (col.key === "status") {
-                  const color = status === "死亡" ? "FFFFEBEE" : status === "販売済み" ? "FFE3F2FD" : "FFF1F8E9";
-                  cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: color.slice(2) } };
+            const headerRow = sheet.getRow(currentRow++);
+            headers.forEach((h, i) => {
+              const cell = headerRow.getCell(i + 1);
+              cell.value = h;
+              cell.font = { bold: true };
+              cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE9E2DA' } };
+              cell.border = { bottom: { style: 'thin' } };
+            });
+
+            // データ書き込み
+            for (const entry of typeEntries) {
+              const dataRow = sheet.getRow(currentRow++);
+              const e = entry as any;
+
+              // 状態の判定
+              const isDeceased = !!e.deathDate && e.deathDate !== "-";
+              const isSold = ((e.soldDate && e.soldDate !== "-") || e.status === "販売済み");
+              let statusText = "飼育中";
+              if (isDeceased) statusText = "死亡";
+              else if (isSold) statusText = "販売済み";
+              else if (type === "幼虫" && e.actualEmergenceDate) statusText = "羽化済み";
+              else if (type === "産卵セット" && isSpawnSetFinished(e)) statusText = "終了";
+
+              let rowData: any[] = [statusText, e.managementName || "-", e.japaneseName, e.scientificName, formatGeneration(e.generation)];
+
+              if (type === "成虫") {
+                rowData.push(e.gender, e.size ? `${e.size}mm` : "-", formatDate(e.emergenceDate), formatDate(e.feedingDate), e.emergenceType, e.memo || "");
+              } else if (type === "幼虫") {
+                rowData.push(formatDate(e.hatchDate || e.extractionDate));
+                // 計測ログを日付の昇順（古い順）にソートして出力
+                const logs = [...(e.logs || [])].sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+                for (let i = 0; i < maxLarvaLogs; i++) {
+                  const log = logs[i];
+                  rowData.push(log ? formatDate(log.date) : "", log ? `${log.weight}g` : "", log ? log.stage : "");
                 }
-                if (col.key === "memo") {
-                  cell.alignment = { wrapText: true };
+                rowData.push(e.memo || "");
+              } else {
+                rowData.push(formatDate(e.setDate));
+                // 産卵セットの履歴（メインフィールドを1回目とする）
+                rowData.push(formatDate(e.setEndDate || e.setDate), (e.eggCount || 0) + (e.larvaCount || 0));
+                // 産卵セットの履歴を日付の昇順（古い順）にソートして出力
+                const sets = [...(e.sets || [])].sort((a, b) => (a.setDate || "").localeCompare(b.setDate || ""));
+                for (let i = 0; i < maxSpawnSets; i++) {
+                  const s = sets[i];
+                  rowData.push(s ? formatDate(s.setEndDate || s.setDate) : "", s ? (s.eggCount || 0) + (s.larvaCount || 0) : "");
+                }
+                rowData.push(e.memo || "");
+              }
+
+              rowData.forEach((val, i) => {
+                dataRow.getCell(i + 1).value = val;
+              });
+
+              // 状態に応じた行の色付け（死亡は薄い赤、販売済みは薄い青）
+              if (statusText === "死亡" || statusText === "販売済み") {
+                const argb = statusText === "死亡" ? "FFFFEBEE" : "FFE3F2FD";
+                for (let i = 1; i <= headers.length; i++) {
+                  const cell = dataRow.getCell(i);
+                  cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb } };
                 }
               }
-              cell.border = { bottom: { style: "hair" } };
-            });
-            currentRow++;
+            }
+            currentRow++; // セクション間の空行
           }
-          currentRow += 2; // セクション間余白
+
+          // オートフィルターを設定（A1セルから最終データセルまで）
+          if (currentRow > 1) {
+            sheet.autoFilter = {
+              from: { row: 1, column: 1 },
+              to: { row: currentRow - 1, column: sheet.columnCount }
+            };
+          }
+
+          // セルの幅を自動調整（全角2、半角1として計算）
+          const colCount = sheet.columnCount;
+          for (let i = 1; i <= colCount; i++) {
+            const column = sheet.getColumn(i);
+            let maxLength = 0;
+            column.eachCell({ includeEmpty: true }, (cell) => {
+              const str = cell.value ? String(cell.value) : "";
+              let len = 0;
+              for (let j = 0; j < str.length; j++) {
+                len += str.charCodeAt(j) > 255 ? 2 : 1;
+              }
+              if (len > maxLength) maxLength = len;
+            });
+            column.width = Math.min(50, Math.max(10, maxLength + 2));
+          }
         }
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `beetle_manager_${today().replace(/-/g, "")}.xlsx`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error(error);
+        window.alert("エクセルファイルの生成に失敗しました。");
+      } finally {
+        setIsSyncing(false);
       }
-
-      // 3. ハイパーリンク（紐付け）の設定
-      for (const entry of targetEntries) {
-        if (!entry.linkedEntryIds?.length) continue;
-        const pos = entryCellMap.get(entry.id);
-        if (!pos || !pos.sheetName) continue;
-
-        const sheet = workbook.getWorksheet(pos.sheetName);
-        if (!sheet) continue;
-
-        const linkCellIdx = entry.type === "成虫" ? 8 : entry.type === "幼虫" ? 7 : 8;
-
-        // sheet が確実に存在することをコンパイラに伝えるため、直接参照を避けて変数を定義
-        const row = sheet.getRow(pos.row);
-        if (!row) continue; // row が undefined の場合をスキップ
-        const cell = row.getCell(linkCellIdx);
-
-        for (const targetId of entry.linkedEntryIds) {
-          const targetPos = entryCellMap.get(targetId);
-          if (!targetPos || !targetPos.sheetName) continue;
-
-          const target = entries.find(i => i.id === targetId);
-          cell.value = {
-            text: `紐付: ${target?.managementName || "詳細"}`,
-            hyperlink: `#\'${targetPos.sheetName}\'!A${targetPos.row}`,
-            tooltip: "リンク先へ移動"
-          };
-          cell.font = { color: { argb: "FF2196F3" }, underline: true };
-          break;
-        }
-      }
-
-      // 4. ダウンロード実行
-      const buffer = await workbook.xlsx.writeBuffer();
-      const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `beetle_manager_${today().replace(/-/g, "")}.xlsx`;
-      a.click();
-      window.URL.revokeObjectURL(url);
-      
-      window.alert(`${targetEntries.length}件のデータを保存しました。`);
-    } catch (error) {
-      console.error(error);
-      window.alert("エクセルファイルの生成に失敗しました。");
-    } finally {
-      setIsSyncing(false);
-    }
-  };
+    };
 
   const handleRegenerateAllNames = useCallback(() => {
     if (!window.confirm("全個体の管理名を現在の規則（設定画面で変更可能）で一括更新します。よろしいですか？")) return;
@@ -733,7 +699,7 @@ export function BeetleManager() {
       scientificName: entry.scientificName,
       locality: entry.locality,
       generation: entry.generation,
-      linkedEntryIds: entry.linkedEntryIds,
+      linkedEntryIds: entry.linkedEntryIds ? [...entry.linkedEntryIds, entry.id] : [entry.id], // 元の幼虫を紐付け
       photos: entry.photos,
       emergenceDate: emergenceDate,
       emergenceType: entry.emergenceType || "羽化",
@@ -1178,35 +1144,43 @@ export function BeetleManager() {
       <section className="sticky top-0 z-30 bg-white/70 backdrop-blur-xl pt-4 pb-2 px-4 border-b border-[#E8E2DA] mb-3 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
         <div className="flex justify-between items-center mb-2">
           <p className="text-[11px] font-black text-[#B0A495] uppercase tracking-[0.3em]">Breeding Dashboard</p>
-          <div className="flex gap-1.5 items-center">
-            <div className="flex bg-[#EFE9E2]/50 rounded-full p-0.5 border border-white/50 shadow-sm">
-              <button 
-                onClick={handleRegenerateAllNames}
-                className="flex items-center gap-1 px-2.5 py-1 text-[8px] font-black text-gray-500 hover:text-[#FF9800] transition-colors"
-                title="規則に従って全個体の名前を付け直します"
-              >
-                <Hash size={10} />
-                <span>一括採番</span>
-              </button>
-              <div className="w-px h-2.5 bg-gray-300/50 self-center" />
-              <button
-                onClick={() => handleBulkCopyToExcel()}
-                className="flex items-center gap-1 px-2.5 py-1 text-[8px] font-black text-gray-500 hover:text-green-600 transition-colors"
-                title="全データをExcelファイルで書き出します"
-              >
-                <FileSpreadsheet size={10} />
-                <span>Excel出力</span>
-              </button>
-            </div>
+          <div className="flex gap-2 items-center">
+            <button 
+              onClick={handleRegenerateAllNames}
+              className="flex items-center gap-1 px-3 py-1.5 bg-white border border-[#E8E2DA] rounded-full text-[10px] font-black text-gray-500 hover:text-[#FF9800] transition-all shadow-sm active:scale-95"
+              title="規則に従って全個体の名前を付け直します"
+            >
+              <Hash size={12} />
+              <span>一括採番</span>
+            </button>
+            <button
+              onClick={() => handleBulkCopyToExcel()}
+              className="flex items-center gap-1 px-3 py-1.5 bg-white border border-[#E8E2DA] rounded-full text-[10px] font-black text-gray-500 hover:text-green-600 transition-all shadow-sm active:scale-95"
+              title="全データをExcelファイルで書き出します"
+            >
+              <FileSpreadsheet size={12} />
+              <span>Excel出力</span>
+            </button>
+
+            <div className="w-px h-4 bg-gray-200 mx-1" />
+
+            <button 
+              onClick={() => setIsSettingsOpen(true)}
+              className="p-1.5 bg-white border border-[#E8E2DA] rounded-full text-gray-400 hover:text-[#FF9800] transition-all shadow-sm active:scale-95"
+            >
+              <Settings size={16} />
+            </button>
+
             <button 
               onClick={() => setShowSort(!showSort)}
-              className={`text-[10px] font-black px-3 py-1 rounded-full transition-all ${showSort ? "bg-[#FF9800] text-white shadow-lg shadow-orange-200" : "bg-[#EFE9E2] text-[#8B7D7B]"}`}
+              className={`text-[10px] font-black px-3 py-1.5 rounded-full transition-all ${showSort ? "bg-[#FF9800] text-white shadow-lg shadow-orange-200" : "bg-[#EFE9E2] text-[#8B7D7B]"}`}
             >
-              並び替え
+              ソート
             </button>
+
             <button 
               onClick={handleToggleSelectionMode}
-              className={`text-[10px] font-black px-3 py-1 rounded-full transition-all ${isSelectionMode ? "bg-[#F4511E] text-white shadow-lg shadow-red-200" : "bg-[#EFE9E2] text-[#8B7D7B]"}`}
+              className={`text-[10px] font-black px-3 py-1.5 rounded-full transition-all ${isSelectionMode ? "bg-[#F4511E] text-white shadow-lg shadow-red-200" : "bg-[#EFE9E2] text-[#8B7D7B]"}`}
             >
               一括
             </button>
@@ -1569,7 +1543,7 @@ export function BeetleManager() {
             id="create-form"
             initialValues={pastedData && pastedData.type === "成虫" ? { ...emptyAdultForm, ...pastedData } : getInitialValues("成虫", emptyAdultForm)}
             onSubmit={(value) => {
-              const mName = generateUniqueMName(value.emergenceDate || today(), value.scientificName, entries, "成虫", managementNameFormats["成虫"]);
+              const mName = generateUniqueMName(value.emergenceDate || today(), value.scientificName, entries, "成虫", managementNameFormats["成虫"], value.managementName);
               addAdult({ ...value, managementName: mName });
               setIsCreating(false);
             }}
@@ -1588,7 +1562,7 @@ export function BeetleManager() {
               let currentEntries = [...entries];
               for (let index = 0; index < count; index += 1) {
                 const targetDate = values.extractionDate && values.extractionDate !== "-" ? values.extractionDate : (values.hatchDate || today());
-                const mName = generateUniqueMName(targetDate, values.scientificName, currentEntries, "幼虫", managementNameFormats["幼虫"]);
+                const mName = generateUniqueMName(targetDate, values.scientificName, currentEntries, "幼虫", managementNameFormats["幼虫"], values.managementName);
                 // IDや作成日などのメタデータを除去して新規登録
                 const { id, createdAt, ...cleanValues } = values as any;
                 addLarva({ ...cleanValues, managementName: mName });
@@ -1606,7 +1580,7 @@ export function BeetleManager() {
             initialValues={pastedData && pastedData.type === "産卵セット" ? { ...emptySpawnSetForm, ...pastedData } : (spawnTemplate ? { ...emptySpawnSetForm, ...spawnTemplate } : getInitialValues("産卵セット", emptySpawnSetForm))}
             allEntries={entries}
             onSubmit={(value) => {
-              const mName = generateUniqueMName(value.setDate || today(), value.scientificName, entries, "産卵セット", managementNameFormats["産卵セット"]);
+              const mName = generateUniqueMName(value.setDate || today(), value.scientificName, entries, "産卵セット", managementNameFormats["産卵セット"], value.managementName);
               addSpawnSet({ ...value, managementName: mName });
               setIsCreating(false);
             }}
@@ -1774,15 +1748,42 @@ export function BeetleManager() {
                   
                   return compare(speciesSortConfig.secondary.key, speciesSortConfig.secondary.direction);
                 }).map((entry) => (
-                  <EntryCard
-                    key={entry.id}
-                    entry={entry}
-                    onOpen={setSelectedEntry}
-                    onDelete={(e, id) => {
-                      e.stopPropagation();
-                      if (window.confirm("本当に削除しますか？")) deleteEntry(id);
-                    }}
-                  />
+                  <div key={entry.id} className="space-y-2">
+                    <EntryCard
+                      entry={entry}
+                      onOpen={setSelectedEntry}
+                      onDelete={(e, id) => {
+                        e.stopPropagation();
+                        if (window.confirm("本当に削除しますか？")) deleteEntry(id);
+                      }}
+                    />
+                    {entry.type === "産卵セット" && (
+                      <div className="px-2 space-y-2">
+                        {/* 履歴のリスト表示 */}
+                        {(entry as SpawnSet).sets && (entry as SpawnSet).sets.length > 0 && (
+                          <div className="space-y-1.5">
+                            {(entry as SpawnSet).sets.map((s, idx) => (
+                              <div key={s.id} className="text-[10px] font-bold text-[#8B7D7B] bg-white/40 rounded-lg p-2 border border-white/60 flex justify-between items-center shadow-sm">
+                                <span>セット{idx + 2}: {s.setDate}〜 (回収: {(s.eggCount || 0) + (s.larvaCount || 0)})</span>
+                                <ChevronRight size={12} className="opacity-40" />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedEntry(entry);
+                            setIsAddingSecondSet(true);
+                          }}
+                          className="w-full py-2 bg-[#FF9800]/10 text-[#FF9800] text-[11px] font-black rounded-xl border border-[#FF9800]/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                        >
+                          <Clipboard size={12} />
+                          履歴を追加登録
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
             </motion.div>
