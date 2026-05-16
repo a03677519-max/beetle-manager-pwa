@@ -1,6 +1,6 @@
 "use client";
 
-import { X, Hash, Type, ChevronRight, Info, RotateCcw, Trash2, Eraser, RotateCw } from "lucide-react";
+import { X, Hash, Type, ChevronRight, Info, RotateCcw, Trash2, Eraser, RotateCw, Save, RefreshCw } from "lucide-react";
 import { MANAGEMENT_NAME_PRESETS } from "@/store/use-beetle-store";
 import { useState } from "react";
 import type { EntryType } from "@/types/beetle";
@@ -12,7 +12,9 @@ export function SettingsView({
   backupEntries,
   onRestoreBackup,
   onClearBackup,
-  onCleanupManagementNames
+  onCleanupManagementNames,
+  onRegenerateNames,
+  onSaveManagementNameFormats
 }: any) {
   const types: EntryType[] = ["成虫", "幼虫", "産卵セット"];
   const [showCustom, setShowCustom] = useState<Record<string, boolean>>({});
@@ -87,6 +89,21 @@ export function SettingsView({
               </div>
             </div>
           ))}
+
+          <div className="flex gap-3 pt-2">
+            <button 
+              onClick={onSaveManagementNameFormats}
+              className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#FF9800] text-white rounded-xl text-xs font-black shadow-lg shadow-orange-100 active:scale-95 transition-all"
+            >
+              <Save size={16} /> 設定を保存
+            </button>
+            <button 
+              onClick={onRegenerateNames}
+              className="flex-1 flex items-center justify-center gap-2 py-3 bg-white border border-[#FF9800] text-[#FF9800] rounded-xl text-xs font-black active:scale-95 transition-all"
+            >
+              <RefreshCw size={16} /> 全個体に適用
+            </button>
+          </div>
         </section>
 
         {/* 管理名の整理 */}

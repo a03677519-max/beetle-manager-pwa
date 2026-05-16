@@ -273,7 +273,7 @@ export function BeetleManager() {
        
        return compare(mainSortConfig.secondary.key, mainSortConfig.secondary.direction);
      });
-   }, [entries, query, selectedType, activeTab, spawnSetFilter, larvaFilter, adultFilter, mainSortConfig, getSortValue]);
+    }, [entries, query, selectedType, activeTab, spawnSetFilter, larvaFilter, adultFilter, mainSortConfig, getSortValue]);
 
   // 並べ替え（ドラッグ）完了時の処理
   const handleReorder = (newOrder: BeetleEntry[], sciName: string) => {
@@ -282,42 +282,11 @@ export function BeetleManager() {
     importData([...otherEntries, ...newOrder]);
   };
 
-  const groupedEntries = useMemo(() => {
-    const groups: Record<string, BeetleEntry[]> = {};
-    filteredEntries.forEach(entry => {
-      const key = entry.scientificName || "Unknown";
-      if (!groups[key]) groups[key] = [];
-      groups[key].push(entry);
-    });
-    return groups;
-  }, [filteredEntries]);
-
   const [expandedSpecies, setExpandedSpecies] = useState<string[]>([]);
 
   // 自動スクロール用のRef
   const groupRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const prevExpandedCount = useRef(0);
-
-  useEffect(() => {
-    if (expandedSpecies.length > prevExpandedCount.current) {
-      const lastOpened = expandedSpecies[expandedSpecies.length - 1];
-      const element = groupRefs.current[lastOpened];
-      if (element) {
-        // アニメーションによるレイアウト変更を考慮して少し遅延させてからスクロール実行
-        const timer = setTimeout(() => {
-          element.scrollIntoView({ behavior: "smooth", block: "start" });
-        }, 300);
-        return () => clearTimeout(timer);
-      }
-    }
-    prevExpandedCount.current = expandedSpecies.length;
-  }, [expandedSpecies]);
-
-  const toggleSpecies = (sciName: string) => {
-    setExpandedSpecies(prev => 
-      prev.includes(sciName) ? prev.filter(s => s !== sciName) : [...prev, sciName]
-    );
-  };
 
   const handleToggleSelect = useCallback((id: string) => {
     setSelectedIds(prev => 
@@ -613,14 +582,15 @@ export function BeetleManager() {
     const processed = entries.map(entry => {
       let mName = entry.managementName || "";
       // 自動採番と思われる形式（日付、または202x/2x等の年号から始まる）またはタグ残骸を消去
-      const isYearJunk = /([_-]|^)(\d{2,4})(\d{2,6})?[A-Za-z.]*([_-]|$)/.test(mName);
+      // 完全一致に近い場合のみ削除対象とする
+      const isAutoName = /^(\d{2,4})(\d{2,6})?[A-Za-z.]*$/.test(mName);
       const hasArtifacts = mName.includes("NN") || mName.includes("{");
 
-      if (isYearJunk || hasArtifacts) {
+      if (isAutoName || hasArtifacts) {
         mName = "";
       } else {
-        // それ以外の名前は、末尾の連番数字やゴミだけを削ぎ落としてベース名に戻す
-        mName = mName.replace(/NN/g, "").replace(/([_-]?\d+)+$/, "").replace(/[_-]{2,}/g, "_").replace(/^[_-]+|[_-]+$/g, "");
+        // それ以外の名前は、末尾の連番数字（_01等）や記号だけを削ぎ落としてベース名に戻す
+        mName = mName.replace(/([_-]?\d+)+$/, "").replace(/[_-]{2,}/g, "_").replace(/^[_-]+|[_-]+$/g, "");
       }
       return { ...entry, managementName: mName };
     });
@@ -652,7 +622,7 @@ export function BeetleManager() {
       
       if (values.managementName !== undefined) {
         let mName = values.managementName;
-        if (mName && /^(\d{2,4})(\d{2,6})?[A-Za-z.]*/.test(mName)) mName = "";
+        if (mName && /^(\d{2,4})(\d{2,6})?[A-Za-z.]*$/.test(mName)) mName = "";
         patch.managementName = mName;
       }
       
@@ -732,22 +702,6 @@ export function BeetleManager() {
       }
     }
   };
-
-  const [selectedSpecies, setSelectedSpecies] = useState<string | null>(null);
-  const [speciesSortConfig, setSpeciesSortConfig] = useState<{
-    primary: { key: string, direction: "asc" | "desc" },
-    secondary: { key: string, direction: "asc" | "desc" }
-  }>({
-    primary: { key: "managementName", direction: "asc" },
-    secondary: { key: "date", direction: "desc" }
-  });
-
-  const speciesSortKeys = [
-    { id: 'managementName', label: '管理名' },
-    { id: 'date', label: '日付' },
-    { id: 'weight', label: '計測値' },
-    { id: 'gender', label: '性別' },
-  ];
 
   const stats = useMemo(() => {
     const adults = entries.filter(e => e.type === "成虫");
@@ -1857,80 +1811,50 @@ export function BeetleManager() {
 
       <section className="px-6">
         <AnimatePresence>
-          {selectedSpecies ? (
-            <motion.div
-              key="species-view"
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              drag="x"
-              dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={0.05}
-              onDragEnd={(_, info) => {
-                // 右にスワイプ、または素早いフリックで前の画面に戻る
-                if (info.offset.x > 80 || info.velocity.x > 500) {
-                  setSelectedSpecies(null);
+          <motion.div
+            key="main-view"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            drag="x"
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.05}
+            onDragEnd={(_, info) => {
+              const categories = ["成虫", "幼虫", "産卵セット"];
+              const currentIndex = categories.indexOf(activeTab);
+              if (currentIndex === -1) return;
+
+              const swipeThreshold = 50;
+              const velocityThreshold = 400;
+
+              if (info.offset.x < -swipeThreshold || info.velocity.x < -velocityThreshold) {
+                // 左にスワイプ -> 次のカテゴリ（タブ）へ
+                if (currentIndex < categories.length - 1) {
+                  const next = categories[currentIndex + 1];
+                  setActiveTab(next);
+                  setSelectedType(next as any);
                 }
-              }}
-              transition={{ type: "spring", damping: 30, stiffness: 450, mass: 0.8 }}
-              className="fixed inset-0 z-80 bg-[#F5F0EB] overflow-y-auto pb-32"
-            >
-              <div className="sticky top-0 z-30 bg-[#F5F0EB]/90 backdrop-blur-xl px-6 pt-4 pb-3 border-b border-gray-200/50 shadow-sm mb-4">
-                <div className="flex items-center gap-4 mb-3">
-                  <button 
-                    onClick={() => setSelectedSpecies(null)}
-                    className="p-2 bg-white rounded-xl shadow-sm text-gray-500 active:scale-95 transition-all"
-                  >
-                    <ChevronLeft size={24} />
-                  </button>
-                  <div className="flex-1 min-w-0">
-                    <h2 className="text-xl font-black text-[#4A3F35] truncate">{groupedEntries[selectedSpecies]?.[0]?.japaneseName || "不明"}</h2>
-                    <p className="text-[10px] italic text-gray-400 truncate tracking-tight">{selectedSpecies}</p>
-                  </div>
-                </div>
-
-                {/* 種別内ソート項目 (固定ヘッダー内) */}
-                <div className="bg-white/60 rounded-[20px] p-2 px-3 border border-white/80 space-y-2 shadow-inner">
-                  <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-                    <div className="flex flex-col items-start min-w-[45px]">
-                      <span className="text-[8px] font-black text-gray-400 uppercase tracking-tighter">1st</span>
-                      <button onClick={() => setSpeciesSortConfig(s => ({ ...s, primary: { ...s.primary, direction: s.primary.direction === "asc" ? "desc" : "asc" } }))} className="text-[8px] font-black text-[#F4511E] flex items-center gap-0.5"><ArrowUpDown size={8} />{speciesSortConfig.primary.direction === "asc" ? "昇" : "降"}</button>
-                    </div>
-                    {speciesSortKeys.map(k => (
-                      <button key={`sp-p-${k.id}`} onClick={() => setSpeciesSortConfig(s => ({...s, primary: { ...s.primary, key: k.id }}))} className={`px-2.5 py-1 rounded-lg text-[9px] font-bold whitespace-nowrap transition-all ${speciesSortConfig.primary.key === k.id ? "bg-[#FF9800] text-white shadow-sm" : "bg-white/50 text-gray-400 border border-gray-100"}`}>{k.label}</button>
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-                    <div className="flex flex-col items-start min-w-[45px]">
-                      <span className="text-[8px] font-black text-gray-400 uppercase tracking-tighter">2nd</span>
-                      <button onClick={() => setSpeciesSortConfig(s => ({ ...s, secondary: { ...s.secondary, direction: s.secondary.direction === "asc" ? "desc" : "asc" } }))} className="text-[8px] font-black text-[#F4511E] flex items-center gap-0.5"><ArrowUpDown size={8} />{speciesSortConfig.secondary.direction === "asc" ? "昇" : "降"}</button>
-                    </div>
-                    {speciesSortKeys.map(k => (
-                      <button key={`sp-s-${k.id}`} onClick={() => setSpeciesSortConfig(s => ({...s, secondary: { ...s.secondary, key: k.id }}))} className={`px-2.5 py-1 rounded-lg text-[9px] font-bold whitespace-nowrap transition-all ${speciesSortConfig.secondary.key === k.id ? "bg-[#FF9800] text-white shadow-sm" : "bg-white/50 text-gray-400 border border-gray-100"}`}>{k.label}</button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="px-6 space-y-4">
-                {(() => {
-                  const sortedList = [...groupedEntries[selectedSpecies]].sort((a, b) => {
-                    const compare = (key: string, direction: "asc" | "desc") => {
-                      const vA = getSortValue(a, key);
-                      const vB = getSortValue(b, key);
-                      const res = typeof vA === "string" ? String(vA).localeCompare(String(vB), "ja", { numeric: true }) : ((vA as number) - (vB as number));
-                      return direction === "asc" ? res : -res;
-                    };
-                    const primaryCmp = compare(speciesSortConfig.primary.key, speciesSortConfig.primary.direction);
-                    if (primaryCmp !== 0) return primaryCmp;
-                    return compare(speciesSortConfig.secondary.key, speciesSortConfig.secondary.direction);
-                  });
-
-                  return sortedList.map((entry) => (
-                    <div 
-                      key={entry.id} 
+              } else if (info.offset.x > swipeThreshold || info.velocity.x > velocityThreshold) {
+                // 右にスワイプ -> 前のカテゴリ（タブ）へ
+                if (currentIndex > 0) {
+                  const prev = categories[currentIndex - 1];
+                  setActiveTab(prev);
+                  setSelectedType(prev as any);
+                }
+              }
+            }}
+            transition={{ duration: 0.2 }}
+          >
+            {activeTab !== "分析" && activeTab !== "タスク" && activeTab !== "設定" ? (
+              filteredEntries.length === 0 ? (
+                <EmptyState />
+              ) : (
+                <div className="space-y-4">
+                  {filteredEntries.map((entry) => (
+                    <div
+                      key={entry.id}
                       className={`space-y-2 ${isSelectionMode ? 'touch-none select-none' : ''}`}
-                      onPointerDown={() => handlePointerDown(entry.id, sortedList)}
+                      onPointerDown={() => handlePointerDown(entry.id, filteredEntries)}
                       onPointerEnter={() => handlePointerEnter(entry.id)}
                       onPointerUp={cancelLongPress}
                       onPointerLeave={cancelLongPress}
@@ -1946,140 +1870,45 @@ export function BeetleManager() {
                           if (window.confirm("本当に削除しますか？")) deleteEntry(id);
                         }}
                       />
-                    {entry.type === "産卵セット" && (
-                      <div className="px-2 space-y-2">
-                        {/* 履歴のリスト表示 */}
-                        {(entry as SpawnSet).sets && (entry as SpawnSet).sets.length > 0 && (
-                          <div className="space-y-1.5">
-                            {(entry as SpawnSet).sets.map((s, idx) => (
-                              <div key={s.id} className="text-[10px] font-bold text-[#8B7D7B] bg-white/40 rounded-lg p-2 border border-white/60 flex justify-between items-center shadow-sm">
-                                <span>セット{idx + 2}: {s.setDate}〜 (回収: {(s.eggCount || 0) + (s.larvaCount || 0)})</span>
-                                <ChevronRight size={12} className="opacity-40" />
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedEntry(entry);
-                            setIsAddingSecondSet(true);
-                          }}
-                          className="w-full py-2 bg-[#FF9800]/10 text-[#FF9800] text-[11px] font-black rounded-xl border border-[#FF9800]/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-                        >
-                          <Clipboard size={12} />
-                          履歴を追加登録
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ));
-              })()}
-              </div>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="main-view"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              drag="x"
-              dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={0.05}
-              onDragEnd={(_, info) => {
-                const categories = ["成虫", "幼虫", "産卵セット"];
-                const currentIndex = categories.indexOf(activeTab);
-                if (currentIndex === -1) return;
-
-                const swipeThreshold = 50;
-                const velocityThreshold = 400;
-
-                if (info.offset.x < -swipeThreshold || info.velocity.x < -velocityThreshold) {
-                  // 左にスワイプ -> 次のカテゴリ（タブ）へ
-                  if (currentIndex < categories.length - 1) {
-                    const next = categories[currentIndex + 1];
-                    setActiveTab(next);
-                    setSelectedType(next as any);
-                  }
-                } else if (info.offset.x > swipeThreshold || info.velocity.x > velocityThreshold) {
-                  // 右にスワイプ -> 前のカテゴリ（タブ）へ
-                  if (currentIndex > 0) {
-                    const prev = categories[currentIndex - 1];
-                    setActiveTab(prev);
-                    setSelectedType(prev as any);
-                  }
-                }
-              }}
-              transition={{ duration: 0.2 }}
-            >
-              {activeTab !== "分析" && activeTab !== "タスク" && activeTab !== "設定" ? (
-                filteredEntries.length === 0 ? (
-                  <EmptyState />
-                ) : (
-                  Object.entries(groupedEntries).map(([sciName, group]) => {
-                    const japaneseName = group[0]?.japaneseName || "不明";
-                    
-                    return (
-                      <div 
-                        key={sciName} 
-                        ref={(el) => { groupRefs.current[sciName] = el; }}
-                        className="mb-3 scroll-mt-80"
-                      >
-                        <button 
-                          onClick={() => setSelectedSpecies(sciName)}
-                          className="w-full flex items-center justify-between p-4 bg-white/40 rounded-2xl mb-2 border border-white/60 active:scale-[0.98] transition-all"
-                        >
-                          <div className="text-left flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="font-black text-[#4A3F35]">{japaneseName}</span>
-                              <span className="text-[10px] font-bold bg-[#FF9800] text-white px-2 py-0.5 rounded-full">{group.length}</span>
-                            </div>
-                            <div className="text-[10px] italic text-gray-400 truncate">{sciName}</div>
-                          </div>
-                          <div className="text-gray-300">
-                            <ChevronRight size={18} />
-                          </div>
-                        </button>
-                      </div>
-                    );
-                  })
-                )
-              ) : activeTab === "分析" ? (
-                <AnalysisView
-                  entries={entries}
-                  setSelectedEntry={setSelectedEntry}
-                  setSelectedType={setSelectedType}
-                  setActiveTab={setActiveTab}
-                  handleExport={handleExport}
-                  handleExcelImport={handleExcelImport} // Pass the new handler
-                  handleImport={handleImport}
-                  isPersisted={isPersisted}
-                  requestPersistence={requestPersistence}
-                  handleSync={handleGitHubSync}
-                  isSyncing={isSyncing}
-          onRegenerateNames={() => handleRegenerateAllNames(false)}
-          onFillEmptyNames={() => handleRegenerateAllNames(true)}
-                  onExcelExportAll={() => handleBulkCopyToExcel()}
-                  onAddSpawnTemplate={(template) => {
-                    setSpawnTemplate(template);
-                    setCreateType("産卵セット");
-                    setIsCreating(true);
-                  }}
-                />
-              ) : activeTab === "タスク" ? (
-                <TaskView
-                  entries={entries}
-                  skippedTaskIds={skippedTaskIds}
-                  setSkippedTaskIds={setSkippedTaskIds}
-                  taskSortConfig={taskSortConfig}
-                  setTaskSortConfig={setTaskSortConfig}
-                  setSelectedEntry={setSelectedEntry}
-                  handleQuickExchange={handleQuickExchange}
-                  handlePromoteToAdult={handlePromoteToAdult}
-                />
-              ) : null}
-            </motion.div>
-          )}
+                    </div>
+                  ))}
+                </div>
+              )
+            ) : activeTab === "分析" ? (
+              <AnalysisView
+                entries={entries}
+                setSelectedEntry={setSelectedEntry}
+                setSelectedType={setSelectedType}
+                setActiveTab={setActiveTab}
+                handleExport={handleExport}
+                handleExcelImport={handleExcelImport}
+                handleImport={handleImport}
+                isPersisted={isPersisted}
+                requestPersistence={requestPersistence}
+                handleSync={handleGitHubSync}
+                isSyncing={isSyncing}
+                onRegenerateNames={() => handleRegenerateAllNames(false)}
+                onFillEmptyNames={() => handleRegenerateAllNames(true)}
+                onExcelExportAll={() => handleBulkCopyToExcel()}
+                onAddSpawnTemplate={(template) => {
+                  setSpawnTemplate(template);
+                  setCreateType("産卵セット");
+                  setIsCreating(true);
+                }}
+              />
+            ) : activeTab === "タスク" ? (
+              <TaskView
+                entries={entries}
+                skippedTaskIds={skippedTaskIds}
+                setSkippedTaskIds={setSkippedTaskIds}
+                taskSortConfig={taskSortConfig}
+                setTaskSortConfig={setTaskSortConfig}
+                setSelectedEntry={setSelectedEntry}
+                handleQuickExchange={handleQuickExchange}
+                handlePromoteToAdult={handlePromoteToAdult}
+              />
+            ) : null}
+          </motion.div>
         </AnimatePresence>
       </section>
 
@@ -2092,9 +1921,7 @@ export function BeetleManager() {
           <SpawnSetSecondForm
             initialValues={editingChildSet ? editingChildSet : { 
               ...emptySpawnSetForm, 
-              // 親のIDを渡さない（新規登録であることを明示）
               id: undefined,
-              // 日付計算用に親の情報を渡す
               sets: (selectedEntry as any)?.sets,
               setDate: (selectedEntry as any)?.setDate,
               setEndDate: (selectedEntry as any)?.setEndDate
@@ -2107,12 +1934,11 @@ export function BeetleManager() {
               if (!entry) return;
               
               let updatedSets;
-              const { parentId, sets, useDifferentMethod, ...cleanSet } = submittedSet as any; // Remove useDifferentMethod as it's a UI flag
+              const { parentId, sets, useDifferentMethod, ...cleanSet } = submittedSet as any;
 
               if (cleanSet.id === "primary") {
-                // Update the main SpawnSet entry's fields
                 updateSpawnSet(parentEntryId, {
-                  ...entry, // Keep existing base fields
+                  ...entry,
                   setDate: cleanSet.setDate,
                   setEndDate: cleanSet.setEndDate,
                   eggCount: cleanSet.eggCount,
@@ -2126,16 +1952,13 @@ export function BeetleManager() {
                   memo: cleanSet.memo,
                 } as any);
               } else {
-                // Child sets logic
-                if (editingChildSet && editingChildSet.id) { // Editing an existing child set
+                if (editingChildSet && editingChildSet.id) {
                   updatedSets = (entry.sets || []).map((s: any) => 
                     s.id === submittedSet.id ? { ...cleanSet, id: s.id } : s
                   );
                 } else {
-                  // New child set
                   updatedSets = [...(entry.sets || []), { ...cleanSet, id: createId() }];
                 }
-                // 子セットの配列が存在する場合のみソートと更新を実行
                 if (updatedSets) {
                   updatedSets.sort((a: any, b: any) => (a.setDate || "").localeCompare(b.setDate || ""));
                   updateSpawnSet(parentEntryId, { ...entry, sets: updatedSets } as any);

@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useRef, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, ChevronUp, Download, Upload, X, FileSpreadsheet, BarChart3, ExternalLink, PlusCircle } from "lucide-react";
+import { ChevronDown, ChevronUp, Download, Upload, X, FileSpreadsheet, BarChart3, ExternalLink, PlusCircle, RefreshCw, Loader2 } from "lucide-react";
 import {
   ScatterChart,
   Scatter,
@@ -174,13 +174,14 @@ export function AnalysisView({
         };
       }
       if (entry.type === "産卵セット") {
-        const sEntry = entry as any;
+        const sEntry = entry as SpawnSet;
         if (sEntry.temperature) groups[key].temperatures.push(Number(sEntry.temperature));
-        groups[key].spawnSetEntries.push(sEntry as SpawnSet);
+        groups[key].spawnSetEntries.push(sEntry);
         if (sEntry.eggCount !== undefined) {
           groups[key].spawnEggRecords.push({ val: sEntry.eggCount, mName, gender: "不明", entryId: sEntry.id });
         }
         if (sEntry.larvaCount !== undefined) {
+          // @ts-ignore - larvaCount exists on SpawnSet in store
           groups[key].spawnLarvaRecords.push({ val: sEntry.larvaCount, mName, gender: "不明", entryId: sEntry.id });
         }
         const total = (sEntry.eggCount || 0) + (sEntry.larvaCount || 0);
@@ -196,32 +197,34 @@ export function AnalysisView({
           }
           if (log.temperature) groups[key].temperatures.push(Number(log.temperature));
         });
-        if (entry.actualEmergenceDate) {
+        const larvaEntry = entry as LarvaBeetle;
+        if (larvaEntry.actualEmergenceDate) {
           // LarvaBeetle型にhatchDateが含まれていない場合のエラーを回避
-          const hatchDate = entry.hatchDate || entry.extractionDate || entry.createdAt; // 孵化日 > 割出日 > 作成日の優先順位
-          const days = daysBetween(hatchDate, entry.actualEmergenceDate);
-          if (days !== null) groups[key].larvaRecords.push({ val: days, mName, gender: currentGender, entryId: entry.id });
+          const hatchDate = larvaEntry.hatchDate || larvaEntry.extractionDate || larvaEntry.createdAt; 
+          const days = daysBetween(hatchDate, larvaEntry.actualEmergenceDate);
+          if (days !== null) groups[key].larvaRecords.push({ val: days, mName, gender: currentGender, entryId: larvaEntry.id });
         }
       }
       if (entry.type === "成虫") {
-        if (entry.emergenceDate && entry.feedingDate) {
-          const days = daysBetween(entry.emergenceDate, entry.feedingDate);
-          if (days !== null && days > 0) groups[key].dormancyRecords.push({ val: days, mName, gender: entry.gender, entryId: entry.id });
+        const adultEntry = entry as AdultBeetle;
+        if (adultEntry.emergenceDate && adultEntry.feedingDate) {
+          const days = daysBetween(adultEntry.emergenceDate, adultEntry.feedingDate);
+          if (days !== null && days > 0) groups[key].dormancyRecords.push({ val: days, mName, gender: adultEntry.gender, entryId: adultEntry.id });
         }
-        if (entry.emergenceDate && entry.deathDate) {
-          const days = daysBetween(entry.emergenceDate, entry.deathDate);
-          if (days !== null && days > 0) groups[key].lifespanRecords.push({ val: days, mName, gender: entry.gender, entryId: entry.id });
+        if (adultEntry.emergenceDate && adultEntry.deathDate) {
+          const days = daysBetween(adultEntry.emergenceDate, adultEntry.deathDate);
+          if (days !== null && days > 0) groups[key].lifespanRecords.push({ val: days, mName, gender: adultEntry.gender, entryId: adultEntry.id });
         }
-        if (entry.size) {
-          const s = parseFloat(entry.size);
+        if (adultEntry.size) {
+          const s = parseFloat(adultEntry.size);
           if (!isNaN(s)) {
-            groups[key].adultSizeRecords.push({ val: s, mName, gender: entry.gender, entryId: entry.id });
+            groups[key].adultSizeRecords.push({ val: s, mName, gender: adultEntry.gender, entryId: adultEntry.id });
 
             // Find linked larval entry for max weight
-            if (entry.linkedEntryIds && entry.linkedEntryIds.length > 0) {
-              const linkedLarva = entries.find(e => entry.linkedEntryIds?.includes(e.id) && e.type === "幼虫") as LarvaBeetle | undefined;
+            if (adultEntry.linkedEntryIds && adultEntry.linkedEntryIds.length > 0) {
+              const linkedLarva = entries.find(e => adultEntry.linkedEntryIds?.includes(e.id) && e.type === "幼虫") as LarvaBeetle | undefined;
               if (linkedLarva && linkedLarva.logs.length > 0) {
-                const maxLarvaWeight = Math.max(...linkedLarva.logs.map(log => log.weight).filter(w => w > 0));
+                const maxLarvaWeight = Math.max(...linkedLarva.logs.map(log => Number(log.weight)).filter(w => w > 0));
                 if (!isNaN(maxLarvaWeight) && maxLarvaWeight > 0) {
                   groups[key].adultSizeVsMaxLarvaWeightRecords.push({
                     adultSize: s,
@@ -574,12 +577,21 @@ export function AnalysisView({
           {!isPersisted && <button onClick={requestPersistence} className="text-[10px] bg-[#FF9800] text-white px-3 py-1 rounded-full font-bold">有効化</button>}
         </div>
         {onRegenerateNames && (
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <button 
+              onClick={handleSync}
+              disabled={isSyncing}
+              className="flex items-center justify-center gap-2 bg-blue-50 text-blue-600 py-3 rounded-xl text-xs font-bold active:scale-95 transition-all disabled:opacity-50"
+            >
+              {isSyncing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} GitHubへ保存
+            </button>
           <button 
             onClick={onRegenerateNames}
-            className="w-full mb-3 flex items-center justify-center gap-2 bg-gray-100 text-gray-600 py-3 rounded-xl text-xs font-bold active:scale-95 transition-all"
+            className="flex items-center justify-center gap-2 bg-gray-100 text-gray-600 py-3 rounded-xl text-xs font-bold active:scale-95 transition-all"
           >
             管理名を新規則で一括更新
           </button>
+          </div>
         )}
         {onFillEmptyNames && (
           <button 
@@ -590,8 +602,6 @@ export function AnalysisView({
           </button>
         )}
         <div className="grid grid-cols-2 gap-3"> {/* Keep grid layout */}
-          {/* GitHub Sync button moved to Navbar, Excel Export All button moved to Navbar */}
-          {/* The original request was to move these buttons to the header, which is done in beetle-manager.tsx */}
           <button onClick={handleExport} className="flex items-center justify-center gap-2 bg-white/80 py-3 rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-all"><Download size={14} /> 書き出し</button>
           <label className="flex items-center justify-center gap-2 bg-white/80 py-3 rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-all cursor-pointer"><Upload size={14} /> JSON読込<input type="file" hidden onChange={handleImport} accept=".json" /></label>
           <label className="flex items-center justify-center gap-2 bg-white/80 py-3 rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-all cursor-pointer col-span-2">

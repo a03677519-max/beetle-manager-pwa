@@ -109,7 +109,7 @@ export function EntryCard({
                   {entry.gender === "オス" ? "♂" : entry.gender === "メス" ? "♀" : ""}
                 </span>
               )}
-              {entry.managementName && <span className="text-[10px] font-black bg-[#F9F7F5] px-2.5 py-1 rounded-lg text-[#B0A495] tracking-wider uppercase border border-[#E8E2DA]">{entry.managementName}</span>}
+              {entry.managementName && <span className="text-[10px] font-black bg-[#F9F7F5] px-2.5 py-1 rounded-lg text-[#B0A495] tracking-wider border border-[#E8E2DA]">{entry.managementName}</span>}
             </div>
             <p className="text-[12px] italic text-[#B0A495] font-serif leading-tight">{entry.scientificName}</p>
             {entry.memo && (
