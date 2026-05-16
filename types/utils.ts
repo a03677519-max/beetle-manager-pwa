@@ -1,197 +1,110 @@
-import type { BeetleEntry, EntryType, ManagementNameFormat } from "@/types/beetle";
+import { BeetleEntry, GenerationValue } from "./beetle";
 
-export const today = () => new Date().toISOString().split("T")[0];
+export const createId = () => Math.random().toString(36).substring(2, 11);
 
-export const createId = () => Math.random().toString(36).substring(2, 15);
+export const today = () => new Date().toISOString().split('T')[0];
 
-export const formatGeneration = (generation: {
-  primary: string;
-  secondary: string;
-  count: string;
-}) => {
-  if (generation.primary === "-") return "-";
-  let label = generation.primary;
-  if (generation.count) label += generation.count;
-  if (generation.secondary && generation.secondary !== "-")
-    label += `(${generation.secondary})`;
-  return label;
+export const formatDate = (date?: string) => {
+  if (!date || date === "-") return "-";
+  return date.split('T')[0];
+};
+
+export const formatGeneration = (gen: GenerationValue) => {
+  if (!gen || gen.primary === "-") return "-";
+  const count = gen.count || "";
+  const secondary = gen.secondary !== "-" ? `(${gen.secondary})` : "";
+  return `${gen.primary}${count}${secondary}`;
 };
 
 export const isSpawnSetFinished = (entry: any) => {
   if (entry.type !== "産卵セット") return false;
-  
-  // 追加のセット（2回目以降）のチェックを優先
-  if (entry.sets && entry.sets.length > 0) {
-    for (const subSet of entry.sets) {
-      // 1つでも終了日が未入力（または"-"）のセットがあれば、全体として未終了
-      if (!subSet.setEndDate || subSet.setEndDate.trim() === "" || subSet.setEndDate === "-") {
-        return false;
-      }
-    }
-    return true; // 全ての追加セットに終了日があれば終了
+  return !!(entry.setEndDate && entry.setEndDate !== "-");
+};
+
+export const getShortenedSciName = (sciName: string) => {
+  if (!sciName) return "";
+  const parts = sciName.trim().split(/\s+/);
+  if (parts.length >= 2) {
+    return parts.map(p => p[0].toUpperCase()).join(".");
   }
-  
-  // 追加セットがない場合は、メイン（1回目）の終了日を確認
-  return !!(entry.setEndDate && entry.setEndDate.trim() !== "" && entry.setEndDate !== "-");
+  return sciName.slice(0, 3).toUpperCase();
 };
 
-export const daysBetween = (date1: string, date2: string) => {
-  if (!date1 || !date2 || date1 === "-" || date2 === "-") return null;
-  const d1 = new Date(date1);
-  const d2 = new Date(date2);
-  const diffTime = Math.abs(d2.getTime() - d1.getTime());
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+export const parseAmbiguousDate = (str: string): Date | null => {
+  if (!str || str === "-") return null;
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? null : d;
 };
 
-export const addDays = (date: string, days: number) => {
-  const result = new Date(date);
-  result.setDate(result.getDate() + days);
-  return result.toISOString().split("T")[0];
-};
-
-export const createDateOptions = () => {
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i).map(
-    String
-  );
-  const months = Array.from({ length: 12 }, (_, i) =>
-    String(i + 1).padStart(2, "0")
-  );
-  const days = Array.from({ length: 31 }, (_, i) =>
-    String(i + 1).padStart(2, "0")
-  );
-  return { years: ["-", ...years], months: ["-", ...months], days: ["-", ...days] };
-};
-
-export const splitDate = (dateString: string) => {
-  if (!dateString || dateString === "-") return { year: "-", month: "-", day: "-" };
-  const parts = dateString.split("-");
-  return {
-    year: parts[0] || "-",
-    month: parts[1] || "-",
-    day: parts[2] || "-",
-  };
-};
-
-export const buildDateFromParts = (year: string, month: string, day: string) => {
-  if (year === "-" || month === "-" || day === "-") return "-";
-  return `${year}-${month}-${day}`;
-};
-
-export const formatDate = (dateString?: string) => {
-  if (!dateString || dateString === "-") return "-";
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return dateString; // Invalid date, return as is
-  return date.toLocaleDateString("ja-JP", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).replace(/\//g, ".");
-};
-
-export const getLarvaDateInfo = (entry: any) => {
-  if (entry.hatchDate && entry.extractionDate && entry.hatchDate !== "-" && entry.extractionDate !== "-") {
-    return { label: "セット期間", value: `${formatDate(entry.hatchDate)} 〜 ${formatDate(entry.extractionDate)}` };
-  } else if (entry.extractionDate && entry.extractionDate !== "-") {
-    return { label: "割出日", value: formatDate(entry.extractionDate) };
-  } else if (entry.hatchDate && entry.hatchDate !== "-") {
-    return { label: "孵化日", value: formatDate(entry.hatchDate) };
-  }
-  return { label: "登録日", value: formatDate(entry.createdAt) };
-};
-
-export const parseAmbiguousDate = (dateString: string): Date | null => {
-  if (!dateString || dateString === "-") return null;
-  // YYYY-MM-DD 形式を優先
-  const isoMatch = dateString.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (isoMatch) {
-    return new Date(dateString);
-  }
-  // YYYY/MM/DD 形式
-  const slashMatch = dateString.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
-  if (slashMatch) {
-    return new Date(`${slashMatch[1]}-${slashMatch[2]}-${slashMatch[3]}`);
-  }
-  // YYYYMMDD 形式
-  const compactMatch = dateString.match(/^(\d{4})(\d{2})(\d{2})$/);
-  if (compactMatch) {
-    return new Date(`${compactMatch[1]}-${compactMatch[2]}-${compactMatch[3]}`);
-  }
-  // その他の形式は Date オブジェクトに任せる
-  const date = new Date(dateString);
-  return isNaN(date.getTime()) ? null : date;
-};
-
-export const getDaysRange = (startDateStr: string, endDateStr: string) => {
-  const startDate = parseAmbiguousDate(startDateStr);
-  const endDate = parseAmbiguousDate(endDateStr);
-
-  if (!startDate || !endDate) return null;
-
-  const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-  return { min: diffDays, max: diffDays }; // 現状は単一の日数なのでmin/maxは同じ
-};
-
-export const generateUniqueMName = (
+/**
+ * 自動採番ロジック
+ * 1. 既存の管理名(currentName)がある場合:
+ *    - 末尾の連番(_01等)を検知して削除し、ベース名とする。
+ *    - 新しい連番を末尾に付与する。
+ * 2. 既存の管理名がない場合:
+ *    - テンプレートを解析してベース名を生成する。
+ *    - 連番を末尾に付与する。
+ */
+export function generateUniqueMName(
   date: string,
   sciName: string,
-  currentEntries: BeetleEntry[],
-  type: EntryType,
-  format: ManagementNameFormat, // New parameter
-  preferredName?: string
-) => {
-  const dateObj = parseAmbiguousDate(date);
-  const baseDate = dateObj ? dateObj.toISOString().split('T')[0] : today(); // YYYY-MM-DD
-  const dateStr = baseDate.replace(/-/g, ""); // YYYYMMDD
+  entries: BeetleEntry[],
+  type: string,
+  format: string,
+  currentName?: string,
+  metadata?: { japaneseName?: string; locality?: string; generation?: string }
+) {
+  const d = date ? new Date(date) : new Date();
+  const yyyy = String(d.getFullYear());
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
 
-  const getSciInitial = (name: string) => {
-    return (name || "")
-      .trim()
-      .split(/\s+/)
-      .filter(word => word.length > 0)
-      .map(word => word.charAt(0).toUpperCase())
-      .join("");
+  const resolve = (tpl: string) => {
+    let r = tpl.replace(/YYYY/g, yyyy).replace(/MM/g, mm).replace(/DD/g, dd);
+    r = r.replace(/{SHORT_SCI}/g, getShortenedSciName(sciName));
+    if (metadata) {
+      r = r.replace(/{JPN}/g, metadata.japaneseName || "");
+      r = r.replace(/{LOC}/g, metadata.locality || "");
+      r = r.replace(/{GEN}/g, metadata.generation || "");
+    }
+    return r;
   };
 
   let prefix: string;
-
-  if (format === "YYMMDD-NN") {
-    prefix = dateStr.substring(2); // YYMMDD
-  } else if (format === "YYYYMMDD-SCI-NN") {
-    const initial = getSciInitial(sciName) || "X";
-    prefix = `${dateStr}-${initial}`;
-  } else { // Default to YYYYMMDD_NN
-    prefix = dateStr;
+  // 既存の管理名がある場合はそれを活かす（末尾の数字は上書き対象として除去）
+  if (currentName && currentName.trim() !== "" && currentName !== "-") {
+    prefix = currentName.replace(/_\d+$/, "");
+  } else {
+    // テンプレートから生成。連番部分は後で付けるので除去。
+    prefix = resolve(format).replace(/_?NN$/, "");
   }
 
-  // 優先したい名前（昇格時の幼虫名など）があり、かつ重複していない場合はそれを使用
-  if (preferredName) {
-    const isDuplicate = currentEntries.some(e => e.managementName === preferredName && e.scientificName === sciName && e.type === type);
-    if (!isDuplicate) return preferredName;
+  // 重複しない連番を見つける
+  let count = 1;
+  while (true) {
+    const nn = String(count).padStart(2, '0');
+    const candidate = `${prefix}_${nn}`;
+    const collision = entries.some(e => e.managementName === candidate && e.type === type);
+    if (!collision) return candidate;
+    count++;
+    if (count > 999) return `${candidate}_overflow`;
   }
+}
 
-  const existingNames = currentEntries
-    .filter(e => e.scientificName === sciName && e.type === type)
-    .map(e => e.managementName || "");
+export const splitDate = (dateStr: string) => {
+  if (!dateStr || dateStr === "-") return { year: "-", month: "-", day: "-" };
+  const [y, m, d] = dateStr.split("-");
+  return { year: y || "-", month: m || "-", day: d || "-" };
+};
 
-  let counter = 1;
-  let candidate: string;
+export const buildDateFromParts = (y: string, m: string, d: string) => {
+  if (y === "-" || m === "-" || d === "-") return "-";
+  return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+};
 
-  if (format === "YYMMDD-NN" || format === "YYYYMMDD-SCI-NN") {
-    candidate = `${prefix}-${String(counter).padStart(2, '0')}`;
-  } else { // Default to YYYYMMDD_NN
-    candidate = `${prefix}_${String(counter).padStart(2, '0')}`;
-  }
-  
-  while (existingNames.includes(candidate)) {
-    counter++;
-    if (format === "YYMMDD-NN" || format === "YYYYMMDD-SCI-NN") {
-      candidate = `${prefix}-${String(counter).padStart(2, '0')}`;
-    } else { // Default to YYYYMMDD_NN
-      candidate = `${prefix}_${String(counter).padStart(2, '0')}`;
-    }
-  }
-  return candidate;
+export const createDateOptions = () => {
+  const years = ["-", ...Array.from({ length: 11 }, (_, i) => String(2020 + i))];
+  const months = ["-", ...Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'))];
+  const days = ["-", ...Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0')), "上", "中", "下"];
+  return { years, months, days };
 };

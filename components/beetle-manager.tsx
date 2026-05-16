@@ -532,7 +532,13 @@ export function BeetleManager() {
         entry.scientificName, 
         processed, 
         entry.type,
-        managementNameFormats[entry.type]
+        managementNameFormats[entry.type],
+        entry.managementName,
+        { 
+          japaneseName: entry.japaneseName, 
+          locality: entry.locality, 
+          generation: formatGeneration(entry.generation) 
+        }
       );
       processed.push({ ...entry, managementName: newName });
     });
@@ -1570,7 +1576,19 @@ export function BeetleManager() {
             id="registration-form"
             initialValues={pastedData && pastedData.type === "成虫" ? { ...emptyAdultForm, ...pastedData } : getInitialValues("成虫", emptyAdultForm)}
             onSubmit={(value) => {
-              const mName = generateUniqueMName(value.emergenceDate || today(), value.scientificName, entries, "成虫", managementNameFormats["成虫"], value.managementName);
+              const mName = generateUniqueMName(
+                value.emergenceDate || today(), 
+                value.scientificName, 
+                entries, 
+                "成虫", 
+                managementNameFormats["成虫"], 
+                value.managementName,
+                { 
+                  japaneseName: value.japaneseName, 
+                  locality: value.locality, 
+                  generation: formatGeneration(value.generation) 
+                }
+              );
               addAdult({ ...value, managementName: mName });
               closeRegistrationModal();
             }}
@@ -1589,7 +1607,19 @@ export function BeetleManager() {
               let currentEntries = [...entries];
               for (let index = 0; index < count; index += 1) {
                 const targetDate = values.extractionDate && values.extractionDate !== "-" ? values.extractionDate : (values.hatchDate || today());
-                const mName = generateUniqueMName(targetDate, values.scientificName, currentEntries, "幼虫", managementNameFormats["幼虫"], values.managementName);
+                const mName = generateUniqueMName(
+                  targetDate, 
+                  values.scientificName, 
+                  currentEntries, 
+                  "幼虫", 
+                  managementNameFormats["幼虫"], 
+                  values.managementName,
+                  { 
+                    japaneseName: values.japaneseName, 
+                    locality: values.locality, 
+                    generation: formatGeneration(values.generation) 
+                  }
+                );
                 // IDや作成日などのメタデータを除去して新規登録
                 const { id, createdAt, ...cleanValues } = values as any;
                 addLarva({ ...cleanValues, managementName: mName });
