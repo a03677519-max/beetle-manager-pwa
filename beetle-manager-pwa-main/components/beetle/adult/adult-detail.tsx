@@ -25,58 +25,58 @@ export function AdultDetail({ entry }: { entry: AdultBeetle }) {
       {/* 横スクロールコンテナ - snap機能でカード単位の移動を実現 */}
       <div className="flex-1 overflow-x-auto flex gap-6 px-1 pb-6 snap-x snap-mandatory hide-scrollbar">
         {/* カード1: 基本情報 */}
-        <div className="min-w-[92vw] snap-center space-y-3">
-          <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+        <div className="min-w-full shrink-0 snap-center space-y-3">
+          <div className="min-w-0 bg-gray-50 p-4 rounded-2xl border border-gray-100">
             <div className="text-xs text-gray-500 mb-0.5">名称</div>
-            <div className="font-bold text-gray-800 text-lg leading-tight">{entry.japaneseName}</div>
+            <div className="font-bold text-gray-800 text-lg leading-tight break-words whitespace-normal">{entry.japaneseName}</div>
             {entry.scientificName && (
-              <div className="text-sm text-gray-500 italic mt-1">{entry.scientificName}</div>
+              <div className="text-sm text-gray-500 italic mt-1 break-words whitespace-normal">{entry.scientificName}</div>
             )}
           </div>
           
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-gray-50 p-3 rounded-xl border border-gray-50">
+            <div className="min-w-0 bg-gray-50 p-3 rounded-xl border border-gray-50">
               <div className="text-xs text-gray-400">性別 / サイズ</div>
-              <div className="font-bold text-gray-700 text-sm">{entry.gender} / {entry.size || "-"}mm</div>
+              <div className="font-bold text-gray-700 text-sm break-words whitespace-normal">{entry.gender} / {entry.size || "-"}mm</div>
             </div>
-            <div className="bg-gray-50 p-3 rounded-xl border border-gray-50">
+            <div className="min-w-0 bg-gray-50 p-3 rounded-xl border border-gray-50">
               <div className="text-xs text-gray-400">状態</div>
-              <div className="font-bold text-gray-700 text-sm">{entry.status || "-"}</div>
+              <div className="font-bold text-gray-700 text-sm break-words whitespace-normal">{entry.status || "-"}</div>
             </div>
-            <div className="bg-gray-50 p-3 rounded-xl border border-gray-50">
+            <div className="min-w-0 bg-gray-50 p-3 rounded-xl border border-gray-50">
               <div className="text-xs text-gray-400">産地</div>
-              <div className="font-bold text-gray-700 text-sm">{entry.locality || "-"}</div>
+              <div className="font-bold text-gray-700 text-sm break-words whitespace-normal">{entry.locality || "-"}</div>
             </div>
-            <div className="bg-gray-50 p-3 rounded-xl border border-gray-50">
+            <div className="min-w-0 bg-gray-50 p-3 rounded-xl border border-gray-50">
               <div className="text-xs text-gray-400">累代</div>
-              <div className="font-bold text-gray-700 text-sm">{buildGenerationLabel(entry.generation)}</div>
+              <div className="font-bold text-gray-700 text-sm break-words whitespace-normal">{buildGenerationLabel(entry.generation)}</div>
             </div>
-            <div className="bg-gray-50 p-3 rounded-xl border border-gray-50">
+            <div className="min-w-0 bg-gray-50 p-3 rounded-xl border border-gray-50">
               <div className="text-xs text-gray-400">羽化日</div>
-              <div className="font-bold text-gray-700 text-sm">{formatDate(entry.emergenceDate)}</div>
+              <div className="font-bold text-gray-700 text-sm break-words whitespace-normal">{formatDate(entry.emergenceDate)}</div>
             </div>
-            <div className="bg-gray-50 p-3 rounded-xl border border-gray-50">
+            <div className="min-w-0 bg-gray-50 p-3 rounded-xl border border-gray-50">
               <div className="text-xs text-gray-400">後食日</div>
-              <div className="font-bold text-gray-700 text-sm">{formatDate(entry.feedingDate)}</div>
+              <div className="font-bold text-gray-700 text-sm break-words whitespace-normal">{formatDate(entry.feedingDate)}</div>
             </div>
           </div>
         </div>
 
         {/* カード2: 履歴・メモ */}
         {(entry.memo || entry.larvaMemo) && (
-          <div className="min-w-[92vw] snap-center space-y-3">
+          <div className="min-w-full shrink-0 snap-center space-y-3">
             {entry.memo && (
-              <div className="bg-orange-50/30 p-4 rounded-2xl border border-orange-100/50">
+              <div className="min-w-0 bg-orange-50/30 p-4 rounded-2xl border border-orange-100/50">
                 <div className="text-xs text-orange-600 font-bold mb-2">管理メモ</div>
-                <div className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">
+                <div className="text-sm text-gray-800 whitespace-pre-wrap break-words leading-relaxed">
                   {entry.memo}
                 </div>
               </div>
             )}
             {entry.larvaMemo && (
-              <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+              <div className="min-w-0 bg-gray-50 p-4 rounded-2xl border border-gray-100">
                 <div className="text-xs text-gray-500 font-bold mb-2">幼虫時のデータ</div>
-                <div className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">
+                <div className="text-sm text-gray-600 whitespace-pre-wrap break-words leading-relaxed">
                   {entry.larvaMemo}
                 </div>
               </div>

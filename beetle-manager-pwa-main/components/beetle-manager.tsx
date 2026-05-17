@@ -38,6 +38,21 @@ import { DashboardToolbar } from "./beetle/shared/dashboard-toolbar";
 import { BulkSelectionBar } from "./beetle/shared/bulk-selection-bar";
 import { DashboardStats } from "./beetle/shared/dashboard-stats";
 
+const cleanManagementNameForBulk = (managementName?: string) => {
+  const normalized = (managementName || "").trim().replace(/＿/g, "_");
+  if (!normalized || normalized === "-") return "";
+
+  const hasTemplateArtifacts = /[{}]|NN/.test(normalized);
+  const underscoreBase = normalized.split("_")[0].trim();
+  const base = underscoreBase
+    .replace(/(?:-\d+)+$/, "")
+    .replace(/[_-]{2,}/g, "_")
+    .replace(/^[_-]+|[_-]+$/g, "");
+
+  const isDateLikeAutoName = /^(?:(?:20)?\d{2})(?:\d{2}){0,3}[A-Za-z.]*$/.test(base);
+  return hasTemplateArtifacts || isDateLikeAutoName ? "" : base;
+};
+
 export function BeetleManager() {
   const entries = useBeetleStore((state) => state.entries);
   const selectedType = useBeetleStore((state) => state.selectedType);
@@ -547,25 +562,14 @@ export function BeetleManager() {
 
   // 設定画面から呼び出されるクリーンアップ機能の実装
   const handleCleanupManagementNames = useCallback(() => {
-    if (!window.confirm("日付（24/25/2026等）で始まる管理名の初期化と、連番（_01等）の除去を一括で行います。よろしいですか？")) return;
+    if (!window.confirm("全個体の管理名からアンダースコア以降を削除し、日付のみの自動採番名は空欄に戻します。よろしいですか？")) return;
     createBackup();
-    const processed = entries.map(entry => {
-      let mName = entry.managementName || "";
-      // 自動採番と思われる形式（日付、または202x/2x等の年号から始まる）またはタグ残骸を消去
-      // 完全一致に近い場合のみ削除対象とする
-      const isAutoName = /^(\d{2,4})(\d{2,6})?[A-Za-z.]*$/.test(mName);
-      const hasArtifacts = mName.includes("NN") || mName.includes("{");
-
-      if (isAutoName || hasArtifacts) {
-        mName = "";
-      } else {
-        // それ以外の名前は、末尾の連番数字（_01等）や記号だけを削ぎ落としてベース名に戻す
-        mName = mName.replace(/([_-]?\d+)+$/, "").replace(/[_-]{2,}/g, "_").replace(/^[_-]+|[_-]+$/g, "");
-      }
-      return { ...entry, managementName: mName };
-    });
+    const processed = entries.map(entry => ({
+      ...entry,
+      managementName: cleanManagementNameForBulk(entry.managementName),
+    }));
     importData(processed);
-    window.alert("管理名のクリーンアップ（連番除去と特定年リセット）が完了しました。");
+    window.alert("管理名のクリーンアップが完了しました。");
   }, [entries, importData, createBackup]);
 
   const handleBulkDelete = () => {
@@ -1228,7 +1232,8 @@ export function BeetleManager() {
           setSelectedFolderKey(null); // タブ切り替え時にフォルダ選択をリセット
 
           if (tab === "設定") { setIsSettingsOpen(true); return; }
-          if (ENTRY_TYPES.includes(tab as EntryType)) setSelectedType(tab as EntryType);
+          if (ENTRY_TYPES.includes(tab as EntryType)) { setVisibleTypes([tab as EntryType]); setSelectedType(tab as EntryType); }
+          else if (tab === "すべて") { setVisibleTypes(["成虫", "幼虫", "産卵セット"]); setSelectedType("すべて"); }
         }}
         onAdd={() => setIsCreating(true)}
         showAddButton={!isCreating && !editingId && !selectedEntry && !isSettingsOpen}
@@ -1710,13 +1715,13 @@ export function BeetleManager() {
                         </div>
 
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5 relative z-10">
-                          <h3 className="text-[19px] font-black text-[#3C3631] truncate tracking-tight">{group.japaneseName}</h3>
+                        <div className="flex min-w-0 flex-wrap items-center gap-2 mb-0.5 relative z-10">
+                          <h3 className="min-w-0 text-[19px] font-black text-[#3C3631] break-words whitespace-normal tracking-tight">{group.japaneseName}</h3>
                           <span className={`px-2 py-0.5 ${theme.badge} text-white text-[10px] font-black rounded-lg shadow-sm shrink-0`}>
                             {group.entries.length}
                           </span>
                         </div>
-                        <p className="text-[13px] italic text-[#B0A495] font-serif truncate leading-tight relative z-10">{group.scientificName}</p>
+                        <p className="text-[13px] italic text-[#B0A495] font-serif break-words whitespace-normal leading-tight relative z-10">{group.scientificName}</p>
                       </div>
                       <ChevronRight size={22} className="text-[#D7CCC8] group-hover:text-[#3C3631] transition-colors relative z-10" />
                     </button>
@@ -1780,11 +1785,11 @@ export function BeetleManager() {
               >
                 <ChevronLeft size={28} />
               </button>
-              <div className="min-w-0">
-                <h2 className="text-[22px] font-black text-[#3C3631] truncate tracking-tight leading-none mb-1">
+              <div className="min-w-0 flex-1">
+                <h2 className="text-[22px] font-black text-[#3C3631] break-words whitespace-normal tracking-tight leading-tight mb-1">
                   {groupedEntries.find(g => g.key === selectedFolderKey)?.japaneseName}
                 </h2>
-                <p className="text-[13px] italic text-[#B0A495] font-serif truncate leading-tight">
+                <p className="text-[13px] italic text-[#B0A495] font-serif break-words whitespace-normal leading-tight">
                   {groupedEntries.find(g => g.key === selectedFolderKey)?.scientificName}
                 </p>
               </div>

@@ -80,15 +80,15 @@ export function SpawnSetDetail({
   return (
     <div className="space-y-6">
       {/* 合計成績のサマリー */}
-      <div className="bg-[#FF9800]/5 border border-[#FF9800]/10 rounded-2xl p-4 flex justify-around items-center shadow-sm">
-        <div className="text-center">
+      <div className="bg-[#FF9800]/5 border border-[#FF9800]/10 rounded-2xl p-4 flex justify-around items-stretch gap-3 shadow-sm">
+        <div className="min-w-0 flex-1 text-center">
           <div className="text-[10px] font-black text-[#EF6C00] uppercase tracking-widest mb-1">合計卵数</div>
-          <div className="text-2xl font-black text-[#EF6C00]">{totals.eggs}<span className="text-xs ml-0.5">個</span></div>
+          <div className="text-2xl font-black text-[#EF6C00] break-words whitespace-normal">{totals.eggs}<span className="text-xs ml-0.5">個</span></div>
         </div>
-        <div className="w-px h-8 bg-[#FF9800]/20" />
-        <div className="text-center">
+        <div className="w-px self-center h-8 bg-[#FF9800]/20" />
+        <div className="min-w-0 flex-1 text-center">
           <div className="text-[10px] font-black text-[#EF6C00] uppercase tracking-widest mb-1">合計幼虫数</div>
-          <div className="text-2xl font-black text-[#EF6C00]">{totals.larvae}<span className="text-xs ml-0.5">頭</span></div>
+          <div className="text-2xl font-black text-[#EF6C00] break-words whitespace-normal">{totals.larvae}<span className="text-xs ml-0.5">頭</span></div>
         </div>
       </div>
 
@@ -100,21 +100,21 @@ export function SpawnSetDetail({
       </div>
 
       <div className="grid grid-cols-2 gap-3 touch-pan-y select-none">
-        <div className="bg-gray-50 p-4 rounded-2xl">
+        <div className="min-w-0 bg-gray-50 p-4 rounded-2xl">
           <div className="text-xs text-gray-500">累代</div>
-          <div className="font-bold text-gray-800 truncate">{buildGenerationLabel(entry.generation)}</div>
+          <div className="font-bold text-gray-800 break-words whitespace-normal">{buildGenerationLabel(entry.generation)}</div>
         </div>
-        <div className="bg-gray-50 p-4 rounded-2xl">
+        <div className="min-w-0 bg-gray-50 p-4 rounded-2xl">
           <div className="text-xs text-gray-500">産地</div>
-          <div className="font-bold text-gray-800 truncate">{entry.locality || "-"}</div>
+          <div className="font-bold text-gray-800 break-words whitespace-normal">{entry.locality || "-"}</div>
         </div>
-        <div className="bg-gray-50 p-4 rounded-2xl">
+        <div className="min-w-0 bg-gray-50 p-4 rounded-2xl">
           <div className="text-xs text-gray-500">温度</div>
-          <div className="font-bold text-gray-800 truncate">{entry.temperature}℃</div>
+          <div className="font-bold text-gray-800 break-words whitespace-normal">{entry.temperature}℃</div>
         </div>
-        <div className="bg-gray-50 p-4 rounded-2xl">
+        <div className="min-w-0 bg-gray-50 p-4 rounded-2xl">
           <div className="text-xs text-gray-500">同居</div>
-          <div className="font-bold text-gray-800 truncate">{entry.cohabitation}</div>
+          <div className="font-bold text-gray-800 break-words whitespace-normal">{entry.cohabitation}</div>
         </div>
       </div>
 
@@ -124,23 +124,23 @@ export function SpawnSetDetail({
           履歴一覧
         </div>
         {allSets.reverse().map((set) => (
-          <div key={set.id} className="bg-white border border-gray-100 p-4 rounded-2xl shadow-sm">
-            <div className="flex justify-between items-center mb-2">
+          <div key={set.id} className="min-w-0 bg-white border border-gray-100 p-4 rounded-2xl shadow-sm">
+            <div className="flex flex-wrap justify-between items-start gap-2 mb-2">
               <span className="text-[11px] font-black text-[#FF9800] bg-orange-50 px-2 py-0.5 rounded-lg">{set.title}</span>
-              <span className="text-xs font-bold text-gray-400">{formatDate(set.setDate)} 〜 {formatDate(set.setEndDate) || "継続中"}</span>
+              <span className="text-xs font-bold text-gray-400 break-words">{formatDate(set.setDate)} 〜 {formatDate(set.setEndDate) || "継続中"}</span>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div>
+              <div className="min-w-0">
                 <p className="text-[10px] text-gray-400 font-bold">回収結果</p>
-                <p className="text-sm font-black text-gray-700">卵:{set.eggCount} / 幼虫:{set.larvaCount}</p>
+                <p className="text-sm font-black text-gray-700 break-words whitespace-normal">卵:{set.eggCount} / 幼虫:{set.larvaCount}</p>
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-[10px] text-gray-400 font-bold">セット方法</p>
-                <p className="text-[11px] font-bold text-gray-600 truncate">{set.substrate || "前回同様"}</p>
+                <p className="text-[11px] font-bold text-gray-600 break-words whitespace-normal">{set.substrate || "前回同様"}</p>
               </div>
             </div>
             {set.memo && (
-              <p className="mt-2 text-[11px] text-gray-500 bg-gray-50 p-2 rounded-lg italic">
+              <p className="mt-2 text-[11px] text-gray-500 bg-gray-50 p-2 rounded-lg break-words whitespace-pre-wrap italic">
                 {set.memo}
               </p>
             )}

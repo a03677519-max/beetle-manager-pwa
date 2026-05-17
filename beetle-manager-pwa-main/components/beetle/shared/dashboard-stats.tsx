@@ -68,7 +68,7 @@ export function DashboardStats({
         </button>
       </div>
 
-      <label className="flex items-center bg-white/90 rounded-[16px] px-4 py-2 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] border border-white focus-within:border-[#FF9800] transition-all mb-3">
+      <label className="flex items-center bg-white/90 rounded-[16px] px-4 py-2.5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] border border-white focus-within:border-[#FF9800] transition-all mb-3">
         <Search size={16} className="text-[#B0A495] mr-2" />
         <input
           type="text"
@@ -79,30 +79,30 @@ export function DashboardStats({
         />
       </label>
 
-      <div className="mt-4">
+      <div className="mt-2 mb-2">
         {visibleTypes.length === 1 && visibleTypes.includes("幼虫") && (
-          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+          <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
             <button 
               onClick={() => onLarvaFilterChange("active")}
-              className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${larvaFilter === "active" ? "bg-[#FF9800] text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}
+              className={`flex-1 min-w-[70px] px-2 py-2 rounded-xl text-[10px] font-black transition-all whitespace-nowrap ${larvaFilter === "active" ? "bg-[#FF9800] text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}
             >
               飼育中 ({stats.larvaeActive})
             </button>
-            <button 
+            <button
               onClick={() => onLarvaFilterChange("emerged")}
-              className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${larvaFilter === "emerged" ? "bg-[#795548] text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}
+              className={`flex-1 min-w-[70px] px-2 py-2 rounded-xl text-[10px] font-black transition-all whitespace-nowrap ${larvaFilter === "emerged" ? "bg-[#795548] text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}
             >
               羽化済み ({stats.larvaeEmerged})
             </button>
             <button 
               onClick={() => onLarvaFilterChange("deceased")}
-              className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${larvaFilter === "deceased" ? "bg-[#F4511E] text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}
+              className={`flex-1 min-w-[70px] px-2 py-2 rounded-xl text-[10px] font-black transition-all whitespace-nowrap ${larvaFilter === "deceased" ? "bg-[#F4511E] text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}
             >
               死亡 ({stats.larvaeDeceased})
             </button>
             <button 
               onClick={() => onLarvaFilterChange("sold")}
-              className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${larvaFilter === "sold" ? "bg-blue-500 text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}
+              className={`flex-1 min-w-[70px] px-2 py-2 rounded-xl text-[10px] font-black transition-all whitespace-nowrap ${larvaFilter === "sold" ? "bg-blue-500 text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}
             >
               販売済み ({stats.larvaeSold})
             </button>
@@ -110,17 +110,17 @@ export function DashboardStats({
         )}
 
         {visibleTypes.length === 1 && visibleTypes.includes("成虫") && (
-          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-            <button onClick={() => onAdultFilterChange("active")} className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${adultFilter === "active" ? "bg-[#FF9800] text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}>飼育中 ({stats.adultsActive})</button>
-            <button onClick={() => onAdultFilterChange("deceased")} className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${adultFilter === "deceased" ? "bg-[#F4511E] text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}>死亡 ({stats.adultsDeceased})</button>
-            <button onClick={() => onAdultFilterChange("sold")} className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${adultFilter === "sold" ? "bg-blue-500 text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}>販売済み ({stats.adultsSold})</button>
+          <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
+            <button onClick={() => onAdultFilterChange("active")} className={`flex-1 min-w-[80px] px-2 py-2 rounded-xl text-[10px] font-black transition-all whitespace-nowrap ${adultFilter === "active" ? "bg-[#FF9800] text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}>飼育中 ({stats.adultsActive})</button>
+            <button onClick={() => onAdultFilterChange("deceased")} className={`flex-1 min-w-[80px] px-2 py-2 rounded-xl text-[10px] font-black transition-all whitespace-nowrap ${adultFilter === "deceased" ? "bg-[#F4511E] text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}>死亡 ({stats.adultsDeceased})</button>
+            <button onClick={() => onAdultFilterChange("sold")} className={`flex-1 min-w-[80px] px-2 py-2 rounded-xl text-[10px] font-black transition-all whitespace-nowrap ${adultFilter === "sold" ? "bg-blue-500 text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}>販売済み ({stats.adultsSold})</button>
           </div>
         )}
 
         {visibleTypes.length === 1 && visibleTypes.includes("産卵セット") && (
-          <div className="flex gap-2">
-            <button onClick={() => onSpawnSetFilterChange("active")} className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${spawnSetFilter === "active" ? "bg-[#FF9800] text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}>継続中 ({stats.spawnSetsActive})</button>
-            <button onClick={() => onSpawnSetFilterChange("finished")} className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${spawnSetFilter === "finished" ? "bg-gray-500 text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}>終了 ({stats.spawnSets - stats.spawnSetsActive})</button>
+          <div className="flex gap-1.5">
+            <button onClick={() => onSpawnSetFilterChange("active")} className={`flex-1 px-2 py-2 rounded-xl text-[10px] font-black transition-all whitespace-nowrap ${spawnSetFilter === "active" ? "bg-[#FF9800] text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}>継続中 ({stats.spawnSetsActive})</button>
+            <button onClick={() => onSpawnSetFilterChange("finished")} className={`flex-1 px-2 py-2 rounded-xl text-[10px] font-black transition-all whitespace-nowrap ${spawnSetFilter === "finished" ? "bg-gray-500 text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}>終了 ({stats.spawnSets - stats.spawnSetsActive})</button>
           </div>
         )}
       </div>

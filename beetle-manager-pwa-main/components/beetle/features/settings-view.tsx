@@ -114,10 +114,10 @@ export function SettingsView({
           </div>
           <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm space-y-3">
             <p className="text-[11px] text-gray-500 font-bold leading-relaxed">
-              管理名の「_（アンダースコア）」以降をすべて削除し、ベース名のみを残します。自動採番の重複（01_01等）を解消する際に使用してください。
+              管理名の「_（アンダースコア）」以降をすべて削除し、ベース名のみを残します。日付のみの自動採番名は空欄に戻します。
             </p>
             <button 
-              onClick={() => { if(window.confirm("全個体の管理名からアンダースコア以降を削除します。よろしいですか？")) onCleanupManagementNames(); }}
+              onClick={onCleanupManagementNames}
               className="w-full flex items-center justify-center gap-2 py-3 bg-red-50 text-red-500 rounded-xl text-xs font-black shadow-sm active:scale-95 transition-all"
             >
               <Eraser size={14} /> 一括クリーンアップ実行

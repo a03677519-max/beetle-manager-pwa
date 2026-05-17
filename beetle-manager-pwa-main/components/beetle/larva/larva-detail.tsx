@@ -86,39 +86,39 @@ export function LarvaDetail({
   return (
     <>
       <div className="grid grid-cols-2 gap-3 mb-6">
-        <div className="bg-gray-50 p-4 rounded-2xl">
+        <div className="min-w-0 bg-gray-50 p-4 rounded-2xl">
           <div className="text-xs text-gray-500">産地</div>
-          <div className="font-bold text-gray-800 truncate">{entry.locality || "-"}</div>
+          <div className="font-bold text-gray-800 break-words whitespace-normal">{entry.locality || "-"}</div>
         </div>
-        <div className="bg-gray-50 p-4 rounded-2xl">
+        <div className="min-w-0 bg-gray-50 p-4 rounded-2xl">
           <div className="text-xs text-gray-500">累代</div>
-          <div className="font-bold text-gray-800 truncate">{buildGenerationLabel(entry.generation)}</div>
+          <div className="font-bold text-gray-800 break-words whitespace-normal">{buildGenerationLabel(entry.generation)}</div>
         </div>
-        <div className="bg-gray-50 p-4 rounded-2xl col-span-2">
+        <div className="min-w-0 bg-gray-50 p-4 rounded-2xl col-span-2">
           {(() => {
             const { label, value } = getLarvaDateInfo(entry);
             return (
               <>
                 <div className="text-xs text-gray-500">{label}</div>
-                <div className="font-bold text-gray-800 truncate">{value}</div>
+                <div className="font-bold text-gray-800 break-words whitespace-normal">{value}</div>
               </>
             );
           })()}
         </div>
-        <div className="bg-gray-50 p-4 rounded-2xl">
+        <div className="min-w-0 bg-gray-50 p-4 rounded-2xl">
           <div className="text-xs text-gray-500">羽化日 ({entry.emergenceType})</div>
-          <div className="font-bold text-gray-800 truncate">{entry.actualEmergenceDate ? formatDate(entry.actualEmergenceDate) : "未定"}</div>
+          <div className="font-bold text-gray-800 break-words whitespace-normal">{entry.actualEmergenceDate ? formatDate(entry.actualEmergenceDate) : "未定"}</div>
         </div>
         {(entry as any).deathDate && (
-          <div className="bg-red-50 p-4 rounded-2xl col-span-2 border border-red-100">
+          <div className="min-w-0 bg-red-50 p-4 rounded-2xl col-span-2 border border-red-100">
             <div className="text-xs text-red-500 font-bold uppercase tracking-wider">死亡日</div>
-            <div className="font-bold text-red-700">{formatDate((entry as any).deathDate)}</div>
+            <div className="font-bold text-red-700 break-words whitespace-normal">{formatDate((entry as any).deathDate)}</div>
           </div>
         )}
         {(entry as any).soldDate && (
-          <div className="bg-blue-50 p-4 rounded-2xl col-span-2 border border-blue-100">
+          <div className="min-w-0 bg-blue-50 p-4 rounded-2xl col-span-2 border border-blue-100">
             <div className="text-xs text-blue-500 font-bold uppercase tracking-wider">販売日</div>
-            <div className="font-bold text-blue-700">{formatDate((entry as any).soldDate)}</div>
+            <div className="font-bold text-blue-700 break-words whitespace-normal">{formatDate((entry as any).soldDate)}</div>
           </div>
         )}
         {linkedAdult && (
@@ -130,17 +130,17 @@ export function LarvaDetail({
             成虫データを確認する
           </button>
         )}
-        <div className="bg-[#F1F3F5] p-4 rounded-2xl border border-gray-100">
+        <div className="min-w-0 bg-[#F1F3F5] p-4 rounded-2xl border border-gray-100">
           <div className="text-[10px] font-black text-[#8B5A2B] uppercase tracking-widest">総ログ数</div>
-          <div className="text-xl font-bold text-[#212529]">{entry.logs.length}件</div>
+          <div className="text-xl font-bold text-[#212529] break-words whitespace-normal">{entry.logs.length}件</div>
         </div>
-        <div className="bg-[#F1F3F5] p-4 rounded-2xl border border-gray-100">
+        <div className="min-w-0 bg-[#F1F3F5] p-4 rounded-2xl border border-gray-100">
           <div className="text-[10px] font-black text-[#8B5A2B] uppercase tracking-widest">最新体重</div>
-          <div className="text-xl font-bold text-[#EF6C00]">{entry.logs[0]?.weight || "-"}g</div>
+          <div className="text-xl font-bold text-[#EF6C00] break-words whitespace-normal">{entry.logs[0]?.weight || "-"}g</div>
         </div>
-        <div className="bg-gray-50 p-4 rounded-2xl">
+        <div className="min-w-0 bg-gray-50 p-4 rounded-2xl">
           <div className="text-xs text-gray-500">育成日数</div>
-          <div className="font-bold text-gray-800 truncate">
+          <div className="font-bold text-gray-800 break-words whitespace-normal">
             {(() => {
               const start = entry.hatchDate || entry.extractionDate || entry.createdAt;
               const end = entry.actualEmergenceDate || today();
@@ -153,9 +153,9 @@ export function LarvaDetail({
           </div>
         </div>
         {entry.memo && (
-          <div className="bg-gray-50 p-4 rounded-2xl col-span-2">
+          <div className="min-w-0 bg-gray-50 p-4 rounded-2xl col-span-2">
             <div className="text-xs text-gray-500">メモ</div>
-            <div className="text-sm text-gray-800 whitespace-pre-wrap mt-1">{entry.memo}</div>
+            <div className="text-sm text-gray-800 whitespace-pre-wrap break-words mt-1">{entry.memo}</div>
           </div>
         )}
       </div>
@@ -171,33 +171,33 @@ export function LarvaDetail({
                 <div className="relative" key={log.id}>
                   <div className="absolute -left-[31px] top-4 w-4 h-4 rounded-full bg-white border-4 border-[#FF9800] shadow-sm z-10 cursor-pointer" onClick={() => setEditingLog(log)} />
                   <div 
-                    className="flex items-center justify-between bg-[#F8F9FA] border border-gray-50 p-4 rounded-2xl transition-active active:bg-gray-100 cursor-pointer shadow-sm"
+                    className="flex min-w-0 items-start justify-between gap-3 bg-[#F8F9FA] border border-gray-50 p-4 rounded-2xl transition-active active:bg-gray-100 cursor-pointer shadow-sm"
                     onClick={() => setEditingLog(log)}
                   >
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
                         <span className="text-[10px] font-bold bg-[#F5F0EB] px-2 py-0.5 rounded text-gray-500 uppercase">{log.stage}</span>
-                        <span className="text-xs text-gray-400 font-medium">{formatDate(log.date)}</span>
+                        <span className="text-xs text-gray-400 font-medium break-words">{formatDate(log.date)}</span>
                       </div>
-                      <div className="flex items-baseline gap-2">
-                        <div className="font-black text-[#212529] text-lg">
+                      <div className="flex flex-wrap items-baseline gap-2">
+                        <div className="font-black text-[#212529] text-lg break-words">
                           {log.weight}g <span className="text-[10px] text-gray-400 font-normal">/ {log.temperature || "-"}℃</span>
                         </div>
                       </div>
                       <div className="mt-1 space-y-0.5 border-t border-gray-100 pt-1">
-                        <div className="text-[11px] text-gray-600 font-bold flex gap-2">
-                          <span className="truncate">{log.substrate || "マット未設定"}</span>
+                        <div className="text-[11px] text-gray-600 font-bold flex min-w-0 flex-wrap gap-2">
+                          <span className="min-w-0 break-words">{log.substrate || "マット未設定"}</span>
                           <span className="text-gray-300">|</span>
                           <span className="shrink-0">{log.bottleSize || "-"}</span>
                         </div>
-                        <div className="text-[10px] text-gray-400 flex gap-3">
+                        <div className="text-[10px] text-gray-400 flex flex-wrap gap-x-3 gap-y-1">
                           <span>水分: {log.moisture}</span>
                           <span>詰圧: {log.pressure}</span>
-                          <span className="ml-auto">性別: {log.gender}</span>
+                          <span className="sm:ml-auto">性別: {log.gender}</span>
                         </div>
                       </div>
                     </div>
-                    <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex shrink-0 gap-1" onClick={(e) => e.stopPropagation()}>
                       <button
                         type="button"
                         className="p-2 text-gray-300 hover:text-[#FF9800] transition-colors"

@@ -60,7 +60,7 @@ export function EntryCard({
   if (viewMode === "grid") {
     return (
       <article 
-        className="flex flex-col bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden active:scale-[0.97] transition-all relative"
+        className="flex min-w-0 flex-col bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden active:scale-[0.97] transition-all relative"
         onClick={() => onOpen(entry)}
       >
         {entry.photos[0] && (
@@ -71,16 +71,16 @@ export function EntryCard({
             </div>
           </div>
         )}
-        <div className="p-3">
-          <h3 className="font-bold text-gray-800 text-sm truncate">{entry.japaneseName}</h3>
+        <div className="min-w-0 p-3">
+          <h3 className="font-bold text-gray-800 text-sm leading-snug break-words whitespace-normal">{entry.japaneseName}</h3>
           {entry.type === "産卵セット" && spawnTotals && (
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex min-w-0 flex-wrap items-center gap-1 mt-1">
               <span className="text-[9px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded font-black tracking-tighter">卵:{spawnTotals.eggs}</span>
               <span className="text-[9px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded font-black tracking-tighter">幼:{spawnTotals.larvae}</span>
             </div>
           )}
           {latestWeight && (
-            <div className="flex items-center justify-between mt-1">
+            <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-1 mt-1">
               <span className="text-primary font-bold">{latestWeight}g</span>
               <span className={`text-[10px] ${dateColor}`}>あと{Math.max(0, 90 - diffDays)}日</span>
             </div>
@@ -97,7 +97,7 @@ export function EntryCard({
 
   return (
     <article // Keep article
-      className={`flex bg-white rounded-[32px] p-5 shadow-[0_8px_30px_rgba(0,0,0,0.04)] cursor-pointer active:scale-[0.97] transition-all duration-300 select-none touch-manipulation relative overflow-hidden border ${isSelected ? "border-[#FF9800] ring-4 ring-orange-50" : "border-[#F1EDE8]"}`}
+      className={`flex min-w-0 bg-white rounded-[32px] p-4 sm:p-5 shadow-[0_8px_30px_rgba(0,0,0,0.04)] cursor-pointer active:scale-[0.97] transition-all duration-300 select-none touch-manipulation relative overflow-hidden border ${isSelected ? "border-[#FF9800] ring-4 ring-orange-50" : "border-[#F1EDE8]"}`}
       onClick={(e) => {
         e.stopPropagation();
         onOpen(entry);
@@ -112,67 +112,67 @@ export function EntryCard({
       )}
 
       {entry.photos[0] && (
-        <div className={`relative w-24 h-24 flex-shrink-0 rounded-[24px] overflow-hidden mr-5 shadow-inner bg-gray-50 transition-all ${isSelectionMode ? "ml-10" : ""}`}>
+        <div className={`relative w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 rounded-[22px] sm:rounded-[24px] overflow-hidden mr-3 sm:mr-5 shadow-inner bg-gray-50 transition-all ${isSelectionMode ? "ml-9 sm:ml-10" : ""}`}>
           <Image src={entry.photos[0]} alt={entry.japaneseName} fill className="object-cover" unoptimized />
         </div>
       )}
       
       <div className="flex-1 min-w-0">
-        <div className="flex justify-between items-start mb-1">
+        <div className="flex min-w-0 justify-between items-start gap-2 mb-1">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center flex-wrap gap-x-2 gap-y-1 mb-1">
-              <h3 className="text-[22px] font-black text-[#3C3631] tracking-tighter leading-none">{entry.japaneseName}</h3>
+            <div className="flex min-w-0 items-start flex-wrap gap-x-2 gap-y-1 mb-1">
+              <h3 className="min-w-0 flex-1 basis-[9rem] text-lg sm:text-xl font-black text-[#3C3631] tracking-tight leading-tight break-words whitespace-normal">{entry.japaneseName}</h3>
               {entry.type === "成虫" && (
-                <span className={`text-base font-bold ${entry.gender === "オス" ? "text-blue-500" : entry.gender === "メス" ? "text-pink-500" : "text-gray-400"}`}>
+                <span className={`shrink-0 text-base font-bold ${entry.gender === "オス" ? "text-blue-500" : entry.gender === "メス" ? "text-pink-500" : "text-gray-400"}`}>
                   {entry.gender === "オス" ? "♂" : entry.gender === "メス" ? "♀" : ""}
                 </span>
               )}
-              {entry.managementName && <span className="text-[11px] font-black bg-[#F9F7F5] px-2.5 py-1 rounded-xl text-[#B0A495] tracking-wider border border-[#E8E2DA] shadow-inner">{entry.managementName}</span>}
+              {entry.managementName && <span className="min-w-0 max-w-full text-[10px] font-black bg-[#F9F7F5] px-2 py-0.5 rounded-lg text-[#B0A495] border border-[#E8E2DA] shadow-inner break-words">{entry.managementName}</span>}
             </div>
-            <p className="text-[13px] italic text-[#B0A495] font-serif leading-tight">{entry.scientificName}</p>
+            <p className="text-[12px] italic text-[#B0A495] font-serif leading-tight break-words whitespace-normal">{entry.scientificName}</p>
             {entry.memo && (
-              <p className="text-[11px] text-gray-400 mt-1 line-clamp-1 italic">
+              <p className="text-[11px] text-gray-400 mt-1 break-words whitespace-pre-wrap italic">
                 {entry.memo}
               </p>
             )}
           </div>
-          <StatusBadge stage={stage} className="ml-2" />
+          <StatusBadge stage={stage} className="shrink-0" />
         </div>
         
-        <div className="flex justify-between items-end mt-3">
-          <dl className="text-[13px] text-[#8B7D7B] space-y-1">
+        <div className="flex min-w-0 flex-col gap-3 mt-3 sm:flex-row sm:justify-between sm:items-end">
+          <dl className="min-w-0 text-[13px] text-[#8B7D7B] space-y-1">
             {entry.type === "成虫" && (
-              <div className="text-[11px] font-bold text-gray-600 space-y-0.5 mb-1">
-                {entry.size && <div><span className="text-muted">サイズ:</span> {entry.size}mm</div>}
-                {entry.emergenceDate && <div><span className="text-muted">{(entry as any).emergenceType === "掘り出し" ? "掘出日" : "羽化日"}:</span> {entry.emergenceDate.replace(/-/g, "/")}</div>}
-                {entry.feedingDate && <div><span className="text-muted">後食日:</span> {entry.feedingDate.replace(/-/g, "/")}</div>}
-                {(entry as any).deathDate && <div className="text-red-500"><span className="text-muted">死亡日:</span> {(entry as any).deathDate.replace(/-/g, "/")}</div>}
+              <div className="min-w-0 text-[11px] font-bold text-gray-600 space-y-0.5 mb-1 break-words">
+                {entry.size && <div className="break-words"><span className="text-muted">サイズ:</span> {entry.size}mm</div>}
+                {entry.emergenceDate && <div className="break-words"><span className="text-muted">{(entry as any).emergenceType === "掘り出し" ? "掘出日" : "羽化日"}:</span> {entry.emergenceDate.replace(/-/g, "/")}</div>}
+                {entry.feedingDate && <div className="break-words"><span className="text-muted">後食日:</span> {entry.feedingDate.replace(/-/g, "/")}</div>}
+                {(entry as any).deathDate && <div className="text-red-500 break-words"><span className="text-muted">死亡日:</span> {(entry as any).deathDate.replace(/-/g, "/")}</div>}
               </div>
             )}
             {entry.type === "幼虫" && logs[0] && (
-              <div className="text-[11px] font-bold text-gray-600 bg-gray-50/80 p-2 rounded-xl mb-2 border border-gray-100">
-                <div className="flex gap-2 mb-0.5">
-                  <span className="truncate">{logs[0].substrate}</span>
+              <div className="min-w-0 text-[11px] font-bold text-gray-600 bg-gray-50/80 p-2 rounded-xl mb-2 border border-gray-100">
+                <div className="flex min-w-0 flex-wrap gap-x-2 gap-y-0.5 mb-0.5">
+                  <span className="min-w-0 break-words">{logs[0].substrate}</span>
                   <span className="shrink-0">{logs[0].bottleSize}</span>
                 </div>
-                <div className="text-[9px] text-gray-400 font-normal">
+                <div className="text-[9px] text-gray-400 font-normal leading-snug break-words">
                   水:{logs[0].moisture} 圧:{logs[0].pressure} 温:{logs[0].temperature || "-"}℃ ステージ:{logs[0].stage}
                 </div>
               </div>
             )}
             {entry.type === "幼虫" && (entry as any).deathDate && (
-              <div className="text-[11px] font-bold text-red-500 mb-1">
+              <div className="text-[11px] font-bold text-red-500 mb-1 break-words">
                 <span className="text-muted">死亡日:</span> {(entry as any).deathDate.replace(/-/g, "/")}
               </div>
             )}
-            <div>
+            <div className="break-words">
               <span className="text-muted">産地:</span> {entry.locality || "-"}
             </div>
-            <div>
+            <div className="break-words">
               <span className="text-muted">累代:</span> {buildGenerationLabel(entry.generation)}
             </div>
             {(entry.type === "幼虫" || entry.type === "産卵セット") && (
-              <div>
+              <div className="break-words">
                 {(() => {
                   const { label, value } = entry.type === "幼虫" 
                     ? getLarvaDateInfo(entry) 
@@ -181,7 +181,7 @@ export function EntryCard({
                 })()}
               </div>
             )}
-            <div className={`text-[11px] font-bold mt-1 ${dateColor}`}>
+            <div className={`text-[11px] font-bold mt-1 break-words ${dateColor}`}>
               {range 
                 ? (range.min === range.max ? `${range.min}日前に交換` : `${range.min}〜${range.max}日前に交換`)
                 : "今日交換"}
@@ -189,14 +189,14 @@ export function EntryCard({
           </dl>
           
           {latestWeight && (
-            <div className="text-right w-1/2">
-              <div className="flex flex-col items-end justify-end"> {/* Keep layout */}
-              <div className="text-[26px] font-black text-[#FF9800] leading-none tracking-tighter">
+            <div className="w-full text-right flex-shrink-0 sm:w-auto sm:ml-2">
+              <div className="flex flex-row items-end justify-between gap-3 sm:flex-col sm:items-end">
+                <div className="text-2xl font-black text-[#FF9800] leading-none tracking-tighter break-words">
                   {latestWeight}<span className="text-[14px] ml-0.5 font-bold">g</span>
                 </div>
                 <div className="mt-1.5 h-[14px]">
                   {weightDiff !== 0 && (
-                    <span className={`text-[12px] font-bold ${weightDiff > 0 ? 'text-[#E74C3C]' : 'text-[#FB8C00]'}`}>
+                    <span className={`text-[12px] font-bold whitespace-nowrap ${weightDiff > 0 ? 'text-[#E74C3C]' : 'text-[#FB8C00]'}`}>
                       {weightDiff > 0 ? `+${weightDiff}g` : `${weightDiff}g`} {weightDiff > 0 ? '↑' : '↓'}
                     </span>
                   )}
@@ -207,12 +207,12 @@ export function EntryCard({
           )}
 
           {entry.type === "産卵セット" && spawnTotals && (
-            <div className="text-right w-1/2">
-              <div className="flex flex-col items-end justify-end">
-                <div className="text-[26px] font-black text-[#EF6C00] leading-none tracking-tighter">
+            <div className="w-full text-right flex-shrink-0 sm:w-auto sm:ml-2">
+              <div className="flex flex-col items-end">
+                <div className="text-2xl font-black text-[#EF6C00] leading-none tracking-tighter break-words">
                   {spawnTotals.eggs + spawnTotals.larvae}<span className="text-[14px] ml-0.5 font-bold">匹</span>
                 </div>
-                <div className="text-[10px] font-black text-orange-400 mt-1 uppercase">
+                <div className="text-[10px] font-black text-orange-400 mt-1 uppercase tracking-tighter break-words">
                   卵:{spawnTotals.eggs} / 幼:{spawnTotals.larvae}
                 </div>
               </div>
