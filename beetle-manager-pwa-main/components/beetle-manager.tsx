@@ -381,6 +381,10 @@ export function BeetleManager() {
   const suppressNextOpenRef = useRef(false);
   const pointerStartRef = useRef<{ x: number; y: number; id: string } | null>(null);
   const isScrollGestureRef = useRef(false);
+  const selectionScrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const autoScrollFrameRef = useRef<number | null>(null);
+  const autoScrollSpeedRef = useRef(0);
+  const lastPointerPositionRef = useRef<{ x: number; y: number } | null>(null);
 
   const applyDragSelection = useCallback((id: string) => {
     if (!dragModeRef.current || lastDragSelectionIdRef.current === id) return;
@@ -401,6 +405,61 @@ export function BeetleManager() {
     }
   }, []);
 
+  const stopSelectionAutoScroll = useCallback(() => {
+    autoScrollSpeedRef.current = 0;
+    if (autoScrollFrameRef.current !== null) {
+      cancelAnimationFrame(autoScrollFrameRef.current);
+      autoScrollFrameRef.current = null;
+    }
+  }, []);
+
+  const applySelectionAtPoint = useCallback((clientX: number, clientY: number) => {
+    const target = document.elementFromPoint(clientX, clientY) as HTMLElement | null;
+    const entryElement = target?.closest<HTMLElement>('[data-selection-entry-id]');
+    const id = entryElement?.dataset.selectionEntryId;
+    if (!id) return;
+
+    suppressNextOpenRef.current = true;
+    applyDragSelection(id);
+  }, [applyDragSelection]);
+
+  const startSelectionAutoScroll = useCallback((clientY: number) => {
+    const container = selectionScrollContainerRef.current;
+    if (!container) return;
+
+    const rect = container.getBoundingClientRect();
+    const edgeSize = 96;
+    const maxSpeed = 18;
+    const distanceToTop = clientY - rect.top;
+    const distanceToBottom = rect.bottom - clientY;
+
+    if (distanceToBottom < edgeSize) {
+      autoScrollSpeedRef.current = Math.ceil(((edgeSize - distanceToBottom) / edgeSize) * maxSpeed);
+    } else if (distanceToTop < edgeSize) {
+      autoScrollSpeedRef.current = -Math.ceil(((edgeSize - distanceToTop) / edgeSize) * maxSpeed);
+    } else {
+      stopSelectionAutoScroll();
+      return;
+    }
+
+    if (autoScrollFrameRef.current !== null) return;
+
+    const step = () => {
+      const scrollTarget = selectionScrollContainerRef.current;
+      const speed = autoScrollSpeedRef.current;
+      if (!scrollTarget || speed === 0) {
+        autoScrollFrameRef.current = null;
+        return;
+      }
+      scrollTarget.scrollTop += speed;
+      const pointerPosition = lastPointerPositionRef.current;
+      if (pointerPosition) applySelectionAtPoint(pointerPosition.x, pointerPosition.y);
+      autoScrollFrameRef.current = requestAnimationFrame(step);
+    };
+
+    autoScrollFrameRef.current = requestAnimationFrame(step);
+  }, [applySelectionAtPoint, stopSelectionAutoScroll]);
+
   const handlePointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>, id: string, currentList: BeetleEntry[]) => {
     if (!isSelectionMode) return;
 
@@ -413,6 +472,7 @@ export function BeetleManager() {
       lastDragSelectionIdRef.current = null;
       pointerStartRef.current = null;
       isScrollGestureRef.current = false;
+      stopSelectionAutoScroll();
       return;
     }
 
@@ -458,6 +518,7 @@ export function BeetleManager() {
 
     const pointerStart = pointerStartRef.current;
     if (!pointerStart) return;
+    lastPointerPositionRef.current = { x: event.clientX, y: event.clientY };
 
     const deltaX = event.clientX - pointerStart.x;
     const deltaY = event.clientY - pointerStart.y;
@@ -474,16 +535,13 @@ export function BeetleManager() {
       applyDragSelection(pointerStart.id);
     }
 
-    const target = document.elementFromPoint(event.clientX, event.clientY) as HTMLElement | null;
-    const entryElement = target?.closest<HTMLElement>('[data-selection-entry-id]');
-    const id = entryElement?.dataset.selectionEntryId;
-    if (!id) return;
+    startSelectionAutoScroll(event.clientY);
     if (event.cancelable && isDraggingRef.current) event.preventDefault(); // なぞり選択中はスクロール抑制
 
     suppressNextOpenRef.current = true;
     cancelLongPress();
-    applyDragSelection(id);
-  }, [applyDragSelection, cancelLongPress]);
+    applySelectionAtPoint(event.clientX, event.clientY);
+  }, [applySelectionAtPoint, applyDragSelection, cancelLongPress, startSelectionAutoScroll]);
 
   const handleEntryClick = useCallback((entry: BeetleEntry) => { // Short click handler
     if (suppressNextOpenRef.current) {
@@ -511,14 +569,19 @@ export function BeetleManager() {
       lastDragSelectionIdRef.current = null;
       pointerStartRef.current = null;
       isScrollGestureRef.current = false;
+      lastPointerPositionRef.current = null;
+      stopSelectionAutoScroll();
       // ここで reset しない（handleEntryClick で消費・リセットするため）
       cancelLongPress();
     };
     window.addEventListener('pointerup', handleGlobalPointerUp);
+    window.addEventListener('pointercancel', handleGlobalPointerUp);
     return () => {
       window.removeEventListener('pointerup', handleGlobalPointerUp);
+      window.removeEventListener('pointercancel', handleGlobalPointerUp);
+      stopSelectionAutoScroll();
     };
-  }, []);
+  }, [stopSelectionAutoScroll]);
 
   const handleBulkCopyToExcel = async (ids?: string[]) => {
     const targetIds = ids || entries.map(e => e.id);
@@ -1922,7 +1985,7 @@ export function BeetleManager() {
             )}
 
             {/* ウィンドウ内のコンテンツエリア */}
-            <div className="flex-1 overflow-y-auto px-6 pt-4 pb-32">
+            <div ref={selectionScrollContainerRef} className="flex-1 overflow-y-auto px-6 pt-4 pb-32">
               <div className="space-y-4">
                 {selectedFolderEntries.map((entry) => {
                   const currentList = selectedFolderEntries;
