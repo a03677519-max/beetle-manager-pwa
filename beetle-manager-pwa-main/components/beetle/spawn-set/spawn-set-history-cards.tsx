@@ -72,7 +72,7 @@ export const buildSpawnSetDisplayRecords = (entry: SpawnSet): SpawnSetDisplayRec
 };
 
 export const getSpawnSetHistoryRecords = (entry: SpawnSet) =>
-  buildSpawnSetDisplayRecords(entry).filter((set) => set.id !== "primary");
+  [...buildSpawnSetDisplayRecords(entry)].sort((a, b) => (b.setDate || "").localeCompare(a.setDate || ""));
 
 export function SpawnSetHistoryCards({
   entry,
@@ -96,9 +96,9 @@ export function SpawnSetHistoryCards({
         >
           <div className="flex items-start justify-between gap-3 mb-3">
             <div className="min-w-0">
-              <div className="text-[10px] font-black text-[#BCAAA4] uppercase tracking-widest mb-1">産卵履歴</div>
+              <div className="text-[10px] font-black text-[#BCAAA4] uppercase tracking-widest mb-1">{set.isPrimary ? "初回セット" : "産卵履歴"}</div>
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[11px] font-black text-[#FF9800] bg-orange-50 px-2 py-0.5 rounded-lg">{set.title}</span>
+                <span className={`text-[11px] font-black px-2 py-0.5 rounded-lg ${set.isPrimary ? "text-white bg-[#FF9800]" : "text-[#FF9800] bg-orange-50"}`}>{set.title}</span>
                 <span className="text-[10px] font-black text-gray-300">{index + 1}/{historySets.length}</span>
               </div>
             </div>

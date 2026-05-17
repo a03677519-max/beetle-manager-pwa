@@ -18,7 +18,6 @@ export function SpawnSetDetail({
   onEditSet?: (set: any) => void;
 }) {
   const allSets = buildSpawnSetDisplayRecords(entry);
-  const primarySet = allSets.find((set) => set.id === "primary");
 
   // 全回転の合計を計算
   const totals = allSets.reduce(
@@ -73,26 +72,6 @@ export function SpawnSetDetail({
             <div className="text-xs text-gray-500">同居</div>
             <div className="font-bold text-gray-800 break-words whitespace-normal">{entry.cohabitation}</div>
           </div>
-          {primarySet && (
-            <div className="min-w-0 bg-orange-50/40 p-4 rounded-2xl col-span-2 border border-orange-100/60">
-              <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                <div className="text-xs text-orange-600 font-black">1回目登録</div>
-                <button type="button" onClick={() => onEditSet?.(primarySet)} className="text-[10px] font-black text-[#FF9800] bg-white px-2 py-1 rounded-lg border border-orange-100">
-                  編集
-                </button>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="min-w-0">
-                  <div className="text-[10px] text-gray-400 font-bold">回収結果</div>
-                  <div className="font-bold text-gray-800 break-words whitespace-normal">卵:{primarySet.eggCount ?? 0} / 幼虫:{primarySet.larvaCount ?? 0}</div>
-                </div>
-                <div className="min-w-0">
-                  <div className="text-[10px] text-gray-400 font-bold">セット方法</div>
-                  <div className="font-bold text-gray-800 break-words whitespace-normal">{primarySet.displaySubstrate || "-"}</div>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
