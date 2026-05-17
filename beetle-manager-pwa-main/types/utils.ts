@@ -1,4 +1,4 @@
-import { BeetleEntry, GenerationValue } from "./beetle";
+import { BeetleEntry, GenerationValue, AdultBeetle, LarvaBeetle, SpawnSet } from "./beetle";
 
 export const createId = () => Math.random().toString(36).substring(2, 11);
 // The `today` function was moved to `lib/utils.ts` to unify date handling.
@@ -18,8 +18,18 @@ export const formatGeneration = (gen: GenerationValue) => {
 
 export const isSpawnSetFinished = (entry: any) => {
   if (entry.type !== "産卵セット") return false;
+  // 2回目以降の履歴がある場合、最新のセットの終了日で判定
+  if (entry.sets && entry.sets.length > 0) {
+    const latest = entry.sets[entry.sets.length - 1];
+    return !!(latest.setEndDate && latest.setEndDate !== "-");
+  }
+  // 1回目セットの終了日
   return !!(entry.setEndDate && entry.setEndDate !== "-");
 };
+
+export const isAdult = (entry: BeetleEntry): entry is AdultBeetle => entry.type === "成虫";
+export const isLarva = (entry: BeetleEntry): entry is LarvaBeetle => entry.type === "幼虫";
+export const isSpawnSet = (entry: BeetleEntry): entry is SpawnSet => entry.type === "産卵セット";
 
 export const getShortenedSciName = (sciName: string) => {
   if (!sciName) return "";

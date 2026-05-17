@@ -109,7 +109,7 @@ export const splitDate = (value: string) => {
   return { year, month, day };
 };
 
-import type { GenerationValue } from "@/types/beetle";
+import type { GenerationValue, BeetleEntry, AdultBeetle, LarvaBeetle, SpawnSet } from "@/types/beetle";
 
 // ...
 
@@ -232,3 +232,7 @@ export const isSpawnSetFinished = (entry: any) => {
   // 1回目セットの終了日
   return !!entry.setEndDate;
 };
+
+export const isAdult = (entry: BeetleEntry): entry is AdultBeetle => entry.type === "成虫";
+export const isLarva = (entry: BeetleEntry): entry is LarvaBeetle => entry.type === "幼虫";
+export const isSpawnSet = (entry: BeetleEntry): entry is SpawnSet => entry.type === "産卵セット";
