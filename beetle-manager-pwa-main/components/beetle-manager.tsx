@@ -353,26 +353,25 @@ export function BeetleManager() {
     isLongPressActive.current = false;
     longPressTimer.current = setTimeout(() => {
       isLongPressActive.current = true;
-      
-      if (lastSelectedId && lastSelectedId !== id) {
-        const indexA = currentList.findIndex(e => e.id === lastSelectedId);
-        const indexB = currentList.findIndex(e => e.id === id);
-        
-        if (indexA !== -1 && indexB !== -1) {
-          const start = Math.min(indexA, indexB);
-          const end = Math.max(indexA, indexB);
-          const rangeIds = currentList.slice(start, end + 1).map(e => e.id);
-          setSelectedIds(prev => Array.from(new Set([...prev, ...rangeIds])));
+      isDraggingRef.current = true;
+      suppressNextOpenRef.current = true;
+      setSelectedIds(prev => {
+        if (dragModeRef.current === 'add') {
+          if (prev.includes(id)) return prev;
+          return [...prev, id];
         }
-      } else { // 単一の長押しの場合、ここで選択状態をトグルする
-        handleToggleSelect(id);
-      }
+        if (dragModeRef.current === 'remove') {
+          return prev.filter(i => i !== id);
+        }
+        return prev;
+      });
       setLastSelectedId(id);
+      lastDragSelectionIdRef.current = id;
       if (typeof window !== 'undefined' && window.navigator?.vibrate) {
         window.navigator.vibrate(50);
       }
-    }, 600);
-  }, [isSelectionMode, lastSelectedId, handleToggleSelect]);
+    }, 350);
+  }, []);
 
   // なぞり選択用の状態管理
   const isDraggingRef = useRef(false);
@@ -380,6 +379,8 @@ export function BeetleManager() {
   const activePointerIdRef = useRef<number | null>(null);
   const lastDragSelectionIdRef = useRef<string | null>(null);
   const suppressNextOpenRef = useRef(false);
+  const pointerStartRef = useRef<{ x: number; y: number; id: string } | null>(null);
+  const isScrollGestureRef = useRef(false);
 
   const applyDragSelection = useCallback((id: string) => {
     if (!dragModeRef.current || lastDragSelectionIdRef.current === id) return;
@@ -403,18 +404,37 @@ export function BeetleManager() {
   const handlePointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>, id: string, currentList: BeetleEntry[]) => {
     if (!isSelectionMode) return;
 
-    isDraggingRef.current = true;
+    const target = event.target as HTMLElement | null;
+    const canDragSelect = !!target?.closest('[data-selection-drag-handle]');
+    if (!canDragSelect) {
+      isDraggingRef.current = false;
+      dragModeRef.current = null;
+      activePointerIdRef.current = null;
+      lastDragSelectionIdRef.current = null;
+      pointerStartRef.current = null;
+      isScrollGestureRef.current = false;
+      return;
+    }
+
+    isDraggingRef.current = false;
     activePointerIdRef.current = event.pointerId;
     lastDragSelectionIdRef.current = null;
     suppressNextOpenRef.current = false;
+    pointerStartRef.current = { x: event.clientX, y: event.clientY, id };
+    isScrollGestureRef.current = false;
 
     // 最初に触れたカードが選択済みなら「解除モード」、未選択なら「追加モード」にする
     const isSelected = selectedIds.includes(id);
     dragModeRef.current = isSelected ? 'remove' : 'add';
-    applyDragSelection(id);
+
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      // ブラウザ差異でキャプチャできない場合も通常のタップ操作は継続する
+    }
 
     startLongPress(id, currentList);
-  }, [isSelectionMode, selectedIds, applyDragSelection, startLongPress]);
+  }, [isSelectionMode, selectedIds, startLongPress]);
 
   const cancelLongPress = useCallback(() => {
     if (longPressTimer.current) {
@@ -433,8 +453,26 @@ export function BeetleManager() {
   }, [cancelLongPress, applyDragSelection]);
 
   const handlePointerMove = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
-    if (!isDraggingRef.current || !dragModeRef.current) return;
+    if (!dragModeRef.current || isScrollGestureRef.current) return;
     if (activePointerIdRef.current !== null && event.pointerId !== activePointerIdRef.current) return;
+
+    const pointerStart = pointerStartRef.current;
+    if (!pointerStart) return;
+
+    const deltaX = event.clientX - pointerStart.x;
+    const deltaY = event.clientY - pointerStart.y;
+    const absX = Math.abs(deltaX);
+    const absY = Math.abs(deltaY);
+    const dragThreshold = 12;
+
+    if (!isDraggingRef.current) {
+      if (Math.max(absX, absY) < dragThreshold) return;
+
+      isDraggingRef.current = true;
+      suppressNextOpenRef.current = true;
+      cancelLongPress();
+      applyDragSelection(pointerStart.id);
+    }
 
     const target = document.elementFromPoint(event.clientX, event.clientY) as HTMLElement | null;
     const entryElement = target?.closest<HTMLElement>('[data-selection-entry-id]');
@@ -471,6 +509,8 @@ export function BeetleManager() {
       dragModeRef.current = null;
       activePointerIdRef.current = null;
       lastDragSelectionIdRef.current = null;
+      pointerStartRef.current = null;
+      isScrollGestureRef.current = false;
       // ここで reset しない（handleEntryClick で消費・リセットするため）
       cancelLongPress();
     };
@@ -1890,7 +1930,7 @@ export function BeetleManager() {
                   return (
                     <div
                       key={entry.id}
-                      className={`${isSelectionMode ? 'touch-none select-none' : ''}`}
+                      className={`${isSelectionMode ? 'select-none touch-pan-y' : ''}`}
                       data-selection-entry-id={entry.id}
                       onPointerDown={(event) => handlePointerDown(event, entry.id, currentList)}
                       onPointerMove={handlePointerMove}

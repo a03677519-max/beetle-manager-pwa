@@ -104,7 +104,7 @@ export function EntryCard({
       }}
     >
       {isSelectionMode && (
-        <div className="absolute top-4 left-4 z-20">
+        <div data-selection-drag-handle className="absolute top-4 left-4 z-20 -m-3 p-3 touch-none">
           <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 ${isSelected ? "bg-[#FF9800] border-[#FF9800]" : "bg-white border-gray-200"}`}>
             {isSelected && <div className="w-2.5 h-1 border-l-2 border-b-2 border-white -rotate-45 mb-0.5" />}
           </div>
