@@ -420,7 +420,7 @@ export function BeetleManager() {
     const entryElement = target?.closest<HTMLElement>('[data-selection-entry-id]');
     const id = entryElement?.dataset.selectionEntryId;
     if (!id) return;
-    event.preventDefault(); // スクロールを抑制
+    if (event.cancelable && isDraggingRef.current) event.preventDefault(); // なぞり選択中はスクロール抑制
 
     suppressNextOpenRef.current = true;
     cancelLongPress();
@@ -514,16 +514,14 @@ export function BeetleManager() {
         date = (larvaEntry.hatchDate && larvaEntry.hatchDate !== "-" ? larvaEntry.hatchDate : (larvaEntry.extractionDate && larvaEntry.extractionDate !== "-" ? larvaEntry.extractionDate : (larvaEntry.createdAt || today())));
       } else { // SpawnSet
         const ss = entry as SpawnSet;
-        // 1回目のセット日と履歴(sets)の中から、最も古い日付を採番基準(初回開始日)とする
-        const allDates = [(ss as any).setDate, ...((ss as any).sets || []).map((s: any) => s.setDate)]
+        // 履歴も含めた最古の日付を基準にする
+        const allDates = [
+          ss.setDate, 
+          ...(ss.sets || []).map((s: any) => s.setDate),
+          (entry as any).createdAt?.slice(0, 10)
+        ]
           .filter(d => d && d !== "-");
-        
-        if (allDates.length > 0) {
-          // 日付文字列をソートして最小値を取得
-          date = [...allDates].sort((a, b) => a.localeCompare(b))[0];
-        } else {
-          date = ss.createdAt || today();
-        }
+        date = allDates.length > 0 ? [...allDates].sort()[0] : (ss.createdAt || today());
       }
       
       const newName = generateUniqueMName(
@@ -797,8 +795,6 @@ export function BeetleManager() {
     if (!entry || entry.type !== "産卵セット") return;
 
     const s = entry as SpawnSet;
-    
-    // 全てのセット（初回 + 履歴）の日付をチェック
     const allSets = [
       { id: "primary", setDate: (s as any).setDate },
       ...((s as any).sets || []).map((set: any) => ({ id: set.id, setDate: set.setDate }))
@@ -809,45 +805,20 @@ export function BeetleManager() {
 
     if (window.confirm("このセット履歴を削除してもよろしいですか？")) {
       let updatedEntry = { ...s } as any;
-      
       if (setId === "primary") {
         updatedEntry.setDate = "";
         updatedEntry.setEndDate = "";
-        updatedEntry.eggCount = 0;
-        updatedEntry.larvaCount = 0;
-        updatedEntry.substrate = "";
-        updatedEntry.containerSize = "";
       } else {
         updatedEntry.sets = (s.sets || []).filter((set: any) => set.id !== setId);
       }
 
-      // 最古のセットを削除する場合、管理名の再計算確認
-      if (isDeletingOldest && window.confirm("削除するセットは初回開始日（管理名の採番基準）です。削除後に管理名を新しい初回日に合わせて再計算しますか？")) {
-        const remainingSets = [
-          { id: "primary", setDate: updatedEntry.setDate },
-          ...(updatedEntry.sets || []).map((set: any) => ({ id: set.id, setDate: set.setDate }))
-        ].filter(set => set.setDate && set.setDate !== "-");
+      if (isDeletingOldest && window.confirm("削除するセットは基準日です。管理名を新しい初回日に合わせて再計算しますか？")) {
+        const remaining = [{ id: "primary", setDate: updatedEntry.setDate }, ...(updatedEntry.sets || [])]
+          .filter(set => set.setDate && set.setDate !== "-");
+        let nextDate = updatedEntry.createdAt || today();
+        if (remaining.length > 0) nextDate = [...remaining].sort((a, b) => a.setDate.localeCompare(b.setDate))[0].setDate;
 
-        let newBaseDate = updatedEntry.createdAt || today();
-        if (remainingSets.length > 0) {
-          const sortedRemaining = [...remainingSets].sort((a, b) => (a.setDate || "").localeCompare(b.setDate || ""));
-          newBaseDate = sortedRemaining[0].setDate || newBaseDate;
-        }
-
-        const newName = generateUniqueMName(
-          newBaseDate,
-          updatedEntry.scientificName,
-          entries.filter(e => e.id !== entryId),
-          "産卵セット",
-          managementNameFormats["産卵セット"],
-          undefined,
-          {
-            japaneseName: updatedEntry.japaneseName,
-            locality: updatedEntry.locality,
-            generation: formatGeneration(updatedEntry.generation)
-          }
-        );
-        updatedEntry.managementName = newName;
+        updatedEntry.managementName = generateUniqueMName(nextDate, updatedEntry.scientificName, entries.filter(e => e.id !== entryId), "産卵セット", managementNameFormats["産卵セット"]);
       }
       updateSpawnSet(entryId, updatedEntry);
     }
@@ -1253,6 +1224,7 @@ export function BeetleManager() {
           startEditing(null);
           setSelectedEntry(null);
           setIsSettingsOpen(false);
+          setSelectedFolderKey(null); // タブ切り替え時にフォルダ選択をリセット
 
           if (tab === "設定") { setIsSettingsOpen(true); return; }
           if (ENTRY_TYPES.includes(tab as EntryType)) setSelectedType(tab as EntryType);
@@ -1261,24 +1233,43 @@ export function BeetleManager() {
         showAddButton={!isCreating && !editingId && !selectedEntry && !isSettingsOpen}
       />
       {/* 固定ヘッダーセクション */}
-      <section className="sticky top-0 z-30 bg-white/70 backdrop-blur-xl pt-4 pb-2 px-4 border-b border-[#E8E2DA] mb-3 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-        <DashboardToolbar
-          isSyncing={isSyncing}
-          isSelectionMode={isSelectionMode}
-          onRegenerateNames={() => handleRegenerateAllNames(false)}
-          onGitHubSync={handleGitHubSync}
-          onExcelExport={() => handleBulkCopyToExcel()}
-          onOpenSettings={() => setIsSettingsOpen(true)}
-          onToggleSelection={handleToggleSelectionMode}
-        />
+      <section className="sticky top-0 z-30 bg-[#F8F5F2]/80 backdrop-blur-xl pt-4 pb-2 px-4 border-b border-[#E8E2DA] mb-3 shadow-sm">
+        {selectedFolderKey ? (
+          <div className="flex items-center gap-3 py-2 animate-in fade-in slide-in-from-left duration-300">
+            <button 
+              onClick={() => setSelectedFolderKey(null)}
+              className="p-2 bg-white border border-[#E8E2DA] rounded-full text-gray-400 active:scale-95 transition-all shadow-sm"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <div className="min-w-0">
+              <h2 className="text-lg font-black text-[#3C3631] truncate leading-tight">
+                {groupedEntries.find(g => g.key === selectedFolderKey)?.japaneseName}
+              </h2>
+              <p className="text-[11px] italic text-[#B0A495] font-serif truncate">
+                {groupedEntries.find(g => g.key === selectedFolderKey)?.scientificName}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <DashboardToolbar
+            isSyncing={isSyncing}
+            isSelectionMode={isSelectionMode}
+            onRegenerateNames={() => handleRegenerateAllNames(false)}
+            onGitHubSync={handleGitHubSync}
+            onExcelExport={() => handleBulkCopyToExcel()}
+            onOpenSettings={() => setIsSettingsOpen(true)}
+            onToggleSelection={() => setIsSelectionMode(!isSelectionMode)}
+          />
+        )}
         
-        {isSelectionMode && (
+        {(isSelectionMode || selectedFolderKey) && (
           <BulkSelectionBar
             selectedCount={selectedIds.length}
             onSelectAll={handleSelectAll}
             onDeselectAll={handleDeselectAll}
             onBulkExport={() => handleBulkCopyToExcel(selectedIds)}
-            onBulkDelete={handleBulkDelete}
+            onBulkDelete={() => { if(window.confirm("一括削除しますか？")) handleBulkDelete(); }}
             onBulkEdit={() => setIsBulkEditing(true)}
             onSelectByType={handleSelectByType}
             availableTypes={availableTypesInView}
@@ -1286,19 +1277,21 @@ export function BeetleManager() {
           />
         )}
 
-        <DashboardStats
-          stats={stats}
-          visibleTypes={visibleTypes}
-          onToggleType={(type) => setVisibleTypes(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type])}
-          query={query}
-          onQueryChange={setQuery}
-          larvaFilter={larvaFilter}
-          onLarvaFilterChange={setLarvaFilter}
-          adultFilter={adultFilter}
-          onAdultFilterChange={setAdultFilter}
-          spawnSetFilter={spawnSetFilter}
-          onSpawnSetFilterChange={setSpawnSetFilter}
-        />
+        {!selectedFolderKey && (
+          <DashboardStats
+            stats={stats}
+            visibleTypes={visibleTypes}
+            onToggleType={(type) => setVisibleTypes(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type])}
+            query={query}
+            onQueryChange={setQuery}
+            larvaFilter={larvaFilter}
+            onLarvaFilterChange={setLarvaFilter}
+            adultFilter={adultFilter}
+            onAdultFilterChange={setAdultFilter}
+            spawnSetFilter={spawnSetFilter}
+            onSpawnSetFilterChange={setSpawnSetFilter}
+          />
+        )}
       </section>
 
       {/* クロップモーダル */}
@@ -1702,65 +1695,46 @@ export function BeetleManager() {
             transition={{ duration: 0.2 }}
           >
             {activeTab !== "分析" && activeTab !== "タスク" && activeTab !== "設定" ? (
-              filteredEntries.length === 0 ? (
+              selectedFolderKey ? (
+                <div className="space-y-3 animate-in slide-in-from-right duration-300">
+                  {groupedEntries.find(g => g.key === selectedFolderKey)?.entries.map((entry) => (
+                    <div
+                      key={entry.id}
+                      className={`space-y-2 ${isSelectionMode ? 'touch-none select-none' : ''}`}
+                      data-selection-entry-id={entry.id}
+                      onPointerDown={(event) => handlePointerDown(event, entry.id, filteredEntries)}
+                      onPointerMove={handlePointerMove}
+                    >
+                      <EntryCard
+                        entry={entry}
+                        onOpen={() => handleEntryClick(entry)}
+                        isSelected={selectedIds.includes(entry.id)}
+                        isSelectionMode={isSelectionMode}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : filteredEntries.length === 0 ? (
                 <EmptyState />
               ) : (
-                <div className="space-y-4">
-                  {groupedEntries.map((group) => {
-                    const isExpanded = expandedSpecies.includes(group.key);
-                    const selectedCount = group.entries.filter((entry) => selectedIds.includes(entry.id)).length;
-                    return (
-                      <div key={group.key} className="rounded-2xl border border-[#E8E2DA] bg-white/70 overflow-hidden">
-                        <button
-                          onClick={() => toggleSpeciesFolder(group.key)}
-                          className="w-full px-4 py-3 flex items-center justify-between hover:bg-white/80 transition-colors"
-                        >
-                          <div className="flex items-center gap-3 text-left">
-                            {isExpanded ? <FolderOpen size={16} className="text-[#FF9800]" /> : <Folder size={16} className="text-[#B0A495]" />}
-                            <div>
-                              <div className="text-sm font-black text-[#4A3F35]">{group.japaneseName}</div>
-                              <div className="text-[11px] text-gray-500 italic">{group.scientificName}</div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-bold text-gray-500">
-                              {group.entries.length}件{isSelectionMode ? ` / 選択${selectedCount}` : ""}
-                            </span>
-                            {isExpanded ? <ChevronUp size={16} className="text-gray-500" /> : <ChevronDown size={16} className="text-gray-500" />}
-                          </div>
-                        </button>
-
-                        {isExpanded && (
-                          <div className="p-3 pt-0 space-y-2">
-                            {group.entries.map((entry) => (
-                              <div
-                                key={entry.id}
-                                className={`space-y-2 ${isSelectionMode ? 'touch-none select-none' : ''}`}
-                                data-selection-entry-id={entry.id}
-                                onPointerDown={(event) => handlePointerDown(event, entry.id, filteredEntries)}
-                                onPointerMove={handlePointerMove}
-                                onPointerEnter={() => handlePointerEnter(entry.id)}
-                                onPointerUp={cancelLongPress}
-                                onPointerLeave={cancelLongPress}
-                                onContextMenu={(e) => { if (isSelectionMode) e.preventDefault(); }}
-                              >
-                                <EntryCard
-                                  entry={entry}
-                                  onOpen={() => handleEntryClick(entry)}
-                                  isSelected={selectedIds.includes(entry.id)}
-                                  isSelectionMode={isSelectionMode}
-                                  onDelete={(e, id) => {
-                                    e.stopPropagation();
-                                    if (window.confirm("本当に削除しますか？")) deleteEntry(id);
-                                  }}
-                                />
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                <div className="space-y-3">
+                  {groupedEntries.map((group) => (
+                    <button
+                      key={group.key}
+                      onClick={() => setSelectedFolderKey(group.key)}
+                      className="w-full bg-white rounded-[28px] p-5 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-[#F1EDE8] text-left active:scale-[0.98] transition-all flex items-center gap-4"
+                    >
+                      <div className="w-12 h-12 rounded-2xl bg-[#F9F7F5] border border-[#E8E2DA] flex items-center justify-center text-[#B0A495] shrink-0">
+                        <Folder size={24} />
                       </div>
-                    );
-                  })}
+                      <div className="flex-1 min-w-0">
+                        <div className="text-lg font-black text-[#3C3631] truncate leading-tight">{group.japaneseName}</div>
+                        <div className="text-xs italic text-[#B0A495] font-serif truncate">{group.scientificName}</div>
+                        <div className="text-[10px] font-black text-[#FF9800] mt-1">{group.entries.length}頭の個体</div>
+                      </div>
+                      <ChevronRight size={20} className="text-[#D7CCC8]" />
+                    </button>
+                  ))}
                 </div>
               )
             ) : activeTab === "分析" ? (
@@ -1824,16 +1798,22 @@ export function BeetleManager() {
               
               let updatedSets;
               const { parentId, sets, useDifferentMethod, ...cleanSet } = submittedSet as any;
-              
-              // 管理名(managementName)や写真などが消失しないよう、既存データをベースにする
-              const baseEntry = { ...entry };
 
               if (cleanSet.id === "primary") {
-                // 1回目のセット内容（メインフィールド）を更新
                 updateSpawnSet(parentEntryId, {
-                  ...baseEntry,
-                  ...cleanSet,
-                });
+                  ...entry,
+                  setDate: cleanSet.setDate,
+                  setEndDate: cleanSet.setEndDate,
+                  eggCount: cleanSet.eggCount,
+                  larvaCount: cleanSet.larvaCount,
+                  substrate: cleanSet.substrate,
+                  containerSize: cleanSet.containerSize,
+                  pressure: cleanSet.pressure,
+                  moisture: cleanSet.moisture,
+                  temperature: cleanSet.temperature,
+                  cohabitation: cleanSet.cohabitation,
+                  memo: cleanSet.memo,
+                } as any);
               } else {
                 if (editingChildSet && editingChildSet.id) {
                   updatedSets = (entry.sets || []).map((s: any) => 
@@ -1844,7 +1824,7 @@ export function BeetleManager() {
                 }
                 if (updatedSets) {
                   updatedSets.sort((a: any, b: any) => (a.setDate || "").localeCompare(b.setDate || ""));
-                  updateSpawnSet(parentEntryId, { ...baseEntry, sets: updatedSets });
+                  updateSpawnSet(parentEntryId, { ...entry, sets: updatedSets } as any);
                 }
               }
               setIsAddingSecondSet(false);

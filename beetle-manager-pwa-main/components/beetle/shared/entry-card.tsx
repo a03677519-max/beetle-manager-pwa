@@ -78,8 +78,8 @@ export function EntryCard({
   }
 
   return (
-    <article
-      className={`flex bg-white rounded-[32px] p-5 shadow-[0_8px_30px_rgba(0,0,0,0.04)] cursor-pointer active:scale-[0.97] transition-all duration-300 select-none touch-manipulation relative overflow-hidden mb-5 border ${isSelected ? "border-[#FF9800] ring-4 ring-orange-50" : "border-[#F1EDE8]"}`}
+    <article // Keep article
+      className={`flex bg-white rounded-[32px] p-5 shadow-[0_8px_30px_rgba(0,0,0,0.04)] cursor-pointer active:scale-[0.97] transition-all duration-300 select-none touch-manipulation relative overflow-hidden border ${isSelected ? "border-[#FF9800] ring-4 ring-orange-50" : "border-[#F1EDE8]"}`}
       onClick={(e) => {
         e.stopPropagation();
         onOpen(entry);
@@ -189,7 +189,7 @@ export function EntryCard({
           )}
         </div>
 
-        {onDelete && (
+        {onDelete && !isSelectionMode && ( // 選択モード時は削除ボタンを非表示
           <button onClick={(e) => { e.stopPropagation(); onDelete(e, entry.id); }} className="absolute bottom-4 right-4 text-gray-400 hover:text-red-500">
             <Trash2 size={18} />
           </button>

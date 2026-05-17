@@ -200,7 +200,7 @@ export function LarvaForm({
           generation={values.generation}
           managementName={values.managementName || ""}
           allEntries={allEntries}
-          autoNumberingDate={dateType === "set" ? setStartDate : (values.hatchDate || values.extractionDate)}
+          autoNumberingDate={dateType === "set" ? setStartDate : (dateType === "hatch" ? values.hatchDate : values.extractionDate)}
           onNext={focusNextField}
           onChange={(patch) => setValues({ ...values, ...patch })}
         />

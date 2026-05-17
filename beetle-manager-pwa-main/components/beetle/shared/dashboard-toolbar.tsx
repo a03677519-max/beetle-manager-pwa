@@ -1,6 +1,6 @@
 "use client";
 
-import { Settings, RefreshCw, FileSpreadsheet, Loader2 } from "lucide-react";
+import { Settings, RefreshCw, FileSpreadsheet, Loader2, Hash } from "lucide-react";
 
 interface DashboardToolbarProps {
   isSyncing: boolean;
@@ -30,6 +30,7 @@ export function DashboardToolbar({
           className="px-2 py-1 bg-white border border-[#E8E2DA] rounded-full text-[10px] font-black text-gray-500 hover:text-[#FF9800] transition-all shadow-sm active:scale-95"
           title="規則に従って全個体の名前を付け直します"
         >
+          <Hash size={12} />
           一括採番
         </button>
         <button

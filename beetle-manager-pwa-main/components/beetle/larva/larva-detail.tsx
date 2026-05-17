@@ -124,7 +124,7 @@ export function LarvaDetail({
         {linkedAdult && (
           <button
             onClick={() => handleNavigate(linkedAdult.id)}
-            className="col-span-2 flex items-center justify-center gap-2 py-4 bg-[#795548]/10 text-[#795548] rounded-2xl text-sm font-black border border-[#795548]/20 active:scale-95 transition-all"
+            className="col-span-2 flex items-center justify-center gap-2 py-4 bg-[#795548]/10 text-[#795548] rounded-2xl text-sm font-bold border border-[#795548]/20 active:scale-95 transition-all"
           >
             <ExternalLink size={18} />
             成虫データを確認する

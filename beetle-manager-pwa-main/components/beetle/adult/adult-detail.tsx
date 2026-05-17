@@ -90,7 +90,7 @@ export function AdultDetail({ entry }: { entry: AdultBeetle }) {
         {linkedLarva && (
           <button
             onClick={() => handleNavigate(linkedLarva.id)}
-            className="w-full flex items-center justify-center py-4 bg-[#FF9800] text-white rounded-[20px] text-sm font-black shadow-lg shadow-orange-100 active:scale-[0.98] transition-all"
+            className="w-full flex items-center justify-center py-4 bg-[#FF9800] text-white rounded-[20px] text-sm font-bold shadow-lg shadow-orange-100 active:scale-[0.98] transition-all"
           >
             幼虫時のデータを確認する
           </button>

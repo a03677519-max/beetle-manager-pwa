@@ -5,7 +5,6 @@ import { DateRollField, Field, BottomSheetInput, GenderField, useNextFieldNaviga
 import { today } from "@/types/utils";
 import type { AdultFormValues } from "@/types/beetle";
 import { EntryBaseFields } from "@/components/beetle/shared/entry-base-fields";
-import { useBeetleStore } from "@/store/use-beetle-store";
 
 export function AdultForm({
   initialValues,
@@ -30,7 +29,6 @@ export function AdultForm({
   const formId = id || "adult-form"; // Keep formId for onSubmit
   const { focusNextField } = useNextFieldNavigation(formId, true);
   const formRef = useRef<HTMLFormElement>(null);
-  const allEntries = useBeetleStore((state) => state.entries);
 
   const isDead = useMemo(() => !!(values.deathDate && values.deathDate !== "-"), [values.deathDate]);
   const isSold = useMemo(() => !!((values.soldDate && values.soldDate !== "-") || values.status === "販売済み"), [values.soldDate, values.status]);
@@ -43,43 +41,6 @@ export function AdultForm({
     });
     return Array.from(sSet).sort();
   }, []);
-
-  const handleAutoNumbering = () => {
-    // 1. プレフィックスの抽出 (例: "A_26312_01" -> "A")
-    const basePrefix = values.managementName?.split('_')[0] || "A";
-    
-    // 2. 日付文字列の生成 (YYMDD形式: 2026-03-12 -> 26312)
-    const dateVal = values.emergenceDate || today();
-    const [year, month, day] = dateVal.split("-");
-    const yy = year.slice(2);
-    const m = parseInt(month, 10);
-    const dd = day.padStart(2, "0");
-    const dateStr = `${yy}${m}${dd}`;
-    
-    // 3. 同一和名・学名かつ、同じベースプレフィックスを持つ個体全体から連番を計算
-    const prefixMatch = `${basePrefix}_`;
-    const numbers = allEntries
-      .filter(e => 
-        e.japaneseName === values.japaneseName && 
-        e.scientificName === values.scientificName &&
-        e.managementName?.startsWith(prefixMatch)
-      )
-      .map(e => {
-        const parts = e.managementName!.split('_');
-        return parseInt(parts[parts.length - 1], 10);
-      })
-      .filter(n => !isNaN(n));
-
-    const nextNum = Math.max(0, ...numbers) + 1;
-    
-    // 4. 数値のフォーマット (例: 1 -> 01, 2 -> 2)
-    const numStr = nextNum === 1 ? "01" : String(nextNum);
-
-    setValues({ 
-      ...values, 
-      managementName: `${basePrefix}_${dateStr}_${numStr}` 
-    });
-  };
 
   // Effect to synchronize internal form state with external initialValues prop.
   // This is important if the parent component can change `initialValues`
@@ -115,15 +76,6 @@ export function AdultForm({
     >
       <div className="flex-1 overflow-y-auto px-1 space-y-2 mb-2">
         <div className="bg-white rounded-2xl p-2 border border-gray-100 shadow-sm space-y-2">
-        <div className="flex justify-end px-1 -mb-1">
-          <button
-            type="button"
-            onClick={handleAutoNumbering}
-            className="flex items-center gap-1 px-3 py-1 bg-[#FF9800]/10 text-[#FF9800] rounded-full text-[11px] font-bold border border-[#FF9800]/20 active:scale-95 transition-all"
-          >
-            一括採番
-          </button>
-        </div>
         <EntryBaseFields
           japaneseName={values.japaneseName}
           scientificName={values.scientificName}
@@ -132,7 +84,7 @@ export function AdultForm({
           managementName={values.managementName || ""}
           linkedEntryIds={values.linkedEntryIds}
           allEntries={allEntries}
-          autoNumberingDate={values.emergenceDate}
+          autoNumberingDate={values.emergenceDate} // 羽化日を基準に渡す
           onNext={focusNextField}
           onChange={(patch) => setValues({ ...values, ...patch })}
         />

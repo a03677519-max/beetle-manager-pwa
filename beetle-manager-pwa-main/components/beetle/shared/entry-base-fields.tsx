@@ -53,15 +53,15 @@ export function EntryBaseFields({
   }, [isLinkedSelectOpen]);
 
   const handleAutoNumbering = () => {
-    // 1. プレフィックスの抽出 (例: "A_26312_01" -> "A")
-    const basePrefix = managementName?.split('_')[0] || "A";
-    
+    // 1. プレフィックスの抽出と正規化
+    let basePrefix = managementName?.split("_")[0] || "A";
+    if (basePrefix.match(/^\d/)) basePrefix = "A";
+
     // 2. 日付文字列の生成 (YYMDD形式: 2026-03-12 -> 26312)
     let dateVal = autoNumberingDate || today();
     let parts = dateVal.split("-");
-    
-    // 日付が不完全（空や "-"）な場合は現在の日付を使用
-    if (parts.length < 3 || parts.some(p => !p || p === "-")) {
+
+    if (parts.length < 3 || parts.some((p) => !p || p === "-")) {
       const now = new Date();
       parts = [String(now.getFullYear()), String(now.getMonth() + 1), String(now.getDate())];
     }
@@ -69,29 +69,28 @@ export function EntryBaseFields({
     const [year, month, day] = parts;
     const yy = year.slice(-2);
     const m = parseInt(month, 10) || 1;
-    // 日付が数値でない（上/中/下など）場合はそのまま使い、数値なら2桁埋め
     const ddNum = parseInt(day, 10);
     const dd = isNaN(ddNum) ? day : day.padStart(2, "0");
-
     const dateStr = `${yy}${m}${dd}`;
-    
-    // 3. 同一和名・学名かつ、同じベースプレフィックスを持つ個体全体から連番を計算
+
+    // 3. 連番の計算 (同一和名・学名かつ同じプレフィックスを持つ全個体を対象)
     const prefixMatch = `${basePrefix}_`;
     const numbers = allEntries
-      .filter(e => 
-        e.japaneseName === japaneseName && 
-        e.scientificName === scientificName &&
-        e.managementName?.startsWith(prefixMatch)
+      .filter(
+        (entry) =>
+          entry.japaneseName === japaneseName &&
+          entry.scientificName === scientificName &&
+          entry.managementName?.startsWith(prefixMatch)
       )
-      .map(e => {
-        const parts = e.managementName!.split('_');
-        return parseInt(parts[parts.length - 1], 10);
+      .map((entry) => {
+        const p = entry.managementName!.split("_");
+        return parseInt(p[p.length - 1], 10);
       })
-      .filter(n => !isNaN(n));
+      .filter((n) => !isNaN(n));
 
     const nextNum = Math.max(0, ...numbers) + 1;
     
-    // 4. 数値のフォーマット (例: 1 -> 01, 2 -> 2)
+    // 4. 数値のフォーマット (初回は 01、2回目以降は数値)
     const numStr = nextNum === 1 ? "01" : String(nextNum);
 
     onChange({ managementName: `${basePrefix}_${dateStr}_${numStr}` });

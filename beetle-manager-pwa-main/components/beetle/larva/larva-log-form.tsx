@@ -127,7 +127,7 @@ export function LarvaLogForm({
     >
       <div className="flex justify-between items-center mb-4">
         <div className="text-[10px] font-black text-[#BCAAA4] uppercase tracking-widest border-l-4 border-[#FF9800] pl-3">ログを入力</div>
-        <button type="submit" className="bg-[#FF9800] text-white px-6 py-1.5 rounded-full text-xs font-bold shadow-lg shadow-[#FF9800]/20 active:scale-[0.98] transition-all select-none">
+        <button type="submit" className="bg-[#FF9800] text-white px-6 py-1.5 rounded-full text-xs font-black shadow-lg shadow-[#FF9800]/20 active:scale-[0.98] transition-all select-none">
           保存する
         </button>
       </div>
