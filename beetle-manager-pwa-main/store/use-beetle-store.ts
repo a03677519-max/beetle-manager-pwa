@@ -71,6 +71,18 @@ const emptyGeneration = {
   count: "",
 } as const;
 
+const getNextEntryNumber = (
+  entries: BeetleEntry[],
+  scientificName: string,
+  type: EntryType,
+): number =>
+  Math.max(
+    0,
+    ...entries
+      .filter((entry) => entry.scientificName === scientificName && entry.type === type)
+      .map((entry) => entry.entryNumber || 0),
+  ) + 1;
+
 export const emptyAdultForm: AdultFormValues = {
   type: "成虫",
   japaneseName: "",
@@ -169,7 +181,7 @@ export const useBeetleStore = create<BeetleState>()(
         set((state) => ({ gitHub: { ...state.gitHub, ...input } })),
       addAdult: (input) =>
         set((state) => {
-          const nextNumber = Math.max(0, ...state.entries.filter(e => e.scientificName === input.scientificName && e.type === "成虫").map(e => e.entryNumber || 0)) + 1;
+          const nextNumber = getNextEntryNumber(state.entries, input.scientificName, "成虫");
           return {
             entries: [{ id: createId(), ...input, entryNumber: nextNumber, photos: input.photos || [], createdAt: today(), updatedAt: today() }, ...state.entries],
             editingId: null,
@@ -184,7 +196,7 @@ export const useBeetleStore = create<BeetleState>()(
         })),
       addLarva: (input) =>
         set((state) => {
-          const nextNumber = Math.max(0, ...state.entries.filter(e => e.scientificName === input.scientificName && e.type === "幼虫").map(e => e.entryNumber || 0)) + 1;
+          const nextNumber = getNextEntryNumber(state.entries, input.scientificName, "幼虫");
           return {
             entries: [{ id: createId(), ...input, entryNumber: nextNumber, photos: input.photos || [], createdAt: today(), updatedAt: today() }, ...state.entries],
             editingId: null,
@@ -199,7 +211,7 @@ export const useBeetleStore = create<BeetleState>()(
         })),
       addSpawnSet: (input) =>
         set((state) => {
-          const nextNumber = Math.max(0, ...state.entries.filter(e => e.scientificName === input.scientificName && e.type === "産卵セット").map(e => e.entryNumber || 0)) + 1;
+          const nextNumber = getNextEntryNumber(state.entries, input.scientificName, "産卵セット");
           return {
             entries: [{ id: createId(), ...input, entryNumber: nextNumber, photos: [], createdAt: today(), updatedAt: today() }, ...state.entries],
             editingId: null,
