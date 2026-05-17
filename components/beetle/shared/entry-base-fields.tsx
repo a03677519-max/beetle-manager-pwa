@@ -4,6 +4,7 @@ import { useMemo, useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Search, Link as LinkIcon } from "lucide-react";
 import { Field, GenerationRollField, BottomSheetInput } from "@/components/entry-fields";
+import { today } from "@/types/utils";
 import type { AdultFormValues, BeetleEntry } from "@/types/beetle";
 
 export function EntryBaseFields({
@@ -14,6 +15,7 @@ export function EntryBaseFields({
   generation,
   linkedEntryIds = [],
   allEntries,
+  autoNumberingDate,
   generationLabelSuffix,
   onNext,
   onChange,
@@ -27,6 +29,7 @@ export function EntryBaseFields({
   generationLabelSuffix?: string;
   onNext?: () => void;
   allEntries: BeetleEntry[];
+  autoNumberingDate?: string;
   onChange: (patch: {
     managementName?: string;
     japaneseName?: string;
@@ -48,6 +51,43 @@ export function EntryBaseFields({
       }, 100);
     }
   }, [isLinkedSelectOpen]);
+
+  const handleAutoNumbering = () => {
+    const basePrefix = managementName?.split("_")[0] || "A";
+    let dateVal = autoNumberingDate || today();
+    let parts = dateVal.split("-");
+
+    if (parts.length < 3 || parts.some((p) => !p || p === "-")) {
+      const now = new Date();
+      parts = [String(now.getFullYear()), String(now.getMonth() + 1), String(now.getDate())];
+    }
+
+    const [year, month, day] = parts;
+    const yy = year.slice(-2);
+    const m = parseInt(month, 10) || 1;
+    const ddNum = parseInt(day, 10);
+    const dd = isNaN(ddNum) ? day : day.padStart(2, "0");
+    const dateStr = `${yy}${m}${dd}`;
+
+    const prefixMatch = `${basePrefix}_`;
+    const numbers = allEntries
+      .filter(
+        (entry) =>
+          entry.japaneseName === japaneseName &&
+          entry.scientificName === scientificName &&
+          entry.managementName?.startsWith(prefixMatch)
+      )
+      .map((entry) => {
+        const parts = entry.managementName!.split("_");
+        return parseInt(parts[parts.length - 1], 10);
+      })
+      .filter((number) => !isNaN(number));
+
+    const nextNum = Math.max(0, ...numbers) + 1;
+    const numStr = nextNum === 1 ? "01" : String(nextNum);
+
+    onChange({ managementName: `${basePrefix}_${dateStr}_${numStr}` });
+  };
 
   const suggestions = useMemo(() => {
     const jSet = new Set<string>();
@@ -117,6 +157,15 @@ export function EntryBaseFields({
 
   return (
     <>
+      <div className="flex justify-end px-1 -mb-1">
+        <button
+          type="button"
+          onClick={handleAutoNumbering}
+          className="flex items-center gap-1 px-3 py-1 bg-[#FF9800]/10 text-[#FF9800] rounded-full text-[11px] font-bold border border-[#FF9800]/20 active:scale-95 transition-all"
+        >
+          一括採番
+        </button>
+      </div>
       <BottomSheetInput
         label="管理名 (No/名前)"
         value={managementName || ""}

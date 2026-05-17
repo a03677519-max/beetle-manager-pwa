@@ -107,6 +107,7 @@ export function SpawnSetForm({
           generation={values.generation}
           managementName={values.managementName || ""}
           allEntries={allEntries}
+          autoNumberingDate={values.setDate}
           generationLabelSuffix="(次世代)"
           onNext={focusNextField}
           onChange={(patch) => setValues({ ...values, ...patch })}
