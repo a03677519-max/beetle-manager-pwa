@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { AnimatePresence, motion, Reorder } from "framer-motion";
-import { Search, Clipboard, Camera, Loader2, Crop, Check, X as CloseIcon, Trash2, Edit, CheckSquare, Square, ArrowUpDown, ChevronDown, ChevronUp, Settings, ChevronLeft, ChevronRight, FileSpreadsheet, RefreshCw, Folder, FolderOpen } from "lucide-react";
+import { Search, Clipboard, Camera, Loader2, Crop, Check, X as CloseIcon, Trash2, Edit, CheckSquare, Square, ArrowUpDown, ChevronDown, ChevronUp, Settings, ChevronLeft, ChevronRight, FileSpreadsheet, RefreshCw, Folder, FolderOpen, Plus } from "lucide-react";
 import { Navbar } from "@/components/layout/navbar";
 import { Modal } from "./ui/modal"; // Ensure Modal is imported
 import { useSwitchBot } from "@/components/use-switchbot";
