@@ -69,17 +69,17 @@ export async function exportDataToExcelBuffer(targetEntries: BeetleEntry[]): Pro
       // ヘッダー作成
       let headers: string[] = ["管理名", "和名", "学名", "累代"];
       if (type === "成虫") {
-        headers.push("性別", "サイズ", "羽化日", "後食日", "区分", "メモ");
+        headers.push("性別", "サイズ", "羽化日", "羽化区分", "後食日", "状態", "メモ");
       } else if (type === "幼虫") {
-        headers.push("孵化/割出日");
+        headers.push("孵化/割出日", "羽化(実績)", "羽化区分", "状態");
         for (let i = 1; i <= maxLarvaLogs; i++) {
-          headers.push(`${i}回目計測日`, `${i}回目体重`, `${i}回目令数`);
+          headers.push(`${i}回目_日付`, `${i}回目_体重`, `${i}回目_ステージ`, `${i}回目_マット`, `${i}回目_温度`);
         }
         headers.push("メモ");
       } else if (type === "産卵セット") {
-        headers.push("セット開始日");
+        headers.push("開始日", "終了日", "合計回収", "使用マット", "状態");
         for (let i = 1; i <= maxSpawnSets + 1; i++) {
-          headers.push(`${i}回目日付`, `${i}回目回収`);
+          headers.push(`セット${i+1}_開始日`, `セット${i+1}_割出日`, `セット${i+1}_卵数`);
         }
         headers.push("メモ");
       }
@@ -100,22 +100,21 @@ export async function exportDataToExcelBuffer(targetEntries: BeetleEntry[]): Pro
         let rowData: any[] = [e.managementName || "-", e.japaneseName, e.scientificName, formatGeneration(e.generation)];
 
         if (type === "成虫") {
-          rowData.push(e.gender, e.size ? `${e.size}mm` : "-", formatDate(e.emergenceDate), formatDate(e.feedingDate), e.emergenceType, e.memo || "");
+          rowData.push(e.gender, e.size ? `${e.size}mm` : "-", formatDate(e.emergenceDate), e.emergenceType, formatDate(e.feedingDate), e.status || "飼育中", e.memo || "");
         } else if (type === "幼虫") {
-          rowData.push(formatDate(e.hatchDate || e.extractionDate));
+          rowData.push(formatDate(e.hatchDate || e.extractionDate), formatDate(e.actualEmergenceDate), e.emergenceType || "-", e.status || "飼育中");
           const logs = [...(e.logs || [])].sort((a, b) => (a.date || "").localeCompare(b.date || ""));
           for (let i = 0; i < maxLarvaLogs; i++) {
             const log = logs[i];
-            rowData.push(log ? formatDate(log.date) : "", log ? `${log.weight}g` : "", log ? log.stage : "");
+            rowData.push(log ? formatDate(log.date) : "", log ? log.weight : 0, log ? log.stage : "", log ? log.substrate : "", log ? log.temperature : "");
           }
           rowData.push(e.memo || "");
         } else {
-          rowData.push(formatDate(e.setDate));
-          rowData.push(formatDate(e.setEndDate || e.setDate), (e.eggCount || 0) + (e.larvaCount || 0));
+          rowData.push(formatDate(e.setDate), formatDate(e.setEndDate), (e.eggCount || 0) + (e.larvaCount || 0), e.substrate || "-", e.status || "セット中");
           const sets = [...(e.sets || [])].sort((a, b) => (a.setDate || "").localeCompare(b.setDate || ""));
           for (let i = 0; i < maxSpawnSets; i++) {
             const s = sets[i];
-            rowData.push(s ? formatDate(s.setEndDate || s.setDate) : "", s ? (s.eggCount || 0) + (s.larvaCount || 0) : "");
+            rowData.push(s ? formatDate(s.setDate) : "", s ? formatDate(s.setEndDate) : "", s ? (s.eggCount || 0) : 0);
           }
           rowData.push(e.memo || "");
         }
