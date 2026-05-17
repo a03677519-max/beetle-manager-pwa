@@ -156,36 +156,3 @@ export function SpawnSetDetail({
     </div>
   );
 }
-        {allSets.reverse().map((set, index) => (
-          <div key={set.id} className="bg-white border border-gray-100 p-4 rounded-2xl shadow-sm">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-[11px] font-black text-[#FF9800] bg-orange-50 px-2 py-0.5 rounded-lg">{set.title}</span>
-              <span className="text-xs font-bold text-gray-400">{formatDate(set.setDate)} 〜 {formatDate(set.setEndDate) || "継続中"}</span>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-[10px] text-gray-400 font-bold">回収結果</p>
-                <p className="text-sm font-black text-gray-700">卵:{set.eggCount} / 幼虫:{set.larvaCount}</p>
-              </div>
-              <div>
-                <p className="text-[10px] text-gray-400 font-bold">セット方法</p>
-                <p className="text-[11px] font-bold text-gray-600 truncate">{set.substrate || "前回同様"}</p>
-              </div>
-            </div>
-            {set.memo && (
-              <p className="mt-2 text-[11px] text-gray-500 bg-gray-50 p-2 rounded-lg italic">
-                {set.memo}
-              </p>
-            )}
-            <div className="flex justify-end gap-2 mt-2">
-              <button onClick={() => onEditSet?.(set)} className="p-1.5 text-gray-400 hover:text-blue-500 transition-colors">
-                <Edit2 size={14} />
-              </button>
-              <button onClick={() => onDeleteSet?.(set.id)} className="p-1.5 text-gray-400 hover:text-red-500 transition-colors">
-                <Trash2 size={14} />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-}

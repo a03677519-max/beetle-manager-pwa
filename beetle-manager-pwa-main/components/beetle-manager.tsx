@@ -168,6 +168,7 @@ export function BeetleManager() {
   const [isBulkEditing, setIsBulkEditing] = useState(false);
   const [visibleTypes, setVisibleTypes] = useState<EntryType[]>(["成虫", "幼虫", "産卵セット"]);
   const [lastSelectedId, setLastSelectedId] = useState<string | null>(null);
+  const [selectedFolderKey, setSelectedFolderKey] = useState<string | null>(null);
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const isLongPressActive = useRef(false);
 

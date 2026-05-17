@@ -3,8 +3,9 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { DateRollField, Field, BottomSheetInput, GenderField, useNextFieldNavigation } from "@/components/entry-fields";
 import { today } from "@/types/utils";
-import type { AdultFormValues } from "@/types/beetle";
+import type { AdultFormValues, BeetleEntry } from "@/types/beetle";
 import { EntryBaseFields } from "@/components/beetle/shared/entry-base-fields";
+import { useBeetleStore } from "@/store/use-beetle-store";
 
 export function AdultForm({
   initialValues,
@@ -29,18 +30,18 @@ export function AdultForm({
   const formId = id || "adult-form"; // Keep formId for onSubmit
   const { focusNextField } = useNextFieldNavigation(formId, true);
   const formRef = useRef<HTMLFormElement>(null);
+  const allEntries = useBeetleStore((state) => state.entries);
 
   const isDead = useMemo(() => !!(values.deathDate && values.deathDate !== "-"), [values.deathDate]);
-  const isSold = useMemo(() => !!((values.soldDate && values.soldDate !== "-") || values.status === "販売済み"), [values.soldDate, values.status]);
+  const isSold = useMemo(() => !!(((values as any).soldDate && (values as any).soldDate !== "-") || values.status === "販売済み"), [(values as any).soldDate, values.status]);
 
   const suggestions = useMemo(() => {
     const sSet = new Set<string>(["飼育中", "販売済み", "完品", "Ｂ品", "未後食"]);
-    const entries = useBeetleStore.getState().entries;
-    entries.forEach((e) => {
+    allEntries.forEach((e: BeetleEntry) => {
       if (e.type === "成虫" && e.status) sSet.add(e.status);
     });
     return Array.from(sSet).sort();
-  }, []);
+  }, [allEntries]);
 
   // Effect to synchronize internal form state with external initialValues prop.
   // This is important if the parent component can change `initialValues`
@@ -161,15 +162,15 @@ export function AdultForm({
                 ...values, 
                 soldDate: e.target.checked ? today() : "-",
                 status: e.target.checked ? "販売済み" : values.status === "販売済み" ? "飼育中" : values.status 
-              })}
+              } as any)}
             />
             <span className="text-sm font-bold text-gray-700">販売済みとして登録</span>
           </label>
           {isSold && (
             <DateRollField
               label="販売日"
-              value={values.soldDate || ""}
-              onChange={(value) => setValues({ ...values, soldDate: value })}
+              value={(values as any).soldDate || ""}
+              onChange={(value) => setValues({ ...values, soldDate: value } as any)}
             />
           )}
 
