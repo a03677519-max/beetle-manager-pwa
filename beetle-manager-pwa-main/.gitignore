@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-ssr/
+
+# Environment variables (API tokens, etc.)
+.env
+.env.local
+
+# Logs and system files
+*.log
+.DS_Store
+.next/  
