@@ -221,7 +221,7 @@ export function EntryDetail({
             {entry.type === "産卵セット" ? (
               <SpawnSetDetail 
                 entry={entry} 
-                allEntries={useBeetleStore.getState().entries}
+                allEntries={useBeetleStore((state) => state.entries)}
                 onAddSecondSet={onAddSecondSet || (() => {})} 
                 onDeleteSet={onDeleteSet || (() => {})}
                 onEditSet={onEditSet || (() => {})}

@@ -73,18 +73,18 @@ export function EntryBaseFields({
     const dd = isNaN(ddNum) ? day : day.padStart(2, "0");
     const dateStr = `${yy}${m}${dd}`;
 
-    // 3. 連番の計算 (同一和名・学名かつ同じプレフィックスを持つ全個体を対象)
+    // 3. 連番の計算 (同一学名かつ同じプレフィックスを持つ全個体を対象)
     const prefixMatch = `${basePrefix}_`;
     const numbers = allEntries
       .filter(
         (entry) =>
-          entry.japaneseName === japaneseName &&
           entry.scientificName === scientificName &&
-          entry.managementName?.startsWith(prefixMatch)
+          (entry.managementName?.startsWith(prefixMatch) || (!entry.managementName && basePrefix === "A"))
       )
       .map((entry) => {
-        const p = entry.managementName!.split("_");
-        return parseInt(p[p.length - 1], 10);
+        if (!entry.managementName) return 0;
+        const parts = entry.managementName.split("_");
+        return parseInt(parts[parts.length - 1], 10);
       })
       .filter((n) => !isNaN(n));
 

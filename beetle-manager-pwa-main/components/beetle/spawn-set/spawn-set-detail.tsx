@@ -31,11 +31,10 @@ export function SpawnSetDetail({
   };
 
   const s = entry as any;
-  // 1回目のセットと2回目以降（sets配列）を統合
-  const rawSets = [
+  // 全てのセットを一度フラットな配列にする
+  const allRawSets = [
     {
       id: "primary",
-      title: "1回目",
       setDate: s.setDate || s.createdAt?.slice(0, 10),
       setEndDate: s.setEndDate,
       eggCount: s.eggCount ?? 0,
@@ -46,15 +45,18 @@ export function SpawnSetDetail({
       moisture: s.moisture,
       memo: s.memo,
     },
-    ...(s.sets || []).map((set: any, i: number) => ({ ...set, title: `${i + 2}回目` })) // sets配列の各要素にtitleを追加
-  ].sort((a, b) => (a.setDate || "").localeCompare(b.setDate || "")); // 日付の昇順（古い順）
+    ...(s.sets || [])
+  ].filter(set => set.setDate).sort((a, b) => (a.setDate || "").localeCompare(b.setDate || ""));
 
-  // 前回のセット方法を引き継ぐ処理
+  // 日付順に並べた後で、適切なタイトルと前回情報の引き継ぎを行う
   const allSets: any[] = [];
   let lastSetup = { substrate: "", containerSize: "", pressure: "", moisture: 3 };
 
-  rawSets.forEach((set) => {
-    const processedSet = { ...set };
+  allRawSets.forEach((set, index) => {
+    const processedSet = { 
+      ...set, 
+      title: `${index + 1}回目` // ソート後に順番を割り当て
+    };
     if (!processedSet.substrate) processedSet.substrate = lastSetup.substrate; else lastSetup.substrate = processedSet.substrate;
     if (!processedSet.containerSize) processedSet.containerSize = lastSetup.containerSize; else lastSetup.containerSize = processedSet.containerSize;
     if (processedSet.pressure === undefined || processedSet.pressure === "") processedSet.pressure = lastSetup.pressure; else lastSetup.pressure = processedSet.pressure;

@@ -78,8 +78,9 @@ export async function exportDataToExcelBuffer(targetEntries: BeetleEntry[]): Pro
         headers.push("メモ");
       } else if (type === "産卵セット") {
         headers.push("開始日", "終了日", "合計回収", "使用マット", "状態");
-        for (let i = 1; i <= maxSpawnSets + 1; i++) {
-          headers.push(`セット${i+1}_開始日`, `セット${i+1}_割出日`, `セット${i+1}_卵数`);
+        for (let i = 0; i < maxSpawnSets; i++) {
+          const num = i + 2;
+          headers.push(`${num}回目_開始日`, `${num}回目_割出日`, `${num}回目_卵数`, `${num}回目_幼虫数`, `${num}回目_マット`, `${num}回目_容器`, `${num}回目_詰圧`, `${num}回目_水分`);
         }
         headers.push("メモ");
       }
@@ -123,7 +124,16 @@ export async function exportDataToExcelBuffer(targetEntries: BeetleEntry[]): Pro
           const sets = [...(entry.sets || [])].sort((a, b) => (a.setDate || "").localeCompare(b.setDate || ""));
           for (let i = 0; i < maxSpawnSets; i++) {
             const s = sets[i];
-            rowData.push(s ? formatDate(s.setDate) : "", s ? formatDate(s.setEndDate) : "", s ? (s.eggCount || 0) : 0);
+            rowData.push(
+              s ? formatDate(s.setDate) : "", 
+              s ? formatDate(s.setEndDate) : "", 
+              s ? (s.eggCount || 0) : "",
+              s ? (s.larvaCount || 0) : "",
+              s ? (s.substrate || "") : "",
+              s ? (s.containerSize || "") : "",
+              s ? (s.pressure || "") : "",
+              s ? (s.moisture || "") : ""
+            );
           }
           rowData.push(entry.memo || "");
         }
@@ -333,22 +343,31 @@ export async function importDataFromExcel(file: File): Promise<BeetleEntry[]> {
             linkedEntryIds: [],
           };
 
-          // Handle second set data if present (flattened in export)
-          const secondSetStartDate = parseDateToISO(entryData["セット2_開始日"]);
-          if (secondSetStartDate !== "-") {
-            spawnSet.sets.push({
-              id: createId(),
-              setDate: secondSetStartDate,
-              setEndDate: parseDateToISO(entryData["セット2_割出日"]),
-              eggCount: parseNumber(entryData["セット2_卵数"]),
-              larvaCount: parseNumber(entryData["セット2_幼虫数"]),
-              substrate: String(entryData["セット2_マット"] || ""),
-              containerSize: String(entryData["セット2_容器"] || ""),
-              pressure: String(entryData["セット2_詰圧"] || ""),
-              moisture: parseNumber(entryData["セット2_水分"]) || 3,
-              memo: "", // Not explicitly exported for second set memo
-            });
-          }
+          // Reconstruct sets history from flattened headers
+          const historySetIndices = new Set<number>();
+          currentHeaders.forEach(h => {
+            const m = h.match(/^(\d+)回目_開始日$/);
+            if (m) historySetIndices.add(parseInt(m[1]));
+          });
+
+          const sortedIndices = Array.from(historySetIndices).sort((a, b) => a - b);
+          sortedIndices.forEach(idx => {
+            const startDate = parseDateToISO(entryData[`${idx}回目_開始日`]);
+            if (startDate !== "-") {
+              spawnSet.sets.push({
+                id: createId(),
+                setDate: startDate,
+                setEndDate: parseDateToISO(entryData[`${idx}回目_割出日`]),
+                eggCount: parseNumber(entryData[`${idx}回目_卵数`]),
+                larvaCount: parseNumber(entryData[`${idx}回目_幼虫数`]),
+                substrate: String(entryData[`${idx}回目_マット`] || ""),
+                containerSize: String(entryData[`${idx}回目_容器`] || ""),
+                pressure: String(entryData[`${idx}回目_詰圧`] || ""),
+                moisture: parseNumber(entryData[`${idx}回目_水分`]) || 3,
+                memo: "", 
+              });
+            }
+          });
           allImportedEntries.push(spawnSet);
         }
       }

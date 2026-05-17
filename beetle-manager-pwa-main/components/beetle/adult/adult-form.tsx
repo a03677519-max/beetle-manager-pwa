@@ -160,7 +160,7 @@ export function AdultForm({
               checked={isSold}
               onChange={(e) => setValues({ 
                 ...values, 
-                soldDate: e.target.checked ? today() : "-",
+                soldDate: (e.target.checked ? today() : "-") as any,
                 status: e.target.checked ? "販売済み" : values.status === "販売済み" ? "飼育中" : values.status 
               } as any)}
             />

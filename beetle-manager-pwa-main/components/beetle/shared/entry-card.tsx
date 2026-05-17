@@ -3,7 +3,7 @@
 import { StatusBadge, Stage } from "@/components/ui/status-badge";
 import { GrowthBar } from "@/components/ui/growth-bar";
 import { buildGenerationLabel } from "@/components/entry-fields";
-import type { BeetleEntry } from "@/types/beetle";
+import type { BeetleEntry, SpawnSet } from "@/types/beetle";
 import { getDaysRange, today, getLarvaDateInfo, getSpawnSetDateInfo } from "@/lib/utils";
 import Image from "next/image";
 import { Trash2 } from "lucide-react";
@@ -27,6 +27,17 @@ export function EntryCard({
   const latestWeight = logs.length > 0 ? logs[0].weight : null;
   const prevWeight = logs.length > 1 ? logs[1].weight : null;
   const weightDiff = latestWeight && prevWeight ? latestWeight - prevWeight : 0;
+
+  // 産卵セットの合計実績を計算
+  const spawnTotals = useMemo(() => {
+    if (entry.type !== "産卵セット") return null;
+    const s = entry as SpawnSet;
+    const primaryEggs = Number(s.eggCount || 0);
+    const primaryLarvae = Number(s.larvaCount || 0);
+    const historyEggs = (s.sets || []).reduce((sum, set) => sum + Number(set.eggCount || 0), 0);
+    const historyLarvae = (s.sets || []).reduce((sum, set) => sum + Number(set.larvaCount || 0), 0);
+    return { eggs: primaryEggs + historyEggs, larvae: primaryLarvae + historyLarvae };
+  }, [entry]);
 
   // エサ交換アラート（信号機）
   const lastLogDate = logs.length > 0 ? logs[0].date : entry.createdAt;
@@ -61,6 +72,12 @@ export function EntryCard({
         )}
         <div className="p-3">
           <h3 className="font-bold text-gray-800 text-sm truncate">{entry.japaneseName}</h3>
+          {entry.type === "産卵セット" && spawnTotals && (
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-[9px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded font-black tracking-tighter">卵:{spawnTotals.eggs}</span>
+              <span className="text-[9px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded font-black tracking-tighter">幼:{spawnTotals.larvae}</span>
+            </div>
+          )}
           {latestWeight && (
             <div className="flex items-center justify-between mt-1">
               <span className="text-primary font-bold">{latestWeight}g</span>
@@ -103,15 +120,15 @@ export function EntryCard({
         <div className="flex justify-between items-start mb-1">
           <div className="flex-1 min-w-0">
             <div className="flex items-center flex-wrap gap-x-2 gap-y-1 mb-1">
-              <h3 className="text-[20px] font-black text-[#3C3631] tracking-tighter leading-none">{entry.japaneseName}</h3>
+              <h3 className="text-[22px] font-black text-[#3C3631] tracking-tighter leading-none">{entry.japaneseName}</h3>
               {entry.type === "成虫" && (
-                <span className={`text-sm font-bold ${entry.gender === "オス" ? "text-blue-500" : entry.gender === "メス" ? "text-pink-500" : "text-gray-400"}`}>
+                <span className={`text-base font-bold ${entry.gender === "オス" ? "text-blue-500" : entry.gender === "メス" ? "text-pink-500" : "text-gray-400"}`}>
                   {entry.gender === "オス" ? "♂" : entry.gender === "メス" ? "♀" : ""}
                 </span>
               )}
-              {entry.managementName && <span className="text-[10px] font-black bg-[#F9F7F5] px-2.5 py-1 rounded-lg text-[#B0A495] tracking-wider border border-[#E8E2DA]">{entry.managementName}</span>}
+              {entry.managementName && <span className="text-[11px] font-black bg-[#F9F7F5] px-2.5 py-1 rounded-xl text-[#B0A495] tracking-wider border border-[#E8E2DA] shadow-inner">{entry.managementName}</span>}
             </div>
-            <p className="text-[12px] italic text-[#B0A495] font-serif leading-tight">{entry.scientificName}</p>
+            <p className="text-[13px] italic text-[#B0A495] font-serif leading-tight">{entry.scientificName}</p>
             {entry.memo && (
               <p className="text-[11px] text-gray-400 mt-1 line-clamp-1 italic">
                 {entry.memo}
@@ -185,6 +202,19 @@ export function EntryCard({
                 </div>
               </div>
               <GrowthBar weight={latestWeight} /> {/* Keep GrowthBar */}
+            </div>
+          )}
+
+          {entry.type === "産卵セット" && spawnTotals && (
+            <div className="text-right w-1/2">
+              <div className="flex flex-col items-end justify-end">
+                <div className="text-[26px] font-black text-[#EF6C00] leading-none tracking-tighter">
+                  {spawnTotals.eggs + spawnTotals.larvae}<span className="text-[14px] ml-0.5 font-bold">匹</span>
+                </div>
+                <div className="text-[10px] font-black text-orange-400 mt-1 uppercase">
+                  卵:{spawnTotals.eggs} / 幼:{spawnTotals.larvae}
+                </div>
+              </div>
             </div>
           )}
         </div>

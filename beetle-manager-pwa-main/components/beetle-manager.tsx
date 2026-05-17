@@ -1235,36 +1235,17 @@ export function BeetleManager() {
       />
       {/* 固定ヘッダーセクション */}
       <section className="sticky top-0 z-30 bg-[#F8F5F2]/80 backdrop-blur-xl pt-4 pb-2 px-4 border-b border-[#E8E2DA] mb-3 shadow-sm">
-        {selectedFolderKey ? (
-          <div className="flex items-center gap-3 py-2 animate-in fade-in slide-in-from-left duration-300">
-            <button 
-              onClick={() => setSelectedFolderKey(null)}
-              className="p-2 bg-white border border-[#E8E2DA] rounded-full text-gray-400 active:scale-95 transition-all shadow-sm"
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <div className="min-w-0">
-              <h2 className="text-lg font-black text-[#3C3631] truncate leading-tight">
-                {groupedEntries.find(g => g.key === selectedFolderKey)?.japaneseName}
-              </h2>
-              <p className="text-[11px] italic text-[#B0A495] font-serif truncate">
-                {groupedEntries.find(g => g.key === selectedFolderKey)?.scientificName}
-              </p>
-            </div>
-          </div>
-        ) : (
-          <DashboardToolbar
-            isSyncing={isSyncing}
-            isSelectionMode={isSelectionMode}
-            onRegenerateNames={() => handleRegenerateAllNames(false)}
-            onGitHubSync={handleGitHubSync}
-            onExcelExport={() => handleBulkCopyToExcel()}
-            onOpenSettings={() => setIsSettingsOpen(true)}
-            onToggleSelection={() => setIsSelectionMode(!isSelectionMode)}
-          />
-        )}
+        <DashboardToolbar
+          isSyncing={isSyncing}
+          isSelectionMode={isSelectionMode}
+          onRegenerateNames={() => handleRegenerateAllNames(false)}
+          onGitHubSync={handleGitHubSync}
+          onExcelExport={() => handleBulkCopyToExcel()}
+          onOpenSettings={() => setIsSettingsOpen(true)}
+          onToggleSelection={() => setIsSelectionMode(!isSelectionMode)}
+        />
         
-        {(isSelectionMode || selectedFolderKey) && (
+        {isSelectionMode && (
           <BulkSelectionBar
             selectedCount={selectedIds.length}
             onSelectAll={handleSelectAll}
@@ -1278,21 +1259,19 @@ export function BeetleManager() {
           />
         )}
 
-        {!selectedFolderKey && (
-          <DashboardStats
-            stats={stats}
-            visibleTypes={visibleTypes}
-            onToggleType={(type) => setVisibleTypes(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type])}
-            query={query}
-            onQueryChange={setQuery}
-            larvaFilter={larvaFilter}
-            onLarvaFilterChange={setLarvaFilter}
-            adultFilter={adultFilter}
-            onAdultFilterChange={setAdultFilter}
-            spawnSetFilter={spawnSetFilter}
-            onSpawnSetFilterChange={setSpawnSetFilter}
-          />
-        )}
+        <DashboardStats
+          stats={stats}
+          visibleTypes={visibleTypes}
+          onToggleType={(type) => setVisibleTypes(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type])}
+          query={query}
+          onQueryChange={setQuery}
+          larvaFilter={larvaFilter}
+          onLarvaFilterChange={setLarvaFilter}
+          adultFilter={adultFilter}
+          onAdultFilterChange={setAdultFilter}
+          spawnSetFilter={spawnSetFilter}
+          onSpawnSetFilterChange={setSpawnSetFilter}
+        />
       </section>
 
       {/* クロップモーダル */}
@@ -1696,46 +1675,53 @@ export function BeetleManager() {
             transition={{ duration: 0.2 }}
           >
             {activeTab !== "分析" && activeTab !== "タスク" && activeTab !== "設定" ? (
-              selectedFolderKey ? (
-                <div className="space-y-3 animate-in slide-in-from-right duration-300">
-                  {groupedEntries.find(g => g.key === selectedFolderKey)?.entries.map((entry) => (
-                    <div
-                      key={entry.id}
-                      className={`space-y-2 ${isSelectionMode ? 'touch-none select-none' : ''}`}
-                      data-selection-entry-id={entry.id}
-                      onPointerDown={(event) => handlePointerDown(event, entry.id, filteredEntries)}
-                      onPointerMove={handlePointerMove}
-                    >
-                      <EntryCard
-                        entry={entry}
-                        onOpen={() => handleEntryClick(entry)}
-                        isSelected={selectedIds.includes(entry.id)}
-                        isSelectionMode={isSelectionMode}
-                      />
-                    </div>
-                  ))}
-                </div>
-              ) : filteredEntries.length === 0 ? (
+              filteredEntries.length === 0 ? (
                 <EmptyState />
               ) : (
                 <div className="space-y-3">
-                  {groupedEntries.map((group) => (
-                    <button
-                      key={group.key}
-                      onClick={() => setSelectedFolderKey(group.key)}
-                      className="w-full bg-white rounded-[28px] p-5 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-[#F1EDE8] text-left active:scale-[0.98] transition-all flex items-center gap-4"
-                    >
-                      <div className="w-12 h-12 rounded-2xl bg-[#F9F7F5] border border-[#E8E2DA] flex items-center justify-center text-[#B0A495] shrink-0">
-                        <Folder size={24} />
-                      </div>
+                  {groupedEntries.map((group) => {
+                    // グループ内の主要な種別を判定してテーマを決定
+                    const counts = group.entries.reduce((acc, e) => {
+                      acc[e.type] = (acc[e.type] || 0) + 1;
+                      return acc;
+                    }, {} as Record<string, number>);
+                    const mainType = (Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0]) as EntryType;
+
+                    const themes = {
+                      "成虫": { bg: "to-orange-50/40", icon: "bg-orange-50 text-orange-500 border-orange-100/50", badge: "bg-orange-500 shadow-orange-100", hover: "hover:border-orange-200" },
+                      "幼虫": { bg: "to-emerald-50/40", icon: "bg-emerald-50 text-emerald-600 border-emerald-100/50", badge: "bg-emerald-600 shadow-emerald-100", hover: "hover:border-emerald-200" },
+                      "産卵セット": { bg: "to-amber-50/40", icon: "bg-amber-50 text-amber-600 border-amber-100/50", badge: "bg-amber-600 shadow-amber-100", hover: "hover:border-amber-200" }
+                    };
+                    const theme = themes[mainType] || themes["成虫"];
+
+                    return (
+                      <button
+                        key={group.key}
+                        onClick={() => setSelectedFolderKey(group.key)}
+                        className={`w-full bg-white rounded-[32px] p-5 shadow-[0_10px_40px_rgba(0,0,0,0.03)] border border-[#F1EDE8] text-left active:scale-[0.97] transition-all flex items-center gap-5 group relative overflow-hidden bg-gradient-to-br from-white via-white ${theme.bg} ${theme.hover}`}
+                      >
+                        {/* 背景の装飾パターン */}
+                        <div className="absolute -right-6 -bottom-6 opacity-[0.04] rotate-12 pointer-events-none transition-transform group-hover:scale-110 group-hover:rotate-0 duration-700">
+                          <Folder size={120} strokeWidth={1} />
+                        </div>
+
+                        <div className={`w-14 h-14 rounded-[22px] ${theme.icon} border flex items-center justify-center shrink-0 shadow-inner group-active:scale-90 transition-transform relative z-10`}>
+                          <Folder size={28} strokeWidth={2.5} />
+                        </div>
+
                       <div className="flex-1 min-w-0">
-                        <div className="text-lg font-black text-[#3C3631] truncate leading-tight">{group.japaneseName}</div>
-                        <div className="text-xs italic text-[#B0A495] font-serif truncate">{group.scientificName}</div>
-                        <div className="text-[10px] font-black text-[#FF9800] mt-1">{group.entries.length}頭の個体</div>
+                        <div className="flex items-center gap-2 mb-0.5 relative z-10">
+                          <h3 className="text-[19px] font-black text-[#3C3631] truncate tracking-tight">{group.japaneseName}</h3>
+                          <span className={`px-2 py-0.5 ${theme.badge} text-white text-[10px] font-black rounded-lg shadow-sm shrink-0`}>
+                            {group.entries.length}
+                          </span>
+                        </div>
+                        <p className="text-[13px] italic text-[#B0A495] font-serif truncate leading-tight relative z-10">{group.scientificName}</p>
                       </div>
-                      <ChevronRight size={20} className="text-[#D7CCC8]" />
+                      <ChevronRight size={22} className="text-[#D7CCC8] group-hover:text-[#3C3631] transition-colors relative z-10" />
                     </button>
-                  ))}
+                    );
+                  })}
                 </div>
               )
             ) : activeTab === "分析" ? (
@@ -1775,6 +1761,86 @@ export function BeetleManager() {
           </motion.div>
         </AnimatePresence>
       </section>
+
+      {/* フォルダ展開時の前面ウィンドウ (完全別ページ風) */}
+      <AnimatePresence>
+        {selectedFolderKey && (
+          <motion.div
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ type: "spring", damping: 32, stiffness: 350, mass: 0.8 }}
+            className="fixed inset-0 z-[60] bg-[#F8F5F2] flex flex-col"
+          >
+            {/* 前面ウィンドウのヘッダー */}
+            <div className="sticky top-0 bg-[#F8F5F2]/90 backdrop-blur-xl pt-5 pb-3 px-5 border-b border-[#E8E2DA] flex items-center gap-4">
+              <button 
+                onClick={() => setSelectedFolderKey(null)}
+                className="p-2.5 bg-white border border-[#E8E2DA] rounded-full text-gray-400 active:scale-90 transition-all shadow-sm"
+              >
+                <ChevronLeft size={28} />
+              </button>
+              <div className="min-w-0">
+                <h2 className="text-[22px] font-black text-[#3C3631] truncate tracking-tight leading-none mb-1">
+                  {groupedEntries.find(g => g.key === selectedFolderKey)?.japaneseName}
+                </h2>
+                <p className="text-[13px] italic text-[#B0A495] font-serif truncate leading-tight">
+                  {groupedEntries.find(g => g.key === selectedFolderKey)?.scientificName}
+                </p>
+              </div>
+            </div>
+            
+            {/* ウィンドウ内の一括操作バー */}
+            {isSelectionMode && (
+              <div className="px-4 pt-3">
+                <BulkSelectionBar
+                  selectedCount={selectedIds.length}
+                  onSelectAll={handleSelectAll}
+                  onDeselectAll={handleDeselectAll}
+                  onBulkExport={() => handleBulkCopyToExcel(selectedIds)}
+                  onBulkDelete={() => { if(window.confirm("一括削除しますか？")) handleBulkDelete(); }}
+                  onBulkEdit={() => setIsBulkEditing(true)}
+                  onSelectByType={handleSelectByType}
+                  availableTypes={availableTypesInView}
+                  selectedTypeCounts={selectedTypeCounts}
+                />
+              </div>
+            )}
+
+            {/* ウィンドウ内のコンテンツエリア */}
+            <div className="flex-1 overflow-y-auto px-6 pt-4 pb-32">
+              <div className="space-y-4">
+                {groupedEntries.find(g => g.key === selectedFolderKey)?.entries.map((entry) => (
+                  <div
+                    key={entry.id}
+                    className={`space-y-2 ${isSelectionMode ? 'touch-none select-none' : ''}`}
+                    data-selection-entry-id={entry.id}
+                    onPointerDown={(event) => handlePointerDown(event, entry.id, groupedEntries.find(g => g.key === selectedFolderKey)?.entries || [])}
+                    onPointerMove={handlePointerMove}
+                  >
+                    <EntryCard
+                      entry={entry}
+                      onOpen={() => handleEntryClick(entry)}
+                      isSelected={selectedIds.includes(entry.id)}
+                      isSelectionMode={isSelectionMode}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ウィンドウ内の追加ボタン */}
+            <div className="fixed bottom-6 right-6">
+               <button 
+                 onClick={() => setIsCreating(true)}
+                 className="w-14 h-14 bg-[#2D5A27] text-white rounded-full shadow-2xl flex items-center justify-center active:scale-90 transition-transform"
+               >
+                 <Plus size={32} />
+               </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <Modal 
         isOpen={isAddingSecondSet} 
