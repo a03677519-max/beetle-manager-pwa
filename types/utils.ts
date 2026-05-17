@@ -1,4 +1,4 @@
-import { BeetleEntry, GenerationValue } from "./beetle";
+import { BeetleEntry, AdultBeetle, LarvaBeetle, SpawnSet, GenerationValue } from "./beetle";
 
 export const createId = () => Math.random().toString(36).substring(2, 11);
 // The `today` function was moved to `lib/utils.ts` to unify date handling.
@@ -19,6 +19,18 @@ export const formatGeneration = (gen: GenerationValue) => {
 export const isSpawnSetFinished = (entry: any) => {
   if (entry.type !== "産卵セット") return false;
   return !!(entry.setEndDate && entry.setEndDate !== "-");
+};
+
+export const isAdult = (entry: BeetleEntry): entry is AdultBeetle => {
+  return entry.type === "成虫";
+};
+
+export const isLarva = (entry: BeetleEntry): entry is LarvaBeetle => {
+  return entry.type === "幼虫";
+};
+
+export const isSpawnSet = (entry: BeetleEntry): entry is SpawnSet => {
+  return entry.type === "産卵セット";
 };
 
 export const getShortenedSciName = (sciName: string) => {

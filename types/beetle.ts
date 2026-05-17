@@ -40,6 +40,9 @@ export type BaseBeetle = {
   managementName?: string;
   entryNumber?: number; // 自動採番用
   linkedEntryIds?: string[];
+  status?: string;
+  soldDate?: string;
+  deathDate?: string;
   memo?: string;
   order?: number; // 並べ替え用
 };
@@ -66,7 +69,6 @@ export type AdultBeetle = BaseBeetle & {
   larvaMemo: string;
   gender: Gender;
   size?: string;
-  status?: string;
 };
 
 export type LarvaBeetle = BaseBeetle & {

@@ -34,7 +34,7 @@ export function AdultForm({
   const allEntries = useBeetleStore((state) => state.entries);
 
   const isDead = useMemo(() => !!(values.deathDate && values.deathDate !== "-"), [values.deathDate]);
-  const isSold = useMemo(() => !!(((values as any).soldDate && (values as any).soldDate !== "-") || values.status === "販売済み"), [(values as any).soldDate, values.status]);
+  const isSold = useMemo(() => !!((values.soldDate && values.soldDate !== "-") || values.status === "販売済み"), [values.soldDate, values.status]);
 
   const suggestions = useMemo(() => {
     const sSet = new Set<string>(["飼育中", "販売済み", "完品", "Ｂ品", "未後食"]);
@@ -163,15 +163,15 @@ export function AdultForm({
                 ...values, 
                 soldDate: e.target.checked ? today() : "-",
                 status: e.target.checked ? "販売済み" : values.status === "販売済み" ? "飼育中" : values.status 
-              } as any)}
+              })}
             />
             <span className="text-sm font-bold text-gray-700">販売済みとして登録</span>
           </label>
           {isSold && (
             <DateRollField
               label="販売日"
-              value={(values as any).soldDate || ""}
-              onChange={(value) => setValues({ ...values, soldDate: value } as any)}
+              value={values.soldDate || ""}
+              onChange={(value) => setValues({ ...values, soldDate: value })}
             />
           )}
 
