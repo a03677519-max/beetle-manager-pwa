@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState, useEffect, useRef, useCallback } from "react";
-import { AnimatePresence, motion, Reorder } from "framer-motion";
-import { Search, Clipboard, Camera, Loader2, Crop, Check, X as CloseIcon, Trash2, Edit, CheckSquare, Square, ArrowUpDown, ChevronDown, ChevronUp, Settings, ChevronLeft, ChevronRight, FileSpreadsheet, Hash, RefreshCw } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Search, Clipboard, Camera, Loader2, Crop, Check, X as CloseIcon, Trash2, Edit, CheckSquare, Square, ArrowUpDown, ChevronDown, ChevronUp, Settings, ChevronLeft, ChevronRight, FileSpreadsheet, Hash, RefreshCw, Folder } from "lucide-react";
 import { Navbar } from "@/components/layout/navbar";
 import { Modal } from "./ui/modal"; // Ensure Modal is imported
 import { useSwitchBot } from "@/components/use-switchbot";
@@ -34,6 +34,14 @@ import { importDataFromExcel } from "./beetle/features/excel"; // インポー�
 import { AnalysisView } from "./beetle/features/analysis-view";
 import { TaskView } from "./beetle/features/task-view";
 import { SettingsView } from "./beetle/features/settings-view"; // 新設を想定
+
+type SpeciesFolder = {
+  key: string;
+  japaneseName: string;
+  scientificName: string;
+  entries: BeetleEntry[];
+  counts: Record<EntryType, number>;
+};
 
 export function BeetleManager() {
   const entries = useBeetleStore((state) => state.entries);
@@ -166,6 +174,7 @@ export function BeetleManager() {
   const [showSort, setShowSort] = useState(false);
   const [isBulkEditing, setIsBulkEditing] = useState(false);
   const [lastSelectedId, setLastSelectedId] = useState<string | null>(null);
+  const [selectedFolderKey, setSelectedFolderKey] = useState<string | null>(null);
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const isLongPressActive = useRef(false);
 
@@ -275,18 +284,42 @@ export function BeetleManager() {
      });
     }, [entries, query, selectedType, activeTab, spawnSetFilter, larvaFilter, adultFilter, mainSortConfig, getSortValue]);
 
-  // 並べ替え（ドラッグ）完了時の処理
-  const handleReorder = (newOrder: BeetleEntry[], sciName: string) => {
-    const otherEntries = entries.filter(e => e.scientificName !== sciName);
-    // 全体の順序を更新（簡易実装: ストアの順序を書き換え）
-    importData([...otherEntries, ...newOrder]);
-  };
+  const speciesFolders = useMemo<SpeciesFolder[]>(() => {
+    const groups = new Map<string, SpeciesFolder>();
 
-  const [expandedSpecies, setExpandedSpecies] = useState<string[]>([]);
+    filteredEntries.forEach((entry) => {
+      const japaneseName = entry.japaneseName.trim() || "和名未設定";
+      const scientificName = entry.scientificName.trim() || "学名未設定";
+      const key = `${scientificName}\u0000${japaneseName}`;
+      const existing = groups.get(key);
 
-  // 自動スクロール用のRef
-  const groupRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const prevExpandedCount = useRef(0);
+      if (existing) {
+        existing.entries.push(entry);
+        existing.counts[entry.type] += 1;
+        return;
+      }
+
+      groups.set(key, {
+        key,
+        japaneseName,
+        scientificName,
+        entries: [entry],
+        counts: { "成虫": 0, "幼虫": 0, "産卵セット": 0 },
+      });
+      groups.get(key)!.counts[entry.type] = 1;
+    });
+
+    return Array.from(groups.values());
+  }, [filteredEntries]);
+
+  const selectedFolder = useMemo(
+    () => speciesFolders.find((folder) => folder.key === selectedFolderKey) ?? null,
+    [selectedFolderKey, speciesFolders],
+  );
+
+  useEffect(() => {
+    if (selectedFolderKey && !selectedFolder) setSelectedFolderKey(null);
+  }, [selectedFolderKey, selectedFolder]);
 
   const handleToggleSelect = useCallback((id: string) => {
     setSelectedIds(prev => 
@@ -1505,6 +1538,60 @@ export function BeetleManager() {
       </AnimatePresence>
 
       <Modal
+        isOpen={!!selectedFolder}
+        onClose={() => setSelectedFolderKey(null)}
+        title={selectedFolder ? `${selectedFolder.japaneseName} (${selectedFolder.entries.length}件)` : "登録カード一覧"}
+      >
+        {selectedFolder && (
+          <div className="space-y-4">
+            <div className="bg-[#F9F7F5] border border-[#E8E2DA] rounded-2xl px-4 py-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[11px] font-black text-[#B0A495] uppercase tracking-[0.2em]">Species Folder</p>
+                  <p className="text-[13px] italic text-[#8B7D7B] truncate">{selectedFolder.scientificName}</p>
+                </div>
+                <div className="flex flex-wrap justify-end gap-1 shrink-0">
+                  {ENTRY_TYPES.filter((type) => selectedFolder.counts[type] > 0).map((type) => (
+                    <span key={type} className="px-2 py-1 rounded-lg bg-white text-[10px] font-black text-[#8B7D7B] border border-[#E8E2DA]">
+                      {type} {selectedFolder.counts[type]}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {selectedFolder.entries.map((entry) => (
+                <div
+                  key={entry.id}
+                  className={`space-y-2 ${isSelectionMode ? 'touch-none select-none' : ''}`}
+                  onPointerDown={() => handlePointerDown(entry.id, selectedFolder.entries)}
+                  onPointerEnter={() => handlePointerEnter(entry.id)}
+                  onPointerUp={cancelLongPress}
+                  onPointerLeave={cancelLongPress}
+                  onContextMenu={(e) => { if (isSelectionMode) e.preventDefault(); }}
+                >
+                  <EntryCard
+                    entry={entry}
+                    onOpen={() => {
+                      if (!isSelectionMode) setSelectedFolderKey(null);
+                      handleEntryClick(entry);
+                    }}
+                    isSelected={selectedIds.includes(entry.id)}
+                    isSelectionMode={isSelectionMode}
+                    onDelete={(e, id) => {
+                      e.stopPropagation();
+                      if (window.confirm("本当に削除しますか？")) deleteEntry(id);
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      <Modal
         isOpen={isCreating || !!editingEntry}
         centered={!!editingEntry && editingEntry.type === '産卵セット'}
         onClose={() => {
@@ -1846,31 +1933,40 @@ export function BeetleManager() {
             transition={{ duration: 0.2 }}
           >
             {activeTab !== "分析" && activeTab !== "タスク" && activeTab !== "設定" ? (
-              filteredEntries.length === 0 ? (
+              speciesFolders.length === 0 ? (
                 <EmptyState />
               ) : (
-                <div className="space-y-4">
-                  {filteredEntries.map((entry) => (
-                    <div
-                      key={entry.id}
-                      className={`space-y-2 ${isSelectionMode ? 'touch-none select-none' : ''}`}
-                      onPointerDown={() => handlePointerDown(entry.id, filteredEntries)}
-                      onPointerEnter={() => handlePointerEnter(entry.id)}
-                      onPointerUp={cancelLongPress}
-                      onPointerLeave={cancelLongPress}
-                      onContextMenu={(e) => { if (isSelectionMode) e.preventDefault(); }}
+                <div className="space-y-3">
+                  {speciesFolders.map((folder) => (
+                    <button
+                      key={folder.key}
+                      type="button"
+                      onClick={() => setSelectedFolderKey(folder.key)}
+                      className="w-full bg-white rounded-[28px] p-5 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-[#F1EDE8] text-left active:scale-[0.98] transition-all"
                     >
-                      <EntryCard
-                        entry={entry}
-                        onOpen={() => handleEntryClick(entry)}
-                        isSelected={selectedIds.includes(entry.id)}
-                        isSelectionMode={isSelectionMode}
-                        onDelete={(e, id) => {
-                          e.stopPropagation();
-                          if (window.confirm("本当に削除しますか？")) deleteEntry(id);
-                        }}
-                      />
-                    </div>
+                      <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 rounded-2xl bg-[#F9F7F5] border border-[#E8E2DA] flex items-center justify-center text-[#FF9800] shrink-0">
+                          <Folder size={28} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="text-[18px] font-black text-[#3C3631] truncate">{folder.japaneseName}</h3>
+                            <span className="text-[10px] font-black bg-[#FFF7ED] text-[#F4511E] px-2 py-0.5 rounded-lg shrink-0">
+                              {folder.entries.length}件
+                            </span>
+                          </div>
+                          <p className="text-[12px] italic text-[#B0A495] font-serif truncate">{folder.scientificName}</p>
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {ENTRY_TYPES.filter((type) => folder.counts[type] > 0).map((type) => (
+                              <span key={type} className="text-[10px] font-black bg-[#F9F7F5] px-2 py-1 rounded-lg text-[#8B7D7B] border border-[#E8E2DA]">
+                                {type} {folder.counts[type]}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        <ChevronRight size={20} className="text-[#D7CCC8] shrink-0" />
+                      </div>
+                    </button>
                   ))}
                 </div>
               )
