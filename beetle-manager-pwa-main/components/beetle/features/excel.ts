@@ -37,7 +37,7 @@ const parseGeneration = (genStr: string | undefined): GenerationValue => {
 /**
  * データをExcelファイルとして生成し、バッファを返します
  */
-export async function exportDataToExcelBuffer(targetEntries: BeetleEntry[]): Promise<Buffer | ArrayBuffer> {
+export async function exportDataToExcelBuffer(targetEntries: BeetleEntry[]): Promise<ArrayBuffer> {
   const ExcelJS = (await import("exceljs")).default;
   const workbook = new ExcelJS.Workbook();
 
@@ -141,7 +141,7 @@ export async function exportDataToExcelBuffer(targetEntries: BeetleEntry[]): Pro
       column.width = Math.min(50, Math.max(10, maxLength + 2));
     });
   }
-  return await workbook.xlsx.writeBuffer();
+  return (await workbook.xlsx.writeBuffer()) as ArrayBuffer;
 }
 
 export async function importDataFromExcel(file: File): Promise<BeetleEntry[]> {
