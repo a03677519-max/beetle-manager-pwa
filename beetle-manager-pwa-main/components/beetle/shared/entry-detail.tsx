@@ -206,10 +206,10 @@ export function EntryDetail({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-6 scroll-smooth">
           <PhotoSection entry={entry} />
 
-          <div className="mt-6 mb-20">
+          <div className="mt-6">
             {entry.type === "成虫" ? <AdultDetail entry={entry} /> : null}
             {entry.type === "幼虫" ? (
               <LarvaDetail

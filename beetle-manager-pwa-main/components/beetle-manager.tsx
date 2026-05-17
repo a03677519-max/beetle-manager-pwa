@@ -34,6 +34,9 @@ import { importDataFromExcel, exportDataToExcelBuffer } from "./beetle/features/
 import { AnalysisView } from "./beetle/features/analysis-view";
 import { TaskView } from "./beetle/features/task-view";
 import { SettingsView } from "./beetle/features/settings-view"; // 新設を想定
+import { DashboardToolbar } from "./beetle/shared/dashboard-toolbar";
+import { BulkSelectionBar } from "./beetle/shared/bulk-selection-bar";
+import { DashboardStats } from "./beetle/shared/dashboard-stats";
 
 export function BeetleManager() {
   const entries = useBeetleStore((state) => state.entries);
@@ -160,11 +163,10 @@ export function BeetleManager() {
     return () => window.removeEventListener('app:navigate-entry', handleNavigate);
   }, [entries]);
 
-  // 一括操作用のステート
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
-  const [showSort, setShowSort] = useState(false);
   const [isBulkEditing, setIsBulkEditing] = useState(false);
+  const [visibleTypes, setVisibleTypes] = useState<EntryType[]>(["成虫", "幼虫", "産卵セット"]);
   const [lastSelectedId, setLastSelectedId] = useState<string | null>(null);
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const isLongPressActive = useRef(false);
@@ -197,7 +199,6 @@ export function BeetleManager() {
     return (e as any)[key] || "";
   }, []);
 
-
   const sortKeys = [
     { id: 'japaneseName', label: '和名' },
     { id: 'scientificName', label: '学名' },
@@ -219,46 +220,42 @@ export function BeetleManager() {
 
   const filteredEntries = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-     const list = entries.filter((entry) => {
-       if (activeTab === "幼虫") {
-         if (entry.type !== "幼虫") return false;
-         const isDeceased = !!(entry as any).deathDate && (entry as any).deathDate !== "-";
-         const isSold = ((entry as any).soldDate && (entry as any).soldDate !== "-") || (entry as any).status === "販売済み";
-         const isEmerged = !!(entry as any).actualEmergenceDate;
+    const list = entries.filter((entry) => {
+      if (!visibleTypes.includes(entry.type)) return false;
 
-         if (larvaFilter === "deceased") return isDeceased;
-         if (isDeceased) return false;
+      // サブフィルターは単一種別選択時のみ適用（UIの複雑化を防ぐため）
+      if (visibleTypes.length === 1) {
+        if (entry.type === "幼虫") {
+          const isDeceased = !!(entry as any).deathDate && (entry as any).deathDate !== "-";
+          const isSold = ((entry as any).soldDate && (entry as any).soldDate !== "-") || (entry as any).status === "販売済み";
+          const isEmerged = !!(entry as any).actualEmergenceDate;
+          if (larvaFilter === "deceased") return isDeceased;
+          if (isDeceased) return false;
+          if (larvaFilter === "sold") return isSold;
+          if (isSold) return false;
+          if (larvaFilter === "emerged") return isEmerged;
+          if (larvaFilter === "active") return !isEmerged;
+        } else if (entry.type === "成虫") {
+          const isDeceased = !!(entry as any).deathDate && (entry as any).deathDate !== "-";
+          const isSold = ((entry as any).soldDate && (entry as any).soldDate !== "-") || (entry as any).status === "販売済み";
+          if (adultFilter === "deceased") return isDeceased;
+          if (adultFilter === "sold") return isSold && !isDeceased;
+          if (adultFilter === "active") return !(isDeceased || isSold);
+        } else if (entry.type === "産卵セット") {
+          const isFinished = isSpawnSetFinished(entry);
+          if (spawnSetFilter === "active" && isFinished) return false;
+          if (spawnSetFilter === "finished" && !isFinished) return false;
+        }
+      }
 
-         if (larvaFilter === "sold") return isSold;
-         if (isSold) return false;
-
-         if (larvaFilter === "emerged") return isEmerged;
-         if (larvaFilter === "active") return !isEmerged;
-       } else if (activeTab === "成虫") {
-         if (entry.type !== "成虫") return false;
-         const isDeceased = !!(entry as any).deathDate && (entry as any).deathDate !== "-";
-         const isSold = ((entry as any).soldDate && (entry as any).soldDate !== "-") || (entry as any).status === "販売済み";
-         const isFinished = isDeceased || isSold;
-
-         if (adultFilter === "deceased") return isDeceased;
-         if (adultFilter === "sold") return isSold && !isDeceased;
-         if (adultFilter === "active") return !isFinished;
-       } else if (activeTab === "産卵セット") {
-         if (entry.type !== "産卵セット") return false;
-         const isFinished = isSpawnSetFinished(entry);
-         if (spawnSetFilter === "active" && isFinished) return false;
-         if (spawnSetFilter === "finished" && !isFinished) return false;
-       }
-
-       const matchesType = selectedType === "すべて" || entry.type === selectedType;
-       const matchesQuery =
-         normalizedQuery.length === 0 ||
-         [entry.japaneseName, entry.scientificName, entry.locality, formatGeneration(entry.generation), entry.managementName]
-           .join(" ")
-           .toLowerCase()
-           .includes(normalizedQuery);
-       return matchesType && matchesQuery;
-     });
+      const matchesQuery =
+        normalizedQuery.length === 0 ||
+        [entry.japaneseName, entry.scientificName, entry.locality, formatGeneration(entry.generation), entry.managementName]
+          .join(" ")
+          .toLowerCase()
+          .includes(normalizedQuery);
+      return matchesQuery;
+    });
 
      return [...list].sort((a, b) => {
        const compare = (key: string, direction: "asc" | "desc") => {
@@ -273,7 +270,30 @@ export function BeetleManager() {
        
        return compare(mainSortConfig.secondary.key, mainSortConfig.secondary.direction);
      });
-    }, [entries, query, selectedType, activeTab, spawnSetFilter, larvaFilter, adultFilter, mainSortConfig, getSortValue]);
+    }, [entries, query, visibleTypes, spawnSetFilter, larvaFilter, adultFilter, mainSortConfig, getSortValue]);
+
+  const availableTypesInView = useMemo(() => {
+    const types = new Set<EntryType>();
+    filteredEntries.forEach(e => types.add(e.type));
+    return Array.from(types);
+  }, [filteredEntries]);
+
+  // New: Calculate selected and total counts for each type in view
+  const selectedTypeCounts = useMemo(() => {
+    const counts: Record<EntryType, { selected: number; total: number }> = {
+      "成虫": { selected: 0, total: 0 },
+      "幼虫": { selected: 0, total: 0 },
+      "産卵セット": { selected: 0, total: 0 },
+    };
+
+    filteredEntries.forEach(entry => {
+      counts[entry.type].total++;
+      if (selectedIds.includes(entry.id)) {
+        counts[entry.type].selected++;
+      }
+    });
+    return counts;
+  }, [filteredEntries, selectedIds]);
 
   // 並べ替え（ドラッグ）完了時の処理
   const handleReorder = (newOrder: BeetleEntry[], sciName: string) => {
@@ -294,6 +314,20 @@ export function BeetleManager() {
     );
     setLastSelectedId(id);
   }, []);
+
+  const handleSelectByType = useCallback((type: EntryType) => {
+    const idsOfType = filteredEntries.filter(e => e.type === type).map(e => e.id);
+    const currentCounts = selectedTypeCounts[type];
+
+    if (currentCounts.total > 0 && currentCounts.selected === currentCounts.total) {
+      // すべて選択されている場合は、その種別の選択を解除
+      setSelectedIds(prev => prev.filter(id => !idsOfType.includes(id)));
+    } else {
+      // 未選択または一部のみ選択されている場合は、すべて選択
+      setSelectedIds(prev => Array.from(new Set([...prev, ...idsOfType])));
+    }
+    if (typeof window !== 'undefined' && window.navigator?.vibrate) window.navigator.vibrate(20);
+  }, [filteredEntries, selectedTypeCounts]);
 
   const startLongPress = useCallback((id: string, currentList: BeetleEntry[]) => {    
     isLongPressActive.current = false;
@@ -348,18 +382,18 @@ export function BeetleManager() {
 
   const handlePointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>, id: string, currentList: BeetleEntry[]) => {
     if (!isSelectionMode) return;
-    event.preventDefault();
-    
+
     isDraggingRef.current = true;
     activePointerIdRef.current = event.pointerId;
     lastDragSelectionIdRef.current = null;
-    suppressNextOpenRef.current = true;
+    suppressNextOpenRef.current = false;
+
     // 最初に触れたカードが選択済みなら「解除モード」、未選択なら「追加モード」にする
     const isSelected = selectedIds.includes(id);
     dragModeRef.current = isSelected ? 'remove' : 'add';
     applyDragSelection(id);
 
-    startLongPress(id, currentList); // 長押しタイマーを開始
+    startLongPress(id, currentList);
   }, [isSelectionMode, selectedIds, applyDragSelection, startLongPress]);
 
   const cancelLongPress = useCallback(() => {
@@ -374,6 +408,7 @@ export function BeetleManager() {
 
     // 他の要素に入った（なぞり選択が開始された）場合は長押し判定をキャンセル
     cancelLongPress();
+    suppressNextOpenRef.current = true;
     applyDragSelection(id);
   }, [cancelLongPress, applyDragSelection]);
 
@@ -385,7 +420,9 @@ export function BeetleManager() {
     const entryElement = target?.closest<HTMLElement>('[data-selection-entry-id]');
     const id = entryElement?.dataset.selectionEntryId;
     if (!id) return;
+    event.preventDefault(); // スクロールを抑制
 
+    suppressNextOpenRef.current = true;
     cancelLongPress();
     applyDragSelection(id);
   }, [applyDragSelection, cancelLongPress]);
@@ -473,9 +510,20 @@ export function BeetleManager() {
         date = (entry as AdultBeetle).emergenceDate || entry.createdAt || today();
       } else if (entry.type === "幼虫") {
         const larvaEntry = entry as LarvaBeetle;
-        date = (larvaEntry.extractionDate && larvaEntry.extractionDate !== "-" ? larvaEntry.extractionDate : (larvaEntry.hatchDate || larvaEntry.createdAt || today()));
+        // セット開始日(hatchDate)を優先し、無ければ割出日(extractionDate)を使用
+        date = (larvaEntry.hatchDate && larvaEntry.hatchDate !== "-" ? larvaEntry.hatchDate : (larvaEntry.extractionDate && larvaEntry.extractionDate !== "-" ? larvaEntry.extractionDate : (larvaEntry.createdAt || today())));
       } else { // SpawnSet
-        date = (entry as SpawnSet).setDate || entry.createdAt || today();
+        const ss = entry as SpawnSet;
+        // 1回目のセット日と履歴(sets)の中から、最も古い日付を採番基準(初回開始日)とする
+        const allDates = [(ss as any).setDate, ...((ss as any).sets || []).map((s: any) => s.setDate)]
+          .filter(d => d && d !== "-");
+        
+        if (allDates.length > 0) {
+          // 日付文字列をソートして最小値を取得
+          date = [...allDates].sort((a, b) => a.localeCompare(b))[0];
+        } else {
+          date = ss.createdAt || today();
+        }
       }
       
       const newName = generateUniqueMName(
@@ -748,22 +796,63 @@ export function BeetleManager() {
     const entry = entries.find(e => e.id === entryId);
     if (!entry || entry.type !== "産卵セット") return;
 
-    const s = entry as any;
-    if (setId === "primary") {
-      // 1回目のセット（基本フィールド）をクリア
-      updateSpawnSet(entryId, {
-        ...s,
-        setDate: "",
-        setEndDate: "",
-        eggCount: 0,
-        larvaCount: 0,
-        substrate: "",
-        containerSize: "",
-      });
-    } else {
-      // sets配列から削除
-      const updatedSets = (s.sets || []).filter((set: any) => set.id !== setId);
-      updateSpawnSet(entryId, { ...s, sets: updatedSets });
+    const s = entry as SpawnSet;
+    
+    // 全てのセット（初回 + 履歴）の日付をチェック
+    const allSets = [
+      { id: "primary", setDate: (s as any).setDate },
+      ...((s as any).sets || []).map((set: any) => ({ id: set.id, setDate: set.setDate }))
+    ].filter(set => set.setDate && set.setDate !== "-");
+
+    const sortedSets = [...allSets].sort((a, b) => (a.setDate || "").localeCompare(b.setDate || ""));
+    const isDeletingOldest = sortedSets.length > 0 && sortedSets[0].id === setId;
+
+    if (window.confirm("このセット履歴を削除してもよろしいですか？")) {
+      let updatedEntry = { ...s } as any;
+      
+      if (setId === "primary") {
+        // 1回目のセット（基本フィールド）をクリア
+        updatedEntry.setDate = "";
+        updatedEntry.setEndDate = "";
+        updatedEntry.eggCount = 0;
+        updatedEntry.larvaCount = 0;
+        updatedEntry.substrate = "";
+        updatedEntry.containerSize = "";
+      } else {
+        // sets配列から削除
+        updatedEntry.sets = (s.sets || []).filter((set: any) => set.id !== setId);
+      }
+
+      // 最古のセットを削除する場合、管理名の再計算確認
+      if (isDeletingOldest && window.confirm("削除するセットは初回開始日（管理名の採番基準）です。削除後に管理名を新しい初回日に合わせて再計算しますか？")) {
+        const remainingSets = [
+          { id: "primary", setDate: updatedEntry.setDate },
+          ...(updatedEntry.sets || []).map((set: any) => ({ id: set.id, setDate: set.setDate }))
+        ].filter(set => set.setDate && set.setDate !== "-");
+
+        let newBaseDate = updatedEntry.createdAt || today();
+        if (remainingSets.length > 0) {
+          const sortedRemaining = [...remainingSets].sort((a, b) => (a.setDate || "").localeCompare(b.setDate || ""));
+          newBaseDate = sortedRemaining[0].setDate || newBaseDate;
+        }
+
+        const newName = generateUniqueMName(
+          newBaseDate,
+          updatedEntry.scientificName,
+          entries.filter(e => e.id !== entryId),
+          "産卵セット",
+          managementNameFormats["産卵セット"],
+          undefined, // 既存の名前を維持せず再生成
+          {
+            japaneseName: updatedEntry.japaneseName,
+            locality: updatedEntry.locality,
+            generation: formatGeneration(updatedEntry.generation)
+          }
+        );
+        updatedEntry.managementName = newName;
+      }
+
+      updateSpawnSet(entryId, updatedEntry);
     }
   };
 
@@ -1176,241 +1265,43 @@ export function BeetleManager() {
       />
       {/* 固定ヘッダーセクション */}
       <section className="sticky top-0 z-30 bg-white/70 backdrop-blur-xl pt-4 pb-2 px-4 border-b border-[#E8E2DA] mb-3 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-        <div className="flex justify-between items-center mb-2">
-          <p className="text-[11px] font-black text-[#B0A495] uppercase tracking-[0.3em]">Breeding Dashboard</p>
-          <div className="flex gap-2 items-center">
-            <button 
-              onClick={() => handleRegenerateAllNames(false)}
-              className="px-2 py-1 bg-white border border-[#E8E2DA] rounded-full text-[10px] font-black text-gray-500 hover:text-[#FF9800] transition-all shadow-sm active:scale-95"
-              title="規則に従って全個体の名前を付け直します"
-            >
-              一括採番
-            </button>
-            <button
-              onClick={handleGitHubSync}
-              className={`flex items-center gap-1 px-3 py-1.5 bg-white border border-[#E8E2DA] rounded-full text-[10px] font-black ${isSyncing ? 'text-orange-400' : 'text-gray-500 hover:text-blue-600'} transition-all shadow-sm active:scale-95`}
-              disabled={isSyncing}
-              title="データをGitHubにバックアップします"
-            >
-              {isSyncing ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
-              <span>同期</span>
-            </button>
-            <button
-              onClick={() => handleBulkCopyToExcel()}
-              className="flex items-center gap-1 px-3 py-1.5 bg-white border border-[#E8E2DA] rounded-full text-[10px] font-black text-gray-500 hover:text-green-600 transition-all shadow-sm active:scale-95"
-              title="全データをExcelファイルで書き出します"
-            >
-              <FileSpreadsheet size={12} />
-              <span>Excel出力</span>
-            </button>
-
-            <div className="w-px h-4 bg-gray-200 mx-1" />
-
-            <button 
-              onClick={() => setIsSettingsOpen(true)}
-              className="p-1.5 bg-white border border-[#E8E2DA] rounded-full text-gray-400 hover:text-[#FF9800] transition-all shadow-sm active:scale-95"
-            >
-              <Settings size={16} />
-            </button>
-
-            <button 
-              onClick={() => setShowSort(!showSort)}
-              className={`text-[10px] font-black px-3 py-1.5 rounded-full transition-all ${showSort ? "bg-[#FF9800] text-white shadow-lg shadow-orange-200" : "bg-[#EFE9E2] text-[#8B7D7B]"}`}
-            >
-              ソート
-            </button>
-
-            <button 
-              onClick={handleToggleSelectionMode}
-              className={`text-[10px] font-black px-3 py-1.5 rounded-full transition-all ${isSelectionMode ? "bg-[#F4511E] text-white shadow-lg shadow-red-200" : "bg-[#EFE9E2] text-[#8B7D7B]"}`}
-            >
-              一括
-            </button>
-          </div>
-        </div>
+        <DashboardToolbar
+          isSyncing={isSyncing}
+          isSelectionMode={isSelectionMode}
+          onRegenerateNames={() => handleRegenerateAllNames(false)}
+          onGitHubSync={handleGitHubSync}
+          onExcelExport={() => handleBulkCopyToExcel()}
+          onOpenSettings={() => setIsSettingsOpen(true)}
+          onToggleSelection={handleToggleSelectionMode}
+        />
         
-        {(isSelectionMode || showSort) && (
-          <div className="bg-gray-50/50 p-3 rounded-[24px] border border-gray-100 mb-6 space-y-3">
-            <div className="flex justify-between items-center mb-1">
-              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sort & Selection</span>
-              <div className="flex gap-2 items-center">
-                <button
-                  onClick={handleToggleSelectionMode}
-                  className={`px-3 py-1 rounded-full text-[10px] font-black border transition-all ${isSelectionMode ? "bg-[#F4511E] text-white border-[#F4511E]" : "bg-white text-[#8B7D7B] border-gray-200"}`}
-                >
-                  {isSelectionMode ? "一括選択 ON" : "一括選択 OFF"}
-                </button>
-              </div>
-              {isSelectionMode && (
-                <div className="flex gap-2">
-                  <button 
-                    onClick={handleSelectAll}
-                    className="px-3 py-1 bg-white border border-gray-100 rounded-full text-[10px] font-black text-[#FF9800] shadow-sm active:scale-95 transition-all"
-                  >
-                    すべて選択
-                  </button>
-                  <button 
-                    onClick={handleDeselectAll}
-                    className="px-3 py-1 bg-white border border-gray-100 rounded-full text-[10px] font-black text-gray-400 shadow-sm active:scale-95 transition-all"
-                  >
-                    解除
-                  </button>
-                </div>
-              )}
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-                <div className="flex flex-col items-start min-w-[50px]">
-                  <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Primary</span>
-                  <button 
-                    onClick={() => setMainSortConfig({ ...mainSortConfig, primary: { ...mainSortConfig.primary, direction: mainSortConfig.primary.direction === "asc" ? "desc" : "asc" } })}
-                    className="text-[8px] font-black text-[#F4511E] flex items-center gap-0.5"
-                  >
-                    <ArrowUpDown size={8} /> {mainSortConfig.primary.direction === "asc" ? "昇" : "降"}
-                  </button>
-                </div>
-                {sortKeys.map(k => (
-                  <button key={`p-${k.id}`} onClick={() => setMainSortConfig({ ...mainSortConfig, primary: { ...mainSortConfig.primary, key: k.id } })} className={`px-3 py-1 rounded-lg text-[10px] font-bold whitespace-nowrap transition-all ${mainSortConfig.primary.key === k.id ? "bg-[#FF9800] text-white shadow-sm" : "bg-white text-gray-400 border border-gray-100"}`}>{k.label}</button>
-                ))}
-              </div>
-              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-                <div className="flex flex-col items-start min-w-[50px]">
-                  <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Secondary</span>
-                  <button 
-                    onClick={() => setMainSortConfig({ ...mainSortConfig, secondary: { ...mainSortConfig.secondary, direction: mainSortConfig.secondary.direction === "asc" ? "desc" : "asc" } })}
-                    className="text-[8px] font-black text-[#F4511E] flex items-center gap-0.5"
-                  >
-                    <ArrowUpDown size={8} /> {mainSortConfig.secondary.direction === "asc" ? "昇" : "降"}
-                  </button>
-                </div>
-                {sortKeys.map(k => (
-                  <button key={`s-${k.id}`} onClick={() => setMainSortConfig({ ...mainSortConfig, secondary: { ...mainSortConfig.secondary, key: k.id } })} className={`px-3 py-1 rounded-lg text-[10px] font-bold whitespace-nowrap transition-all ${mainSortConfig.secondary.key === k.id ? "bg-[#FF9800] text-white shadow-sm" : "bg-white text-gray-400 border border-gray-100"}`}>{k.label}</button>
-                ))}
-              </div>
-            </div>
-            {isSelectionMode && (
-              <div className="flex gap-2 pt-2 border-t border-gray-200/50">
-                <button onClick={() => handleBulkCopyToExcel(selectedIds)} disabled={selectedIds.length === 0} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-green-50 text-green-600 rounded-xl text-[11px] font-bold disabled:opacity-30 transition-all active:scale-95">
-                  <FileSpreadsheet size={14} /> Excelコピー
-                </button>
-                <button onClick={handleBulkDelete} disabled={selectedIds.length === 0} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-red-50 text-red-500 rounded-xl text-[11px] font-bold disabled:opacity-30 transition-all active:scale-95">
-                  <Trash2 size={14} /> 削除 ({selectedIds.length})
-                </button>
-                <button onClick={() => setIsBulkEditing(true)} disabled={selectedIds.length === 0} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-blue-50 text-blue-500 rounded-xl text-[11px] font-bold disabled:opacity-30 transition-all active:scale-95">
-                  <Edit size={14} /> 編集 ({selectedIds.length})
-                </button>
-              </div>
-            )}
-          </div>
+        {isSelectionMode && (
+          <BulkSelectionBar
+            selectedCount={selectedIds.length}
+            onSelectAll={handleSelectAll}
+            onDeselectAll={handleDeselectAll}
+            onBulkExport={() => handleBulkCopyToExcel(selectedIds)}
+            onBulkDelete={handleBulkDelete}
+            onBulkEdit={() => setIsBulkEditing(true)}
+            onSelectByType={handleSelectByType}
+            availableTypes={availableTypesInView}
+            selectedTypeCounts={selectedTypeCounts}
+          />
         )}
 
-        {/* 統計ボタン */}
-        <div className="grid grid-cols-3 gap-2 mb-3">
-          <button 
-            onClick={() => { setActiveTab("成虫"); setSelectedType("成虫"); }}
-            className={`p-2 rounded-[18px] border transition-all text-left ${activeTab === "成虫" && selectedType === "成虫" ? "bg-[#FF9800] border-[#FF9800] text-white shadow-[0_8px_20px_rgba(255,152,0,0.2)] scale-[1.02]" : "bg-white/60 border-white/80 text-[#4A3F35] shadow-sm"}`}
-          >
-            <p className="text-[10px] font-black opacity-80 mb-0.5">成虫</p>
-            <p className="text-xl font-black leading-none">{stats.adults}<span className="text-xs ml-0.5 font-bold">頭</span></p>
-          </button>
-          <button 
-            onClick={() => { setActiveTab("幼虫"); setSelectedType("幼虫"); }}
-            className={`p-2 rounded-[18px] border transition-all text-left ${activeTab === "幼虫" && selectedType === "幼虫" ? "bg-[#FF9800] border-[#FF9800] text-white shadow-[0_8px_20px_rgba(255,152,0,0.2)] scale-[1.02]" : "bg-white/60 border-white/80 text-[#4A3F35] shadow-sm"}`}
-          >
-            <p className="text-[10px] font-black opacity-80 mb-0.5">幼虫</p>
-            <p className="text-xl font-black leading-none">{stats.larvae}<span className="text-xs ml-0.5 font-bold">頭</span></p>
-          </button>
-          <button 
-            onClick={() => { setActiveTab("産卵セット"); setSelectedType("産卵セット"); }}
-            className={`p-2 rounded-[18px] border transition-all text-left ${activeTab === "産卵セット" && selectedType === "産卵セット" ? "bg-[#FF9800] border-[#FF9800] text-white shadow-[0_8px_20px_rgba(255,152,0,0.2)] scale-[1.02]" : "bg-white/60 border-white/80 text-[#4A3F35] shadow-sm"}`}
-          >
-            <p className="text-[10px] font-black opacity-80 mb-0.5">セット</p>
-            <p className="text-xl font-black leading-none">{stats.spawnSets}<span className="text-xs ml-0.5 font-bold">件</span></p>
-          </button>
-        </div>
-
-        <label className="flex items-center bg-white/90 rounded-[16px] px-4 py-2 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] border border-white focus-within:border-[#FF9800] transition-all mb-3">
-          <Search size={16} className="text-[#B0A495] mr-2" />
-          <input
-            type="text"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="検索..."
-            className="flex-1 text-sm text-[#4A3F35] outline-none bg-transparent placeholder-[#D7CCC8]"
-          />
-        </label>
-
-        {/* 種別ごとのサブフィルター */}
-        <div className="mt-4">
-          {activeTab === "幼虫" && (
-            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-              <button 
-                onClick={() => setLarvaFilter("active")}
-                className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${larvaFilter === "active" ? "bg-[#FF9800] text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}
-              >
-                飼育中 ({stats.larvaeActive})
-              </button>
-              <button 
-                onClick={() => setLarvaFilter("emerged")}
-                className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${larvaFilter === "emerged" ? "bg-[#795548] text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}
-              >
-                羽化済み ({stats.larvaeEmerged})
-              </button>
-              <button 
-                onClick={() => setLarvaFilter("deceased")}
-                className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${larvaFilter === "deceased" ? "bg-[#F4511E] text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}
-              >
-                死亡 ({stats.larvaeDeceased})
-              </button>
-              <button 
-                onClick={() => setLarvaFilter("sold")}
-                className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${larvaFilter === "sold" ? "bg-blue-500 text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}
-              >
-                販売済み ({stats.larvaeSold})
-              </button>
-            </div>
-          )}
-
-          {activeTab === "成虫" && (
-            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-              <button 
-                onClick={() => setAdultFilter("active")}
-                className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${adultFilter === "active" ? "bg-[#FF9800] text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}
-              >
-                飼育中 ({stats.adultsActive})
-              </button>
-              <button 
-                onClick={() => setAdultFilter("deceased")}
-                className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${adultFilter === "deceased" ? "bg-[#F4511E] text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}
-              >
-                死亡 ({stats.adultsDeceased})
-              </button>
-              <button 
-                onClick={() => setAdultFilter("sold")}
-                className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${adultFilter === "sold" ? "bg-blue-500 text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}
-              >
-                販売済み ({stats.adultsSold})
-              </button>
-            </div>
-          )}
-
-          {activeTab === "産卵セット" && (
-            <div className="flex gap-2">
-              <button 
-                onClick={() => setSpawnSetFilter("active")}
-                className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${spawnSetFilter === "active" ? "bg-[#FF9800] text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}
-              >
-                継続中 ({stats.spawnSetsActive})
-              </button>
-              <button 
-                onClick={() => setSpawnSetFilter("finished")}
-                className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${spawnSetFilter === "finished" ? "bg-gray-500 text-white shadow-md" : "bg-white/60 text-gray-400 border border-white"}`}
-              >
-                終了 ({stats.spawnSets - stats.spawnSetsActive})
-              </button>
-            </div>
-          )}
-        </div>
+        <DashboardStats
+          stats={stats}
+          visibleTypes={visibleTypes}
+          onToggleType={(type) => setVisibleTypes(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type])}
+          query={query}
+          onQueryChange={setQuery}
+          larvaFilter={larvaFilter}
+          onLarvaFilterChange={setLarvaFilter}
+          adultFilter={adultFilter}
+          onAdultFilterChange={setAdultFilter}
+          spawnSetFilter={spawnSetFilter}
+          onSpawnSetFilterChange={setSpawnSetFilter}
+        />
       </section>
 
       {/* クロップモーダル */}
@@ -1623,7 +1514,8 @@ export function BeetleManager() {
             onSubmit={(values, count) => {
               let currentEntries = [...entries];
               for (let index = 0; index < count; index += 1) {
-                const targetDate = values.extractionDate && values.extractionDate !== "-" ? values.extractionDate : (values.hatchDate || today());
+                // 採番基準をセット開始日(hatchDate)優先に変更
+                const targetDate = (values.hatchDate && values.hatchDate !== "-") ? values.hatchDate : (values.extractionDate && values.extractionDate !== "-" ? values.extractionDate : today());
                 const mName = generateUniqueMName(
                   targetDate, 
                   values.scientificName, 
@@ -1655,7 +1547,7 @@ export function BeetleManager() {
             allEntries={entries}
             onSubmit={(value) => {
               const mName = generateUniqueMName(
-                value.setDate || today(), 
+                (value.setDate && value.setDate !== "-") ? value.setDate : today(), 
                 value.scientificName, 
                 entries, 
                 "産卵セット", 
@@ -1699,7 +1591,8 @@ export function BeetleManager() {
               if (count > 1) {
                 let currentEntries = [...entries];
                 for (let i = 1; i < count; i++) {
-                  const targetDate = value.extractionDate && value.extractionDate !== "-" ? value.extractionDate : (value.hatchDate || today());
+                  // 採番基準をセット開始日(hatchDate)優先に変更
+                  const targetDate = (value.hatchDate && value.hatchDate !== "-") ? value.hatchDate : (value.extractionDate && value.extractionDate !== "-" ? value.extractionDate : today());
                   const mName = generateUniqueMName(
                     targetDate, 
                     value.scientificName, 
@@ -1934,22 +1827,16 @@ export function BeetleManager() {
               
               let updatedSets;
               const { parentId, sets, useDifferentMethod, ...cleanSet } = submittedSet as any;
+              
+              // 管理名(managementName)や写真などが消失しないよう、既存データをベースにする
+              const baseEntry = { ...entry };
 
               if (cleanSet.id === "primary") {
+                // 1回目のセット内容（メインフィールド）を更新
                 updateSpawnSet(parentEntryId, {
-                  ...entry,
-                  setDate: cleanSet.setDate,
-                  setEndDate: cleanSet.setEndDate,
-                  eggCount: cleanSet.eggCount,
-                  larvaCount: cleanSet.larvaCount,
-                  substrate: cleanSet.substrate,
-                  containerSize: cleanSet.containerSize,
-                  pressure: cleanSet.pressure,
-                  moisture: cleanSet.moisture,
-                  temperature: cleanSet.temperature,
-                  cohabitation: cleanSet.cohabitation,
-                  memo: cleanSet.memo,
-                } as any);
+                  ...baseEntry,
+                  ...cleanSet,
+                });
               } else {
                 if (editingChildSet && editingChildSet.id) {
                   updatedSets = (entry.sets || []).map((s: any) => 
@@ -1960,7 +1847,7 @@ export function BeetleManager() {
                 }
                 if (updatedSets) {
                   updatedSets.sort((a: any, b: any) => (a.setDate || "").localeCompare(b.setDate || ""));
-                  updateSpawnSet(parentEntryId, { ...entry, sets: updatedSets } as any);
+                  updateSpawnSet(parentEntryId, { ...baseEntry, sets: updatedSets });
                 }
               }
               setIsAddingSecondSet(false);

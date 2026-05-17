@@ -6,7 +6,6 @@ import { today } from "@/types/utils";
 import type { AdultFormValues } from "@/types/beetle";
 import { EntryBaseFields } from "@/components/beetle/shared/entry-base-fields";
 import { useBeetleStore } from "@/store/use-beetle-store";
-import { Clipboard } from "lucide-react";
 
 export function AdultForm({
   initialValues,
@@ -87,6 +86,7 @@ export function AdultForm({
           managementName={values.managementName || ""}
           linkedEntryIds={values.linkedEntryIds}
           allEntries={allEntries}
+          autoNumberingDate={values.emergenceDate}
           onNext={focusNextField}
           onChange={(patch) => setValues({ ...values, ...patch })}
         />
@@ -199,9 +199,9 @@ export function AdultForm({
             <button
               type="button"
               onClick={handleLarvaDataPaste}
-              className="flex items-center gap-1 text-[10px] font-black text-[#FF9800] bg-[#FF9800]/5 px-2 py-1 rounded-lg"
+              className="flex items-center gap-1 px-3 py-1 bg-[#FF9800]/10 text-[#FF9800] rounded-full text-[11px] font-bold border border-[#FF9800]/20 active:scale-95 transition-all"
             >
-              <Clipboard size={12} /> クリップボードから貼付
+              貼付
             </button>
           </div>
           <textarea

@@ -4,6 +4,7 @@ import { useMemo, useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Search, Link as LinkIcon } from "lucide-react";
 import { Field, GenerationRollField, BottomSheetInput } from "@/components/entry-fields";
+import { today } from "@/types/utils";
 import type { AdultFormValues, BeetleEntry } from "@/types/beetle";
 
 export function EntryBaseFields({
@@ -14,6 +15,7 @@ export function EntryBaseFields({
   generation,
   linkedEntryIds = [],
   allEntries,
+  autoNumberingDate,
   generationLabelSuffix,
   onNext,
   onChange,
@@ -27,6 +29,7 @@ export function EntryBaseFields({
   generationLabelSuffix?: string;
   onNext?: () => void;
   allEntries: BeetleEntry[];
+  autoNumberingDate?: string;
   onChange: (patch: {
     managementName?: string;
     japaneseName?: string;
@@ -48,6 +51,40 @@ export function EntryBaseFields({
       }, 100);
     }
   }, [isLinkedSelectOpen]);
+
+  const handleAutoNumbering = () => {
+    // 1. プレフィックスの抽出 (例: "A_26312_01" -> "A")
+    const basePrefix = managementName?.split('_')[0] || "A";
+    
+    // 2. 日付文字列の生成 (YYMDD形式: 2026-03-12 -> 26312)
+    const dateVal = autoNumberingDate || today();
+    const [year, month, day] = dateVal.split("-");
+    const yy = year.slice(2);
+    const m = parseInt(month, 10);
+    const dd = day.padStart(2, "0");
+    const dateStr = `${yy}${m}${dd}`;
+    
+    // 3. 同一和名・学名かつ、同じベースプレフィックスを持つ個体全体から連番を計算
+    const prefixMatch = `${basePrefix}_`;
+    const numbers = allEntries
+      .filter(e => 
+        e.japaneseName === japaneseName && 
+        e.scientificName === scientificName &&
+        e.managementName?.startsWith(prefixMatch)
+      )
+      .map(e => {
+        const parts = e.managementName!.split('_');
+        return parseInt(parts[parts.length - 1], 10);
+      })
+      .filter(n => !isNaN(n));
+
+    const nextNum = Math.max(0, ...numbers) + 1;
+    
+    // 4. 数値のフォーマット (例: 1 -> 01, 2 -> 2)
+    const numStr = nextNum === 1 ? "01" : String(nextNum);
+
+    onChange({ managementName: `${basePrefix}_${dateStr}_${numStr}` });
+  };
 
   const suggestions = useMemo(() => {
     const jSet = new Set<string>();
@@ -117,6 +154,15 @@ export function EntryBaseFields({
 
   return (
     <>
+      <div className="flex justify-end px-1 -mb-1">
+        <button
+          type="button"
+          onClick={handleAutoNumbering}
+          className="flex items-center gap-1 px-3 py-1 bg-[#FF9800]/10 text-[#FF9800] rounded-full text-[11px] font-bold border border-[#FF9800]/20 active:scale-95 transition-all"
+        >
+          一括採番
+        </button>
+      </div>
       <BottomSheetInput
         label="管理名 (No/名前)"
         value={managementName || ""}
