@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { AnimatePresence, motion, Reorder } from "framer-motion";
-import { Search, Clipboard, Camera, Loader2, Crop, Check, X as CloseIcon, Trash2, Edit, CheckSquare, Square, ArrowUpDown, ChevronDown, ChevronUp, Settings, ChevronLeft, ChevronRight, FileSpreadsheet, Hash, RefreshCw } from "lucide-react";
+import { Search, Clipboard, Camera, Loader2, Crop, Check, X as CloseIcon, Trash2, Edit, CheckSquare, Square, ArrowUpDown, ChevronDown, ChevronUp, Settings, ChevronLeft, ChevronRight, FileSpreadsheet, Hash, RefreshCw, Folder, FolderOpen } from "lucide-react";
 import { Navbar } from "@/components/layout/navbar";
 import { Modal } from "./ui/modal"; // Ensure Modal is imported
 import { useSwitchBot } from "@/components/use-switchbot";
@@ -664,6 +664,40 @@ export function BeetleManager() {
     setLastSelectedId(null);
   };
 
+  const groupedEntries = useMemo(() => {
+    const grouped = filteredEntries.reduce((acc, entry) => {
+      const sci = entry.scientificName || "学名未設定";
+      const jpn = entry.japaneseName || "和名未設定";
+      const key = `${sci}__${jpn}`;
+      if (!acc[key]) {
+        acc[key] = { key, scientificName: sci, japaneseName: jpn, entries: [] as BeetleEntry[] };
+      }
+      acc[key].entries.push(entry);
+      return acc;
+    }, {} as Record<string, { key: string; scientificName: string; japaneseName: string; entries: BeetleEntry[] }>);
+
+    return Object.values(grouped).sort((a, b) => {
+      const sciCmp = a.scientificName.localeCompare(b.scientificName, "ja", { numeric: true });
+      if (sciCmp !== 0) return sciCmp;
+      return a.japaneseName.localeCompare(b.japaneseName, "ja", { numeric: true });
+    });
+  }, [filteredEntries]);
+
+  useEffect(() => {
+    setExpandedSpecies((prev) => {
+      const keys = new Set(groupedEntries.map((g) => g.key));
+      const remain = prev.filter((k) => keys.has(k));
+      if (remain.length > 0) return remain;
+      return groupedEntries.map((g) => g.key);
+    });
+  }, [groupedEntries]);
+
+  const toggleSpeciesFolder = useCallback((key: string) => {
+    setExpandedSpecies((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
+    );
+  }, []);
+
   const [taskSortConfig, setTaskSortConfig] = useState<{ primary: "urgency" | "type" | "days" | "name"; secondary: "urgency" | "type" | "days" | "name" }>({ primary: "urgency", secondary: "name" });
   const [skippedTaskIds, setSkippedTaskIds] = useState<string[]>([]);
   const [isMounted, setIsMounted] = useState(false);
@@ -1275,6 +1309,14 @@ export function BeetleManager() {
           <div className="bg-gray-50/50 p-3 rounded-[24px] border border-gray-100 mb-6 space-y-3">
             <div className="flex justify-between items-center mb-1">
               <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sort & Selection</span>
+              <div className="flex gap-2 items-center">
+                <button
+                  onClick={handleToggleSelectionMode}
+                  className={`px-3 py-1 rounded-full text-[10px] font-black border transition-all ${isSelectionMode ? "bg-[#F4511E] text-white border-[#F4511E]" : "bg-white text-[#8B7D7B] border-gray-200"}`}
+                >
+                  {isSelectionMode ? "一括選択 ON" : "一括選択 OFF"}
+                </button>
+              </div>
               {isSelectionMode && (
                 <div className="flex gap-2">
                   <button 
@@ -1850,28 +1892,59 @@ export function BeetleManager() {
                 <EmptyState />
               ) : (
                 <div className="space-y-4">
-                  {filteredEntries.map((entry) => (
-                    <div
-                      key={entry.id}
-                      className={`space-y-2 ${isSelectionMode ? 'touch-none select-none' : ''}`}
-                      onPointerDown={() => handlePointerDown(entry.id, filteredEntries)}
-                      onPointerEnter={() => handlePointerEnter(entry.id)}
-                      onPointerUp={cancelLongPress}
-                      onPointerLeave={cancelLongPress}
-                      onContextMenu={(e) => { if (isSelectionMode) e.preventDefault(); }}
-                    >
-                      <EntryCard
-                        entry={entry}
-                        onOpen={() => handleEntryClick(entry)}
-                        isSelected={selectedIds.includes(entry.id)}
-                        isSelectionMode={isSelectionMode}
-                        onDelete={(e, id) => {
-                          e.stopPropagation();
-                          if (window.confirm("本当に削除しますか？")) deleteEntry(id);
-                        }}
-                      />
-                    </div>
-                  ))}
+                  {groupedEntries.map((group) => {
+                    const isExpanded = expandedSpecies.includes(group.key);
+                    const selectedCount = group.entries.filter((entry) => selectedIds.includes(entry.id)).length;
+                    return (
+                      <div key={group.key} className="rounded-2xl border border-[#E8E2DA] bg-white/70 overflow-hidden">
+                        <button
+                          onClick={() => toggleSpeciesFolder(group.key)}
+                          className="w-full px-4 py-3 flex items-center justify-between hover:bg-white/80 transition-colors"
+                        >
+                          <div className="flex items-center gap-3 text-left">
+                            {isExpanded ? <FolderOpen size={16} className="text-[#FF9800]" /> : <Folder size={16} className="text-[#B0A495]" />}
+                            <div>
+                              <div className="text-sm font-black text-[#4A3F35]">{group.japaneseName}</div>
+                              <div className="text-[11px] text-gray-500 italic">{group.scientificName}</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold text-gray-500">
+                              {group.entries.length}件{isSelectionMode ? ` / 選択${selectedCount}` : ""}
+                            </span>
+                            {isExpanded ? <ChevronUp size={16} className="text-gray-500" /> : <ChevronDown size={16} className="text-gray-500" />}
+                          </div>
+                        </button>
+
+                        {isExpanded && (
+                          <div className="p-3 pt-0 space-y-2">
+                            {group.entries.map((entry) => (
+                              <div
+                                key={entry.id}
+                                className={`space-y-2 ${isSelectionMode ? 'touch-none select-none' : ''}`}
+                                onPointerDown={() => handlePointerDown(entry.id, filteredEntries)}
+                                onPointerEnter={() => handlePointerEnter(entry.id)}
+                                onPointerUp={cancelLongPress}
+                                onPointerLeave={cancelLongPress}
+                                onContextMenu={(e) => { if (isSelectionMode) e.preventDefault(); }}
+                              >
+                                <EntryCard
+                                  entry={entry}
+                                  onOpen={() => handleEntryClick(entry)}
+                                  isSelected={selectedIds.includes(entry.id)}
+                                  isSelectionMode={isSelectionMode}
+                                  onDelete={(e, id) => {
+                                    e.stopPropagation();
+                                    if (window.confirm("本当に削除しますか？")) deleteEntry(id);
+                                  }}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )
             ) : activeTab === "分析" ? (
