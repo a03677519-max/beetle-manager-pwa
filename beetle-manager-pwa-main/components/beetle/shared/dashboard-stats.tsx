@@ -42,26 +42,41 @@ export function DashboardStats({
   spawnSetFilter,
   onSpawnSetFilterChange,
 }: DashboardStatsProps) {
+  const typeThemes: Record<EntryType, { active: string; inactive: string }> = {
+    "成虫": {
+      active: "bg-orange-500 border-orange-500 text-white shadow-[0_8px_20px_rgba(249,115,22,0.22)] scale-[1.02]",
+      inactive: "bg-white/60 border-orange-100 text-orange-700 shadow-sm opacity-50",
+    },
+    "幼虫": {
+      active: "bg-emerald-600 border-emerald-600 text-white shadow-[0_8px_20px_rgba(5,150,105,0.22)] scale-[1.02]",
+      inactive: "bg-white/60 border-emerald-100 text-emerald-700 shadow-sm opacity-50",
+    },
+    "産卵セット": {
+      active: "bg-amber-500 border-amber-500 text-white shadow-[0_8px_20px_rgba(245,158,11,0.22)] scale-[1.02]",
+      inactive: "bg-white/60 border-amber-100 text-amber-700 shadow-sm opacity-50",
+    },
+  };
+
   return (
     <>
       <div className="grid grid-cols-3 gap-2 mb-3">
         <button 
           onClick={() => onToggleType("成虫")}
-          className={`p-2 rounded-[18px] border transition-all text-left ${visibleTypes.includes("成虫") ? "bg-[#FF9800] border-[#FF9800] text-white shadow-[0_8px_20px_rgba(255,152,0,0.2)] scale-[1.02]" : "bg-white/60 border-white/80 text-[#4A3F35] shadow-sm opacity-50"}`}
+          className={`p-2 rounded-[18px] border transition-all text-left ${visibleTypes.includes("成虫") ? typeThemes["成虫"].active : typeThemes["成虫"].inactive}`}
         >
           <p className="text-[10px] font-black opacity-80 mb-0.5">成虫</p>
           <p className="text-xl font-black leading-none">{stats.adults}<span className="text-xs ml-0.5 font-bold">頭</span></p>
         </button>
         <button 
           onClick={() => onToggleType("幼虫")}
-          className={`p-2 rounded-[18px] border transition-all text-left ${visibleTypes.includes("幼虫") ? "bg-[#FF9800] border-[#FF9800] text-white shadow-[0_8px_20px_rgba(255,152,0,0.2)] scale-[1.02]" : "bg-white/60 border-white/80 text-[#4A3F35] shadow-sm opacity-50"}`}
+          className={`p-2 rounded-[18px] border transition-all text-left ${visibleTypes.includes("幼虫") ? typeThemes["幼虫"].active : typeThemes["幼虫"].inactive}`}
         >
           <p className="text-[10px] font-black opacity-80 mb-0.5">幼虫</p>
           <p className="text-xl font-black leading-none">{stats.larvae}<span className="text-xs ml-0.5 font-bold">頭</span></p>
         </button>
         <button 
           onClick={() => onToggleType("産卵セット")}
-          className={`p-2 rounded-[18px] border transition-all text-left ${visibleTypes.includes("産卵セット") ? "bg-[#FF9800] border-[#FF9800] text-white shadow-[0_8px_20px_rgba(255,152,0,0.2)] scale-[1.02]" : "bg-white/60 border-white/80 text-[#4A3F35] shadow-sm opacity-50"}`}
+          className={`p-2 rounded-[18px] border transition-all text-left ${visibleTypes.includes("産卵セット") ? typeThemes["産卵セット"].active : typeThemes["産卵セット"].inactive}`}
         >
           <p className="text-[10px] font-black opacity-80 mb-0.5">セット</p>
           <p className="text-xl font-black leading-none">{stats.spawnSets}<span className="text-xs ml-0.5 font-bold">件</span></p>
@@ -75,7 +90,7 @@ export function DashboardStats({
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}
           placeholder="検索..."
-          className="flex-1 text-sm text-[#4A3F35] outline-none bg-transparent placeholder-[#D7CCC8]"
+          className="flex-1 text-[16px] text-[#4A3F35] outline-none bg-transparent placeholder-[#D7CCC8]"
         />
       </label>
 

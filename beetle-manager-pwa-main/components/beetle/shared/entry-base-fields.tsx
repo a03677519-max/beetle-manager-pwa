@@ -258,7 +258,7 @@ export function EntryBaseFields({
                   placeholder="名前や管理名で検索..."
                   value={searchQuery} // Keep value
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-12 bg-gray-50 rounded-2xl pl-11 pr-4 text-sm font-bold outline-none border border-transparent focus:border-[#FF9800]/20 transition-all"
+                  className="w-full h-12 bg-gray-50 rounded-2xl pl-11 pr-4 text-[16px] font-bold outline-none border border-transparent focus:border-[#FF9800]/20 transition-all"
                 />
               </div>
               <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">

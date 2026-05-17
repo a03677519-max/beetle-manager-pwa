@@ -5,6 +5,7 @@ import { Settings, RefreshCw, FileSpreadsheet, Loader2, Hash } from "lucide-reac
 interface DashboardToolbarProps {
   isSyncing: boolean;
   isSelectionMode: boolean;
+  dashboardTextClassName?: string;
   onRegenerateNames: () => void;
   onGitHubSync: () => void;
   onExcelExport: () => void;
@@ -15,6 +16,7 @@ interface DashboardToolbarProps {
 export function DashboardToolbar({
   isSyncing,
   isSelectionMode,
+  dashboardTextClassName = "text-[#B0A495]",
   onRegenerateNames,
   onGitHubSync,
   onExcelExport,
@@ -23,7 +25,7 @@ export function DashboardToolbar({
 }: DashboardToolbarProps) {
   return (
     <div className="flex justify-between items-center mb-2">
-      <p className="text-[11px] font-black text-[#B0A495] uppercase tracking-[0.3em]">Breeding Dashboard</p>
+      <p className={`text-[11px] font-black uppercase tracking-[0.3em] ${dashboardTextClassName}`}>Breeding Dashboard</p>
       <div className="flex gap-2 items-center">
         <button 
           onClick={onRegenerateNames}

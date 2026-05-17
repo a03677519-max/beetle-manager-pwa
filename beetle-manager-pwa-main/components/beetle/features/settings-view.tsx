@@ -7,6 +7,9 @@ import type { EntryType } from "@/types/beetle";
 
 export function SettingsView({ 
   onClose,
+  sortKeys = [],
+  mainSortConfig,
+  onUpdateMainSortConfig,
   managementNameFormats,
   onUpdateManagementNameFormat,
   backupEntries,
@@ -34,6 +37,50 @@ export function SettingsView({
       </div>
 
       <div className="p-6 space-y-8">
+        {/* 並び順設定 */}
+        <section className="space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Type size={18} className="text-[#FF9800]" />
+            <h3 className="font-black text-[#4A3F35]">一覧の並び順</h3>
+          </div>
+          <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm space-y-4">
+            <p className="text-[11px] text-gray-500 font-bold leading-relaxed">
+              変更した並び順は保存され、次回以降も維持されます。初期設定は和名のあいうえお順です。
+            </p>
+            {([
+              { key: "primary", label: "優先" },
+              { key: "secondary", label: "次に優先" },
+            ] as const).map((item) => (
+              <div key={item.key} className="grid grid-cols-[4rem_1fr_6rem] items-center gap-2">
+                <span className="text-[11px] font-black text-gray-400">{item.label}</span>
+                <select
+                  className="min-w-0 bg-gray-50 border border-gray-100 rounded-xl px-3 py-2.5 text-[16px] font-bold text-gray-700 outline-none focus:border-[#FF9800]"
+                  value={mainSortConfig?.[item.key]?.key || "japaneseName"}
+                  onChange={(e) => onUpdateMainSortConfig?.({
+                    ...mainSortConfig,
+                    [item.key]: { ...(mainSortConfig?.[item.key] || {}), key: e.target.value },
+                  })}
+                >
+                  {sortKeys.map((sortKey: any) => (
+                    <option key={sortKey.id} value={sortKey.id}>{sortKey.label}</option>
+                  ))}
+                </select>
+                <select
+                  className="bg-gray-50 border border-gray-100 rounded-xl px-3 py-2.5 text-[16px] font-bold text-gray-700 outline-none focus:border-[#FF9800]"
+                  value={mainSortConfig?.[item.key]?.direction || "asc"}
+                  onChange={(e) => onUpdateMainSortConfig?.({
+                    ...mainSortConfig,
+                    [item.key]: { ...(mainSortConfig?.[item.key] || {}), direction: e.target.value },
+                  })}
+                >
+                  <option value="asc">昇順</option>
+                  <option value="desc">降順</option>
+                </select>
+              </div>
+            ))}
+          </div>
+        </section>
+
         {/* 自動採番設定 */}
         <section className="space-y-4">
           <div className="flex items-center gap-2 mb-2">

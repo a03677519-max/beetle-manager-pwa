@@ -185,7 +185,7 @@ export function BeetleManager() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [isBulkEditing, setIsBulkEditing] = useState(false);
-  const [visibleTypes, setVisibleTypes] = useState<EntryType[]>(["成虫", "幼虫", "産卵セット"]);
+  const [visibleTypes, setVisibleTypes] = useState<EntryType[]>(["成虫"]);
   const [lastSelectedId, setLastSelectedId] = useState<string | null>(null);
   const [selectedFolderKey, setSelectedFolderKey] = useState<string | null>(null);
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
@@ -694,6 +694,24 @@ export function BeetleManager() {
   }, [setSelectedType, startEditing]);
 
   const mainViewTabs = useMemo(() => ["成虫", "幼虫", "産卵セット", "分析", "タスク"], []);
+  const activeTheme = useMemo(() => {
+    if (activeTab === "幼虫") {
+      return {
+        header: "bg-emerald-50/90 border-emerald-100",
+        dashboard: "text-emerald-700",
+      };
+    }
+    if (activeTab === "産卵セット") {
+      return {
+        header: "bg-amber-50/90 border-amber-100",
+        dashboard: "text-amber-700",
+      };
+    }
+    return {
+      header: "bg-orange-50/90 border-orange-100",
+      dashboard: "text-orange-700",
+    };
+  }, [activeTab]);
  
   const handleBulkDelete = () => {
     if (selectedIds.length === 0) return;
@@ -780,12 +798,31 @@ export function BeetleManager() {
       return acc;
     }, {} as Record<string, { key: string; scientificName: string; japaneseName: string; entries: BeetleEntry[] }>);
 
-    return Object.values(grouped).sort((a, b) => {
-      const sciCmp = a.scientificName.localeCompare(b.scientificName, "ja", { numeric: true });
-      if (sciCmp !== 0) return sciCmp;
-      return a.japaneseName.localeCompare(b.japaneseName, "ja", { numeric: true });
-    });
-  }, [filteredEntries]);
+    return Object.values(grouped)
+      .map((group) => ({
+        ...group,
+        entries: [...group.entries].sort((a, b) => {
+          const primaryCmp = getSortValue(a, mainSortConfig.primary.key).toString().localeCompare(
+            getSortValue(b, mainSortConfig.primary.key).toString(),
+            "ja",
+            { numeric: true },
+          );
+          if (primaryCmp !== 0) return mainSortConfig.primary.direction === "asc" ? primaryCmp : -primaryCmp;
+
+          const secondaryCmp = getSortValue(a, mainSortConfig.secondary.key).toString().localeCompare(
+            getSortValue(b, mainSortConfig.secondary.key).toString(),
+            "ja",
+            { numeric: true },
+          );
+          return mainSortConfig.secondary.direction === "asc" ? secondaryCmp : -secondaryCmp;
+        }),
+      }))
+      .sort((a, b) => {
+        const jpnCmp = a.japaneseName.localeCompare(b.japaneseName, "ja", { numeric: true });
+        if (jpnCmp !== 0) return jpnCmp;
+        return a.scientificName.localeCompare(b.scientificName, "ja", { numeric: true });
+      });
+  }, [filteredEntries, getSortValue, mainSortConfig]);
 
   const selectedFolder = useMemo(
     () => groupedEntries.find(g => g.key === selectedFolderKey) ?? null,
@@ -1375,10 +1412,11 @@ export function BeetleManager() {
       />
       {/* 固定ヘッダーセクション */}
       {activeTab !== "分析" && activeTab !== "タスク" && (
-        <section className="sticky top-0 z-30 bg-[#F8F5F2]/80 backdrop-blur-xl pt-4 pb-2 px-4 border-b border-[#E8E2DA] mb-3 shadow-sm">
+        <section className={`sticky top-0 z-30 backdrop-blur-xl pt-4 pb-2 px-4 border-b mb-3 shadow-sm transition-colors ${activeTheme.header}`}>
           <DashboardToolbar
             isSyncing={isSyncing}
             isSelectionMode={isSelectionMode}
+            dashboardTextClassName={activeTheme.dashboard}
             onRegenerateNames={() => handleRegenerateAllNames(false)}
             onGitHubSync={handleGitHubSync}
             onExcelExport={() => handleBulkCopyToExcel()}
@@ -1784,14 +1822,14 @@ export function BeetleManager() {
         </div>
       </Modal>
 
-      <section className="px-6">
+      <section className="px-6 min-h-[calc(100dvh-220px)]">
         <AnimatePresence>
           <motion.div
             key="main-view"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="touch-pan-y"
+            className="min-h-[calc(100dvh-220px)] touch-pan-y"
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.05}
@@ -1879,8 +1917,6 @@ export function BeetleManager() {
                 handleExport={handleExport}
                 handleExcelImport={handleExcelImport}
                 handleImport={handleImport}
-                isPersisted={isPersisted}
-                requestPersistence={requestPersistence}
                 handleSync={handleGitHubSync}
                 isSyncing={isSyncing}
                 onRegenerateNames={() => handleRegenerateAllNames(false)}
@@ -2116,6 +2152,8 @@ export function BeetleManager() {
         <SettingsView
           onClose={() => setIsSettingsOpen(false)}
           sortKeys={sortKeys}
+          mainSortConfig={mainSortConfig}
+          onUpdateMainSortConfig={setMainSortConfig}
           backupEntries={backupEntries}
           onRestoreBackup={restoreBackup}
           onClearBackup={clearBackup}

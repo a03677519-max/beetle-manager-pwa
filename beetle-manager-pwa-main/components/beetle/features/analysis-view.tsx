@@ -25,8 +25,6 @@ interface AnalysisViewProps {
   handleExport: () => void;
   handleImport: (event: React.ChangeEvent<HTMLInputElement>) => void;
   handleExcelImport: (event: React.ChangeEvent<HTMLInputElement>) => void; // New prop for Excel import
-  isPersisted: boolean;
-  requestPersistence: () => void;
   handleSync: () => void;
   isSyncing?: boolean;
   onRegenerateNames?: () => void;
@@ -100,8 +98,6 @@ export function AnalysisView({
   handleExport, 
   handleImport, 
   handleExcelImport, // Destructure new prop
-  isPersisted, 
-  requestPersistence,
   handleSync,
   isSyncing,
   onRegenerateNames,
@@ -573,13 +569,6 @@ export function AnalysisView({
       </AnimatePresence>
 
       <section className="bg-white/80 backdrop-blur-md p-6 rounded-[24px] border border-white/60 shadow-sm mt-8">
-        <h3 className="text-[10px] font-black text-[#D7CCC8] uppercase tracking-widest mb-4">Storage Management</h3>
-        <div className="mb-4 p-4 bg-white/40 rounded-2xl border border-white/60 flex items-center justify-between">
-          <div className="text-[10px] font-bold text-gray-600">
-            {isPersisted ? "永続ストレージ有効" : "削除される可能性があります"}
-          </div>
-          {!isPersisted && <button onClick={requestPersistence} className="text-[10px] bg-[#FF9800] text-white px-3 py-1 rounded-full font-bold">有効化</button>}
-        </div>
         {onRegenerateNames && (
           <div className="grid grid-cols-2 gap-3 mb-3">
             <button 
