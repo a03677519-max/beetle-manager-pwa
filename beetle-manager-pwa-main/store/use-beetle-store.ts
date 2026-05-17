@@ -35,7 +35,9 @@ type BeetleState = {
   gitHub: GitHubSettings;
   mainSortConfig: SortConfig;
   managementNameFormats: ManagementNameFormatMap;
+  keepAlreadyNumberedNames: boolean;
   setManagementNameFormat: (type: EntryType, format: ManagementNameFormat) => void;
+  setKeepAlreadyNumberedNames: (enabled: boolean) => void;
   setMainSortConfig: (config: SortConfig) => void;
   backupEntries: BeetleEntry[] | null;
   createBackup: () => void;
@@ -169,12 +171,14 @@ export const useBeetleStore = create<BeetleState>()(
         "幼虫": "YYYYMMDD_NN",
         "産卵セット": "YYYYMMDD_NN",
       },
+      keepAlreadyNumberedNames: false,
       setManagementNameFormat: (type, format) => set((state) => ({ 
         managementNameFormats: {
           ...state.managementNameFormats,
           [type]: format
         }
       })),
+      setKeepAlreadyNumberedNames: (keepAlreadyNumberedNames) => set({ keepAlreadyNumberedNames }),
       updateSwitchBot: (input) =>
         set((state) => ({ switchBot: { ...state.switchBot, ...input } })),
       updateGitHub: (input) =>
@@ -259,7 +263,8 @@ export const useBeetleStore = create<BeetleState>()(
               japaneseName: adultInput.japaneseName,
               locality: adultInput.locality,
               generation: formatGeneration(adultInput.generation)
-            }
+            },
+            { keepAlreadyNumbered: state.keepAlreadyNumberedNames }
           );
 
           const nextNumber = Math.max(0, ...state.entries.filter(e => e.scientificName === adultInput.scientificName && e.type === "成虫").map(e => e.entryNumber || 0)) + 1;
@@ -357,6 +362,7 @@ export const useBeetleStore = create<BeetleState>()(
         gitHub: state.gitHub,
         mainSortConfig: state.mainSortConfig,
         managementNameFormats: state.managementNameFormats,
+        keepAlreadyNumberedNames: state.keepAlreadyNumberedNames,
         backupEntries: state.backupEntries,
       }),
       merge: (persistedState, currentState) => {
@@ -369,6 +375,7 @@ export const useBeetleStore = create<BeetleState>()(
           switchBot: persisted.switchBot ?? currentState.switchBot,
           gitHub: persisted.gitHub ?? currentState.gitHub,
           managementNameFormats: persisted.managementNameFormats ?? currentState.managementNameFormats,
+          keepAlreadyNumberedNames: persisted.keepAlreadyNumberedNames ?? currentState.keepAlreadyNumberedNames,
           mainSortConfig: persisted.mainSortConfig ?? currentState.mainSortConfig,
           backupEntries: persisted.backupEntries ?? currentState.backupEntries,
         };

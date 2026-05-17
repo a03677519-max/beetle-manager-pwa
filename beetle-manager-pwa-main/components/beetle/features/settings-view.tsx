@@ -14,7 +14,9 @@ export function SettingsView({
   onClearBackup,
   onCleanupManagementNames,
   onRegenerateNames,
-  onSaveManagementNameFormats
+  onSaveManagementNameFormats,
+  keepAlreadyNumberedNames,
+  onUpdateKeepAlreadyNumberedNames
 }: any) {
   const types: EntryType[] = ["成虫", "幼虫", "産卵セット"];
   const [showCustom, setShowCustom] = useState<Record<string, boolean>>({});
@@ -42,8 +44,28 @@ export function SettingsView({
           <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 flex gap-3">
             <Info size={18} className="text-blue-400 shrink-0 mt-0.5" />
             <p className="text-xs text-blue-600 leading-relaxed font-bold">
-              既存の管理名がある場合、末尾に連番(_01等)を付加します。既に連番がある場合は上書きされます。
+              既存の管理名がある場合、末尾に連番(_01等)を付加します。下の設定を有効にすると、既に連番がある管理名は維持します。
             </p>
+          </div>
+
+          <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+            <label className="flex items-center justify-between gap-4 cursor-pointer">
+              <div className="min-w-0">
+                <p className="text-sm font-black text-gray-600">採番済みの管理名を維持</p>
+                <p className="text-[10px] text-gray-400 font-bold leading-relaxed mt-1">
+                  管理名の末尾が「_01」「-01」などの場合、全個体に適用しても番号を二重に付与しません。
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                className="sr-only"
+                checked={!!keepAlreadyNumberedNames}
+                onChange={(e) => onUpdateKeepAlreadyNumberedNames(e.target.checked)}
+              />
+              <span className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${keepAlreadyNumberedNames ? "bg-[#FF9800]" : "bg-gray-200"}`}>
+                <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${keepAlreadyNumberedNames ? "translate-x-6" : "translate-x-1"}`} />
+              </span>
+            </label>
           </div>
 
           {types.map((type) => (

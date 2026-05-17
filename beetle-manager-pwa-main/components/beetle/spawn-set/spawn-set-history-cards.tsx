@@ -90,87 +90,83 @@ export function SpawnSetHistoryCards({
   return (
     <>
       {historySets.map((set, index) => (
-        <article
-          key={set.id}
-          className="w-[17rem] sm:w-80 shrink-0 snap-start rounded-[28px] border border-orange-100 bg-white p-4 shadow-[0_8px_30px_rgba(0,0,0,0.04)]"
-        >
-          <div className="flex items-start justify-between gap-3 mb-3">
-            <div className="min-w-0">
-              <div className="text-[10px] font-black text-[#BCAAA4] uppercase tracking-widest mb-1">{set.isPrimary ? "初回セット" : "産卵履歴"}</div>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className={`text-[11px] font-black px-2 py-0.5 rounded-lg ${set.isPrimary ? "text-white bg-[#FF9800]" : "text-[#FF9800] bg-orange-50"}`}>{set.title}</span>
-                <span className="text-[10px] font-black text-gray-300">{index + 1}/{historySets.length}</span>
+        <div key={set.id} className="w-[17rem] sm:w-80 shrink-0 snap-start flex flex-col gap-2">
+          <article className="min-w-0 rounded-[28px] border border-orange-100 bg-white p-4 shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <div className="min-w-0">
+                <div className="text-[10px] font-black text-[#BCAAA4] uppercase tracking-widest mb-1">{set.isPrimary ? "初回セット" : "産卵履歴"}</div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={`text-[11px] font-black px-2 py-0.5 rounded-lg ${set.isPrimary ? "text-white bg-[#FF9800]" : "text-[#FF9800] bg-orange-50"}`}>{set.title}</span>
+                  <span className="text-[10px] font-black text-gray-300">{index + 1}/{historySets.length}</span>
+                </div>
+              </div>
+              <div className="flex shrink-0 gap-1">
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onEditSet?.(entry, set);
+                  }}
+                  className="p-1.5 text-gray-300 hover:text-blue-500 transition-colors"
+                >
+                  <Edit2 size={16} />
+                </button>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onDeleteSet?.(entry, set.id);
+                  }}
+                  className="p-1.5 text-gray-300 hover:text-red-500 transition-colors"
+                >
+                  <Trash2 size={16} />
+                </button>
               </div>
             </div>
-            <div className="flex shrink-0 gap-1">
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onEditSet?.(entry, set);
-                }}
-                className="p-1.5 text-gray-300 hover:text-blue-500 transition-colors"
-              >
-                <Edit2 size={16} />
-              </button>
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onDeleteSet?.(entry, set.id);
-                }}
-                className="p-1.5 text-gray-300 hover:text-red-500 transition-colors"
-              >
-                <Trash2 size={16} />
-              </button>
-            </div>
-          </div>
 
-          <div className="text-xs font-bold text-gray-400 break-words mb-3">
-            {formatDate(set.setDate || "")} 〜 {set.setEndDate ? formatDate(set.setEndDate) : "継続中"}
-          </div>
+            <div className="text-xs font-bold text-gray-400 break-words mb-3">
+              {formatDate(set.setDate || "")} 〜 {set.setEndDate ? formatDate(set.setEndDate) : "継続中"}
+            </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            <div className="min-w-0 bg-[#F8F9FA] p-3 rounded-xl border border-gray-50">
-              <p className="text-[10px] text-gray-400 font-bold">回収結果</p>
-              <p className="text-sm font-black text-gray-700 break-words whitespace-normal">卵:{set.eggCount ?? 0} / 幼:{set.larvaCount ?? 0}</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="min-w-0 bg-[#F8F9FA] p-3 rounded-xl border border-gray-50">
+                <p className="text-[10px] text-gray-400 font-bold">回収結果</p>
+                <p className="text-sm font-black text-gray-700 break-words whitespace-normal">卵:{set.eggCount ?? 0} / 幼:{set.larvaCount ?? 0}</p>
+              </div>
+              <div className="min-w-0 bg-[#F8F9FA] p-3 rounded-xl border border-gray-50">
+                <p className="text-[10px] text-gray-400 font-bold">セット方法</p>
+                <p className="text-[11px] font-bold text-gray-600 break-words whitespace-normal">{set.displaySubstrate || "前回同様"}</p>
+              </div>
+              <div className="min-w-0 bg-[#F8F9FA] p-3 rounded-xl border border-gray-50">
+                <p className="text-[10px] text-gray-400 font-bold">容器</p>
+                <p className="text-[11px] font-bold text-gray-600 break-words whitespace-normal">{set.displayContainerSize || "-"}</p>
+              </div>
+              <div className="min-w-0 bg-[#F8F9FA] p-3 rounded-xl border border-gray-50">
+                <p className="text-[10px] text-gray-400 font-bold">環境</p>
+                <p className="text-[11px] font-bold text-gray-600 break-words whitespace-normal">水:{set.displayMoisture ?? "-"} / 圧:{set.displayPressure || "-"}</p>
+              </div>
             </div>
-            <div className="min-w-0 bg-[#F8F9FA] p-3 rounded-xl border border-gray-50">
-              <p className="text-[10px] text-gray-400 font-bold">セット方法</p>
-              <p className="text-[11px] font-bold text-gray-600 break-words whitespace-normal">{set.displaySubstrate || "前回同様"}</p>
-            </div>
-            <div className="min-w-0 bg-[#F8F9FA] p-3 rounded-xl border border-gray-50">
-              <p className="text-[10px] text-gray-400 font-bold">容器</p>
-              <p className="text-[11px] font-bold text-gray-600 break-words whitespace-normal">{set.displayContainerSize || "-"}</p>
-            </div>
-            <div className="min-w-0 bg-[#F8F9FA] p-3 rounded-xl border border-gray-50">
-              <p className="text-[10px] text-gray-400 font-bold">環境</p>
-              <p className="text-[11px] font-bold text-gray-600 break-words whitespace-normal">水:{set.displayMoisture ?? "-"} / 圧:{set.displayPressure || "-"}</p>
-            </div>
-          </div>
 
-          {set.memo && (
-            <p className="mt-3 text-[11px] text-gray-500 bg-orange-50/40 p-3 rounded-xl break-words whitespace-pre-wrap italic border border-orange-50">
-              {set.memo}
-            </p>
-          )}
-        </article>
-      ))}
+            {set.memo && (
+              <p className="mt-3 text-[11px] text-gray-500 bg-orange-50/40 p-3 rounded-xl break-words whitespace-pre-wrap italic border border-orange-50">
+                {set.memo}
+              </p>
+            )}
+          </article>
 
-      <button
-        type="button"
-        onClick={(event) => {
-          event.stopPropagation();
-          onAddSet?.(entry);
-        }}
-        className="w-44 shrink-0 snap-start rounded-[28px] border border-dashed border-orange-200 bg-white/70 p-4 text-left shadow-[0_8px_30px_rgba(0,0,0,0.03)] active:scale-[0.97] transition-all"
-      >
-        <div className="w-9 h-9 rounded-full bg-[#FF9800] text-white flex items-center justify-center shadow-lg shadow-orange-100 mb-3">
-          <Plus size={20} />
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onAddSet?.(entry);
+            }}
+            className="w-full flex items-center justify-center gap-2 rounded-2xl border border-dashed border-orange-200 bg-white/80 px-4 py-3 text-xs font-black text-[#FF9800] shadow-[0_8px_24px_rgba(0,0,0,0.03)] active:scale-[0.98] transition-all"
+          >
+            <Plus size={16} />
+            履歴を追加
+          </button>
         </div>
-        <div className="text-sm font-black text-gray-600">履歴を追加</div>
-        <div className="text-[10px] font-bold text-gray-400 mt-1 leading-snug">カード横に独立した産卵履歴を追加します</div>
-      </button>
+      ))}
     </>
   );
 }

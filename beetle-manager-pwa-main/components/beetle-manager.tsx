@@ -73,6 +73,7 @@ export function BeetleManager() {
   const gitHub = useBeetleStore((state) => state.gitHub);
   const mainSortConfig = useBeetleStore((state) => state.mainSortConfig);
   const managementNameFormats = useBeetleStore((state) => state.managementNameFormats);
+  const keepAlreadyNumberedNames = useBeetleStore((state) => state.keepAlreadyNumberedNames);
   const backupEntries = useBeetleStore((state) => state.backupEntries);
   const createBackup = useBeetleStore((state) => state.createBackup);
   const restoreBackup = useBeetleStore((state) => state.restoreBackup);
@@ -80,6 +81,7 @@ export function BeetleManager() {
   const setMainSortConfig = useBeetleStore((state) => state.setMainSortConfig);
   const { fetchTemperature, isFetching } = useSwitchBot();
   const setManagementNameFormat = useBeetleStore((state) => state.setManagementNameFormat);
+  const setKeepAlreadyNumberedNames = useBeetleStore((state) => state.setKeepAlreadyNumberedNames);
 
   const editingEntry = entries.find((entry) => entry.id === editingId) ?? null;
 
@@ -553,14 +555,15 @@ export function BeetleManager() {
           japaneseName: entry.japaneseName,
           locality: entry.locality,
           generation: formatGeneration(entry.generation)
-        }
+        },
+        { keepAlreadyNumbered: keepAlreadyNumberedNames }
       );
       processed.push({ ...entry, managementName: newName });
     });
     
     importData(processed);
     window.alert("管理名の一括更新が完了しました。");
-  }, [entries, managementNameFormats, importData]);
+  }, [entries, managementNameFormats, keepAlreadyNumberedNames, importData]);
 
   // 設定画面から呼び出されるクリーンアップ機能の実装
   const handleCleanupManagementNames = useCallback(() => {
@@ -775,7 +778,9 @@ export function BeetleManager() {
       entries, 
       "成虫", 
       managementNameFormats["成虫"],
-      entry.managementName
+      entry.managementName,
+      undefined,
+      { keepAlreadyNumbered: keepAlreadyNumberedNames }
     );
 
     addAdult({
@@ -825,7 +830,7 @@ export function BeetleManager() {
         let nextDate = updatedEntry.createdAt || today();
         if (remaining.length > 0) nextDate = [...remaining].sort((a, b) => a.setDate.localeCompare(b.setDate))[0].setDate;
 
-        updatedEntry.managementName = generateUniqueMName(nextDate, updatedEntry.scientificName, entries.filter(e => e.id !== entryId), "産卵セット", managementNameFormats["産卵セット"]);
+        updatedEntry.managementName = generateUniqueMName(nextDate, updatedEntry.scientificName, entries.filter(e => e.id !== entryId), "産卵セット", managementNameFormats["産卵セット"], undefined, undefined, { keepAlreadyNumbered: keepAlreadyNumberedNames });
       }
       updateSpawnSet(entryId, updatedEntry);
     }
@@ -1479,7 +1484,8 @@ export function BeetleManager() {
                   japaneseName: value.japaneseName,
                   locality: value.locality,
                   generation: formatGeneration(value.generation)
-                }
+                },
+                { keepAlreadyNumbered: keepAlreadyNumberedNames }
               );
               addAdult({ ...value, managementName: mName });
               setIsCreating(false);
@@ -1511,7 +1517,8 @@ export function BeetleManager() {
                     japaneseName: values.japaneseName,
                     locality: values.locality,
                     generation: formatGeneration(values.generation)
-                  }
+                  },
+                  { keepAlreadyNumbered: keepAlreadyNumberedNames }
                 );
                 // IDや作成日などのメタデータを除去して新規登録
                 const { id, createdAt, ...cleanValues } = values as any;
@@ -1541,7 +1548,8 @@ export function BeetleManager() {
                   japaneseName: value.japaneseName,
                   locality: value.locality,
                   generation: formatGeneration(value.generation)
-                }
+                },
+                { keepAlreadyNumbered: keepAlreadyNumberedNames }
               );
               addSpawnSet({ ...value, managementName: mName });
               setIsCreating(false);
@@ -1588,7 +1596,8 @@ export function BeetleManager() {
                       japaneseName: value.japaneseName,
                       locality: value.locality,
                       generation: formatGeneration(value.generation)
-                    }
+                    },
+                    { keepAlreadyNumbered: keepAlreadyNumberedNames }
                   );
                   
                   const { id, photos, createdAt, ...rest } = value;
@@ -1947,6 +1956,8 @@ export function BeetleManager() {
           onClearBackup={clearBackup}
           managementNameFormats={managementNameFormats}
           onUpdateManagementNameFormat={setManagementNameFormat}
+          keepAlreadyNumberedNames={keepAlreadyNumberedNames}
+          onUpdateKeepAlreadyNumberedNames={setKeepAlreadyNumberedNames}
           onCleanupManagementNames={handleCleanupManagementNames}
           onRegenerateNames={() => handleRegenerateAllNames(false)}
           onSaveManagementNameFormats={() => window.alert("管理名テンプレートが保存されました。")}

@@ -45,12 +45,25 @@ export const parseAmbiguousDate = (str: string): Date | null => {
   return isNaN(d.getTime()) ? null : d;
 };
 
+export const hasNumberingSuffix = (name?: string): boolean => {
+  const normalized = (name || "").trim();
+  if (!normalized || normalized === "-") return false;
+  return /[_-]\d+$/.test(normalized);
+};
+
+const getNumberingSuffix = (name?: string): number | null => {
+  const match = (name || "").trim().match(/[_-](\d+)$/);
+  if (!match) return null;
+  const suffix = Number(match[1]);
+  return Number.isNaN(suffix) ? null : suffix;
+};
+
 /**
  * 自動採番ロジック
  * 1. テンプレートから「連番の形式（区切り文字と桁数）」を動的に解析。
  * 2. 既存の管理名がある場合、末尾の古い連番を除去。
  * 3. 既存名に現在のテンプレート（日付等）が含まれていない場合、末尾に追加する。
- * 4. 同年内の同じ学名の個体は既存の管理名ごとに連番にする。
+ * 4. 同じ学名・同じ種別の個体は日付部分が違っても連番にする。
  */
 export function generateUniqueMName(
   date: string,
@@ -59,7 +72,8 @@ export function generateUniqueMName(
   type: string,
   format: string,
   currentName?: string,
-  metadata?: { japaneseName?: string; locality?: string; generation?: string }
+  metadata?: { japaneseName?: string; locality?: string; generation?: string },
+  options?: { keepAlreadyNumbered?: boolean }
 ) {
   let d = parseAmbiguousDate(date);
   if (!d || isNaN(d.getTime())) d = new Date();
@@ -86,12 +100,18 @@ export function generateUniqueMName(
     return r.replace(/[_-]?N+$/, "");
   };
 
+  const trimmedCurrentName = (currentName || "").trim();
+  if (options?.keepAlreadyNumbered && hasNumberingSuffix(trimmedCurrentName)) {
+    const collision = entries.some(e => e.managementName === trimmedCurrentName && e.type === type);
+    if (!collision) return trimmedCurrentName;
+  }
+
   let prefix: string;
   const templateBase = resolveTemplate(format);
 
-  if (currentName && currentName.trim() !== "" && currentName !== "-") {
+  if (trimmedCurrentName && trimmedCurrentName !== "-") {
     // 既存名から末尾の連番（_01, -1等）を除去
-    const existingBase = currentName.replace(/([_-]?\d+)+$/, "").replace(/N+$/g, "").trim();
+    const existingBase = trimmedCurrentName.replace(/([_-]?\d+)+$/, "").replace(/N+$/g, "").trim();
 
     // 既存管理名がある場合は、常に「既存名_テンプレートベース」にする
     // 例: "ABC" + "20240101" => "ABC_20240101_01"
@@ -104,7 +124,15 @@ export function generateUniqueMName(
   // 記号の重複や末尾の記号をクリーンアップ
   prefix = prefix.replace(/[_-]{2,}/g, "_").replace(/^[_-]+|[_-]+$/g, "");
 
-  let count = 1;
+  const maxExistingNumber = Math.max(
+    0,
+    ...entries
+      .filter(e => e.scientificName === sciName && e.type === type)
+      .map(e => getNumberingSuffix(e.managementName))
+      .filter((n): n is number => n !== null)
+  );
+
+  let count = maxExistingNumber + 1;
   while (true) {
     const nn = String(count).padStart(padding, '0');
     const candidate = `${prefix}${separator}${nn}`;
