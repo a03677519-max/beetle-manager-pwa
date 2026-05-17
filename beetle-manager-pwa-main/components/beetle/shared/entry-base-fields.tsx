@@ -57,11 +57,22 @@ export function EntryBaseFields({
     const basePrefix = managementName?.split('_')[0] || "A";
     
     // 2. 日付文字列の生成 (YYMDD形式: 2026-03-12 -> 26312)
-    const dateVal = autoNumberingDate || today();
-    const [year, month, day] = dateVal.split("-");
-    const yy = year.slice(2);
-    const m = parseInt(month, 10);
-    const dd = day.padStart(2, "0");
+    let dateVal = autoNumberingDate || today();
+    let parts = dateVal.split("-");
+    
+    // 日付が不完全（空や "-"）な場合は現在の日付を使用
+    if (parts.length < 3 || parts.some(p => !p || p === "-")) {
+      const now = new Date();
+      parts = [String(now.getFullYear()), String(now.getMonth() + 1), String(now.getDate())];
+    }
+
+    const [year, month, day] = parts;
+    const yy = year.slice(-2);
+    const m = parseInt(month, 10) || 1;
+    // 日付が数値でない（上/中/下など）場合はそのまま使い、数値なら2桁埋め
+    const ddNum = parseInt(day, 10);
+    const dd = isNaN(ddNum) ? day : day.padStart(2, "0");
+
     const dateStr = `${yy}${m}${dd}`;
     
     // 3. 同一和名・学名かつ、同じベースプレフィックスを持つ個体全体から連番を計算

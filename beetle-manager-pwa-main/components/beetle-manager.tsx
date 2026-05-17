@@ -811,7 +811,6 @@ export function BeetleManager() {
       let updatedEntry = { ...s } as any;
       
       if (setId === "primary") {
-        // 1回目のセット（基本フィールド）をクリア
         updatedEntry.setDate = "";
         updatedEntry.setEndDate = "";
         updatedEntry.eggCount = 0;
@@ -819,7 +818,6 @@ export function BeetleManager() {
         updatedEntry.substrate = "";
         updatedEntry.containerSize = "";
       } else {
-        // sets配列から削除
         updatedEntry.sets = (s.sets || []).filter((set: any) => set.id !== setId);
       }
 
@@ -842,7 +840,7 @@ export function BeetleManager() {
           entries.filter(e => e.id !== entryId),
           "産卵セット",
           managementNameFormats["産卵セット"],
-          undefined, // 既存の名前を維持せず再生成
+          undefined,
           {
             japaneseName: updatedEntry.japaneseName,
             locality: updatedEntry.locality,
@@ -851,7 +849,6 @@ export function BeetleManager() {
         );
         updatedEntry.managementName = newName;
       }
-
       updateSpawnSet(entryId, updatedEntry);
     }
   };

@@ -2,17 +2,20 @@
  * データをGitHubリポジトリにバックアップとして保存（プッシュ）します
  */
 export async function pushDataToGitHub(
-  config: { token: string; repo: string },
+  config: { token: string; owner: string; repo: string; path: string; branch: string },
   data: any
 ): Promise<boolean> {
-  const { token, repo } = config;
-  const fileName = "beetle-data-backup.json";
+  const { token, owner, repo, path, branch } = config;
+  const fileName = path || "beetle-data-backup.json";
   const message = `Sync backup data: ${new Date().toLocaleString()}`;
   
-  // JSONデータをUTF-8を考慮してBase64に変換
-  const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
+  // JSONデータをUTF-8対応のBase64に変換
+  const json = JSON.stringify(data, null, 2);
+  const bytes = new TextEncoder().encode(json);
+  const binString = Array.from(bytes, (byte) => String.fromCharCode(byte)).join("");
+  const content = btoa(binString);
 
-  const url = `https://api.github.com/repos/${repo}/contents/${fileName}`;
+  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${fileName}`;
   const headers = {
     Authorization: `token ${token}`,
     Accept: "application/vnd.github.v3+json",
@@ -33,7 +36,7 @@ export async function pushDataToGitHub(
   const putResponse = await fetch(url, {
     method: "PUT",
     headers,
-    body: JSON.stringify({ message, content, sha }),
+    body: JSON.stringify({ message, content, sha, branch }),
   });
 
   return putResponse.ok;
