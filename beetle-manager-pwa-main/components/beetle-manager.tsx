@@ -27,6 +27,7 @@ import { AdultForm } from "./beetle/adult/adult-form";
 import { LarvaForm } from "./beetle/larva/larva-form";
 import { SpawnSetForm } from "./beetle/spawn-set/spawn-set-form";
 import { SpawnSetSecondForm } from "./beetle/spawn-set/spawn-set-second-form";
+import { SpawnSetHistoryCards } from "./beetle/spawn-set/spawn-set-history-cards";
 import { EntryCard } from "./beetle/shared/entry-card";
 import { EmptyState } from "./beetle/shared/empty-state";
 import { EntryDetail } from "./beetle/shared/entry-detail";
@@ -84,6 +85,7 @@ export function BeetleManager() {
 
   const [selectedEntry, setSelectedEntry] = useState<BeetleEntry | null>(null);
   const [isAddingSecondSet, setIsAddingSecondSet] = useState(false);
+  const [secondSetParentId, setSecondSetParentId] = useState<string | null>(null);
   const [editingChildSet, setEditingChildSet] = useState<any>(null); // 産卵セットの2回目以降の編集用
   
   // クロップ用のステート
@@ -829,12 +831,19 @@ export function BeetleManager() {
     }
   };
 
+  const handleAddSecondSet = (entryId: string) => {
+    setSecondSetParentId(entryId);
+    setEditingChildSet(null);
+    setIsAddingSecondSet(true);
+  };
+
   const handleEditSet = (entryId: string, set: any) => {
     const entry = entries.find(e => e.id === entryId);
     if (!entry || entry.type !== "産卵セット") return;
 
     // 1回目(primary)も2回目以降も、履歴専用フォーム(SpawnSetSecondForm)を開くように統合
     // これにより、個体情報全体を開かずにセット内容だけを素早く修正可能になります
+    setSecondSetParentId(entryId);
     setEditingChildSet({ ...set, id: set.id, parentId: entryId });
     setIsAddingSecondSet(true);
   };
@@ -1329,7 +1338,7 @@ export function BeetleManager() {
             onClose={() => setSelectedEntry(null)}
             onFetchTemperature={fetchCurrentTemperature} // Pass the function
             isFetchingTemperature={isFetching} // Pass the state
-            onAddSecondSet={() => setIsAddingSecondSet(true)} // Pass the function
+            onAddSecondSet={() => handleAddSecondSet(selectedEntry.id)} // Pass the function
             onDeleteSet={(setId) => handleDeleteSet(selectedEntry.id, setId)} // Pass the function
             onEditSet={(set) => handleEditSet(selectedEntry.id, set)} // Pass the function
           />
@@ -1815,22 +1824,40 @@ export function BeetleManager() {
             {/* ウィンドウ内のコンテンツエリア */}
             <div className="flex-1 overflow-y-auto px-6 pt-4 pb-32">
               <div className="space-y-4">
-                {groupedEntries.find(g => g.key === selectedFolderKey)?.entries.map((entry) => (
-                  <div
-                    key={entry.id}
-                    className={`space-y-2 ${isSelectionMode ? 'touch-none select-none' : ''}`}
-                    data-selection-entry-id={entry.id}
-                    onPointerDown={(event) => handlePointerDown(event, entry.id, groupedEntries.find(g => g.key === selectedFolderKey)?.entries || [])}
-                    onPointerMove={handlePointerMove}
-                  >
-                    <EntryCard
-                      entry={entry}
-                      onOpen={() => handleEntryClick(entry)}
-                      isSelected={selectedIds.includes(entry.id)}
-                      isSelectionMode={isSelectionMode}
-                    />
-                  </div>
-                ))}
+                {groupedEntries.find(g => g.key === selectedFolderKey)?.entries.map((entry) => {
+                  const currentList = groupedEntries.find(g => g.key === selectedFolderKey)?.entries || [];
+
+                  return (
+                    <div
+                      key={entry.id}
+                      className={`${isSelectionMode ? 'touch-none select-none' : ''}`}
+                      data-selection-entry-id={entry.id}
+                      onPointerDown={(event) => handlePointerDown(event, entry.id, currentList)}
+                      onPointerMove={handlePointerMove}
+                    >
+                      <div className="-mx-6 overflow-x-auto px-6 pb-2 snap-x snap-mandatory touch-pan-x hide-scrollbar">
+                        <div className="flex items-stretch gap-3">
+                          <div className="w-[calc(100vw-3rem)] max-w-full shrink-0 snap-start">
+                            <EntryCard
+                              entry={entry}
+                              onOpen={() => handleEntryClick(entry)}
+                              isSelected={selectedIds.includes(entry.id)}
+                              isSelectionMode={isSelectionMode}
+                            />
+                          </div>
+                          {entry.type === "産卵セット" && !isSelectionMode && (
+                            <SpawnSetHistoryCards
+                              entry={entry as SpawnSet}
+                              onAddSet={(spawnEntry) => handleAddSecondSet(spawnEntry.id)}
+                              onEditSet={(spawnEntry, set) => handleEditSet(spawnEntry.id, set)}
+                              onDeleteSet={(spawnEntry, setId) => handleDeleteSet(spawnEntry.id, setId)}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -1849,21 +1876,21 @@ export function BeetleManager() {
 
       <Modal 
         isOpen={isAddingSecondSet} 
-        onClose={() => { setIsAddingSecondSet(false); setEditingChildSet(null); }} 
+        onClose={() => { setIsAddingSecondSet(false); setEditingChildSet(null); setSecondSetParentId(null); }} 
         title={editingChildSet ? "履歴の編集" : "追加のセット登録"}
       >
-        {(selectedEntry || editingChildSet) && (
+        {((secondSetParentId ? entries.find(e => e.id === secondSetParentId) : selectedEntry) || editingChildSet) && (
           <SpawnSetSecondForm
             initialValues={editingChildSet ? editingChildSet : { 
               ...emptySpawnSetForm, 
               id: undefined,
-              sets: (selectedEntry as any)?.sets,
-              setDate: (selectedEntry as any)?.setDate,
-              setEndDate: (selectedEntry as any)?.setEndDate
+              sets: ((secondSetParentId ? entries.find(e => e.id === secondSetParentId) : selectedEntry) as any)?.sets,
+              setDate: ((secondSetParentId ? entries.find(e => e.id === secondSetParentId) : selectedEntry) as any)?.setDate,
+              setEndDate: ((secondSetParentId ? entries.find(e => e.id === secondSetParentId) : selectedEntry) as any)?.setEndDate
             }}
             allEntries={entries}
             onSubmit={(submittedSet) => {
-              const parentEntryId = editingChildSet ? editingChildSet.parentId : selectedEntry?.id;
+              const parentEntryId = editingChildSet ? editingChildSet.parentId : secondSetParentId ?? selectedEntry?.id;
               if (!parentEntryId) return;
               const entry = entries.find(e => e.id === parentEntryId) as any;
               if (!entry) return;
@@ -1901,10 +1928,12 @@ export function BeetleManager() {
               }
               setIsAddingSecondSet(false);
               setEditingChildSet(null);
+              setSecondSetParentId(null);
             }}
             onCancel={() => {
               setIsAddingSecondSet(false);
               setEditingChildSet(null);
+              setSecondSetParentId(null);
             }}
           />
         )}
