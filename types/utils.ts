@@ -77,19 +77,14 @@ export function generateUniqueMName(
   };
 
   let prefix: string;
+  let serialSeparator = separator;
   const templateBase = resolveTemplate(format);
 
   if (currentName && currentName.trim() !== "" && currentName !== "-") {
     // 既存名から末尾の連番（_01, -1等）を除去
-    const existingBase = currentName.replace(/([_-]?\d+)+$/, "").replace(/N+$/g, "").trim();
-    
-    // 既存名が既にテンプレートベース（日付等）を含んでいるかチェック
-    if (existingBase.includes(templateBase)) {
-      prefix = existingBase;
-    } else {
-      // 含まれていない場合は、既存名をベースとしてテンプレート部分を追記する
-      prefix = `${existingBase}_${templateBase}`;
-    }
+    const existingBase = currentName.replace(/[_-]\d+$/, "").replace(/[_-]?N+$/, "").trim();
+    serialSeparator = "_";
+    prefix = existingBase || templateBase;
   } else {
     prefix = templateBase;
   }
@@ -100,7 +95,7 @@ export function generateUniqueMName(
   let count = 1;
   while (true) {
     const nn = String(count).padStart(padding, '0');
-    const candidate = `${prefix}${separator}${nn}`;
+    const candidate = `${prefix}${serialSeparator}${nn}`;
     const collision = entries.some(e => e.managementName === candidate && e.type === type);
     if (!collision) return candidate;
     count++;
