@@ -1,37 +1,33 @@
 import type { Metadata, Viewport } from "next";
-
+import { Inter } from "next/font/google";
 import { PwaRegister } from "@/components/pwa-register";
 
-import "./globals.css";
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "昆虫管理アプリ",
-  description: "個体登録・ステージ管理・履歴ログをローカル保存できる昆虫管理アプリ",
+  title: "Beetle Manager",
+  description: "Beetle breeding management PWA",
   manifest: "/manifest.json",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "昆虫管理アプリ",
-  },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#2f8f57",
+  themeColor: "#FF9800",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="ja">
-      <body>
-        <PwaRegister />
+      <body className={inter.className}>
         {children}
+        <PwaRegister />
       </body>
     </html>
   );
