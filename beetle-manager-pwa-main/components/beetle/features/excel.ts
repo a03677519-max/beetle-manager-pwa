@@ -1,5 +1,5 @@
 import type { BeetleEntry, AdultBeetle, LarvaBeetle, SpawnSet, LarvaLog, GenerationValue, EntryType } from "@/types/beetle";
-import { createId, today, parseAmbiguousDate } from "@/types/utils";
+import { createId, today, parseAmbiguousDate, formatGeneration, formatDate } from "@/types/utils";
 
 // Helper to parse a date string into YYYY-MM-DD format
 const parseDateToISO = (dateStr: string | number | Date | undefined): string => {
@@ -33,6 +33,116 @@ const parseGeneration = (genStr: string | undefined): GenerationValue => {
   }
   return defaultGen;
 };
+
+/**
+ * データをExcelファイルとして生成し、バッファを返します
+ */
+export async function exportDataToExcelBuffer(targetEntries: BeetleEntry[]): Promise<Buffer | ArrayBuffer> {
+  const ExcelJS = (await import("exceljs")).default;
+  const workbook = new ExcelJS.Workbook();
+
+  // 最大ログ数/履歴数の算出
+  let maxLarvaLogs = 0;
+  let maxSpawnSets = 0;
+  targetEntries.forEach(entry => {
+    if (entry.type === "幼虫") maxLarvaLogs = Math.max(maxLarvaLogs, (entry as any).logs?.length || 0);
+    if (entry.type === "産卵セット") maxSpawnSets = Math.max(maxSpawnSets, (entry as any).sets?.length || 0);
+  });
+
+  const groups = targetEntries.reduce((acc, e) => {
+    const key = e.scientificName || "Unknown";
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(e);
+    return acc;
+  }, {} as Record<string, BeetleEntry[]>);
+
+  for (const [sciName, speciesEntries] of Object.entries(groups)) {
+    const sheetName = sciName.replace(/[\\/*?[\]]/g, "").slice(0, 31);
+    const sheet = workbook.addWorksheet(sheetName);
+    let currentRow = 1;
+
+    const types: EntryType[] = ["成虫", "幼虫", "産卵セット"];
+    for (const type of types) {
+      const typeEntries = speciesEntries.filter(e => e.type === type);
+      if (typeEntries.length === 0) continue;
+
+      // ヘッダー作成
+      let headers: string[] = ["管理名", "和名", "学名", "累代"];
+      if (type === "成虫") {
+        headers.push("性別", "サイズ", "羽化日", "後食日", "区分", "メモ");
+      } else if (type === "幼虫") {
+        headers.push("孵化/割出日");
+        for (let i = 1; i <= maxLarvaLogs; i++) {
+          headers.push(`${i}回目計測日`, `${i}回目体重`, `${i}回目令数`);
+        }
+        headers.push("メモ");
+      } else if (type === "産卵セット") {
+        headers.push("セット開始日");
+        for (let i = 1; i <= maxSpawnSets + 1; i++) {
+          headers.push(`${i}回目日付`, `${i}回目回収`);
+        }
+        headers.push("メモ");
+      }
+
+      const headerRow = sheet.getRow(currentRow++);
+      headers.forEach((h, i) => {
+        const cell = headerRow.getCell(i + 1);
+        cell.value = h;
+        cell.font = { bold: true };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE9E2DA' } };
+        cell.border = { bottom: { style: 'thin' } };
+      });
+
+      // データ書き込み
+      for (const entry of typeEntries) {
+        const dataRow = sheet.getRow(currentRow++);
+        const e = entry as any;
+        let rowData: any[] = [e.managementName || "-", e.japaneseName, e.scientificName, formatGeneration(e.generation)];
+
+        if (type === "成虫") {
+          rowData.push(e.gender, e.size ? `${e.size}mm` : "-", formatDate(e.emergenceDate), formatDate(e.feedingDate), e.emergenceType, e.memo || "");
+        } else if (type === "幼虫") {
+          rowData.push(formatDate(e.hatchDate || e.extractionDate));
+          const logs = [...(e.logs || [])].sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+          for (let i = 0; i < maxLarvaLogs; i++) {
+            const log = logs[i];
+            rowData.push(log ? formatDate(log.date) : "", log ? `${log.weight}g` : "", log ? log.stage : "");
+          }
+          rowData.push(e.memo || "");
+        } else {
+          rowData.push(formatDate(e.setDate));
+          rowData.push(formatDate(e.setEndDate || e.setDate), (e.eggCount || 0) + (e.larvaCount || 0));
+          const sets = [...(e.sets || [])].sort((a, b) => (a.setDate || "").localeCompare(b.setDate || ""));
+          for (let i = 0; i < maxSpawnSets; i++) {
+            const s = sets[i];
+            rowData.push(s ? formatDate(s.setEndDate || s.setDate) : "", s ? (s.eggCount || 0) + (s.larvaCount || 0) : "");
+          }
+          rowData.push(e.memo || "");
+        }
+
+        rowData.forEach((val, i) => {
+          dataRow.getCell(i + 1).value = val;
+        });
+      }
+      currentRow++; 
+    }
+
+    // セルの幅を自動調整
+    sheet.columns.forEach(column => {
+      let maxLength = 0;
+      column.eachCell?.({ includeEmpty: true }, (cell) => {
+        const str = cell.value ? String(cell.value) : "";
+        let len = 0;
+        for (let j = 0; j < str.length; j++) {
+          len += str.charCodeAt(j) > 255 ? 2 : 1;
+        }
+        if (len > maxLength) maxLength = len;
+      });
+      column.width = Math.min(50, Math.max(10, maxLength + 2));
+    });
+  }
+  return await workbook.xlsx.writeBuffer();
+}
 
 export async function importDataFromExcel(file: File): Promise<BeetleEntry[]> {
   const ExcelJS = (await import("exceljs")).default;

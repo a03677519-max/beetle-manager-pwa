@@ -82,14 +82,11 @@ export function generateUniqueMName(
   if (currentName && currentName.trim() !== "" && currentName !== "-") {
     // 既存名から末尾の連番（_01, -1等）を除去
     const existingBase = currentName.replace(/([_-]?\d+)+$/, "").replace(/N+$/g, "").trim();
-    
-    // 既存名が既にテンプレートベース（日付等）を含んでいるかチェック
-    if (existingBase.includes(templateBase)) {
-      prefix = existingBase;
-    } else {
-      // 含まれていない場合は、既存名をベースとしてテンプレート部分を追記する
-      prefix = `${existingBase}_${templateBase}`;
-    }
+
+    // 既存管理名がある場合は、常に「既存名_テンプレートベース」にする
+    // 例: "ABC" + "20240101" => "ABC_20240101_01"
+    // 既にテンプレート文字列を含んでいても、要件に合わせて末尾にテンプレートを付与する
+    prefix = `${existingBase}_${templateBase}`;
   } else {
     prefix = templateBase;
   }

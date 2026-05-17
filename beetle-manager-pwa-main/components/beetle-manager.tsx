@@ -30,7 +30,7 @@ import { SpawnSetSecondForm } from "./beetle/spawn-set/spawn-set-second-form";
 import { EntryCard } from "./beetle/shared/entry-card";
 import { EmptyState } from "./beetle/shared/empty-state";
 import { EntryDetail } from "./beetle/shared/entry-detail";
-import { importDataFromExcel } from "./beetle/features/excel"; // インポートパスを修正
+import { importDataFromExcel, exportDataToExcelBuffer } from "./beetle/features/excel"; // インポートパスを修正
 import { AnalysisView } from "./beetle/features/analysis-view";
 import { TaskView } from "./beetle/features/task-view";
 import { SettingsView } from "./beetle/features/settings-view"; // 新設を想定
@@ -398,119 +398,10 @@ export function BeetleManager() {
     setIsSyncing(true); // 処理中インジケータとして利用
 
     try {
-      const ExcelJS = (await import("exceljs")).default;
-      const workbook = new ExcelJS.Workbook();
-
       const targetEntries = ids ? entries.filter(e => ids.includes(e.id)) : entries;
       if (targetEntries.length === 0) return;
 
-      // 最大ログ数/履歴数の算出
-      let maxLarvaLogs = 0;
-      let maxSpawnSets = 0;
-      targetEntries.forEach(entry => {
-        if (entry.type === "幼虫") maxLarvaLogs = Math.max(maxLarvaLogs, (entry as any).logs?.length || 0);
-        if (entry.type === "産卵セット") maxSpawnSets = Math.max(maxSpawnSets, (entry as any).sets?.length || 0);
-      });
-
-        const groups = targetEntries.reduce((acc, e) => {
-          const key = e.scientificName || "Unknown";
-          if (!acc[key]) acc[key] = [];
-          acc[key].push(e);
-          return acc;
-        }, {} as Record<string, BeetleEntry[] >);
-
-        for (const [sciName, speciesEntries] of Object.entries(groups)) {
-          const sheetName = sciName.replace(/[\\/*?[\]]/g, "").slice(0, 31);
-          const sheet = workbook.addWorksheet(sheetName);
-          let currentRow = 1;
-
-          const types: EntryType[] = ["成虫", "幼虫", "産卵セット"];
-          for (const type of types) {
-            const typeEntries = speciesEntries.filter(e => e.type === type);
-            if (typeEntries.length === 0) continue;
-
-            // ヘッダー作成
-            let headers: string[] = ["管理名", "和名", "学名", "累代"];
-            if (type === "成虫") {
-              headers.push("性別", "サイズ", "羽化日", "後食日", "区分", "メモ");
-            } else if (type === "幼虫") {
-              headers.push("孵化/割出日");
-              for (let i = 1; i <= maxLarvaLogs; i++) {
-                headers.push(`${i}回目計測日`, `${i}回目体重`, `${i}回目令数`);
-              }
-              headers.push("メモ");
-            } else if (type === "産卵セット") {
-              headers.push("セット開始日");
-              for (let i = 1; i <= maxSpawnSets + 1; i++) {
-                headers.push(`${i}回目日付`, `${i}回目回収`);
-              }
-              headers.push("メモ");
-            }
-
-            const headerRow = sheet.getRow(currentRow++);
-            headers.forEach((h, i) => {
-              const cell = headerRow.getCell(i + 1);
-              cell.value = h;
-              cell.font = { bold: true };
-              cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE9E2DA' } };
-              cell.border = { bottom: { style: 'thin' } };
-            });
-
-            // データ書き込み
-            for (const entry of typeEntries) {
-              const dataRow = sheet.getRow(currentRow++);
-              const e = entry as any;
-              let rowData: any[] = [e.managementName || "-", e.japaneseName, e.scientificName, formatGeneration(e.generation)];
-
-              if (type === "成虫") {
-                rowData.push(e.gender, e.size ? `${e.size}mm` : "-", formatDate(e.emergenceDate), formatDate(e.feedingDate), e.emergenceType, e.memo || "");
-              } else if (type === "幼虫") {
-                rowData.push(formatDate(e.hatchDate || e.extractionDate));
-                // 計測ログを日付の昇順（古い順）にソートして出力
-                const logs = [...(e.logs || [])].sort((a, b) => (a.date || "").localeCompare(b.date || ""));
-                for (let i = 0; i < maxLarvaLogs; i++) {
-                  const log = logs[i];
-                  rowData.push(log ? formatDate(log.date) : "", log ? `${log.weight}g` : "", log ? log.stage : "");
-                }
-                rowData.push(e.memo || "");
-              } else {
-                rowData.push(formatDate(e.setDate));
-                // 産卵セットの履歴（メインフィールドを1回目とする）
-                rowData.push(formatDate(e.setEndDate || e.setDate), (e.eggCount || 0) + (e.larvaCount || 0));
-                // 産卵セットの履歴を日付の昇順（古い順）にソートして出力
-                const sets = [...(e.sets || [])].sort((a, b) => (a.setDate || "").localeCompare(b.setDate || ""));
-                for (let i = 0; i < maxSpawnSets; i++) {
-                  const s = sets[i];
-                  rowData.push(s ? formatDate(s.setEndDate || s.setDate) : "", s ? (s.eggCount || 0) + (s.larvaCount || 0) : "");
-                }
-                rowData.push(e.memo || "");
-              }
-
-              rowData.forEach((val, i) => {
-                dataRow.getCell(i + 1).value = val;
-              });
-            }
-            currentRow++; // セクション間の空行
-          }
-
-          // セルの幅を自動調整（全角2、半角1として計算）
-          const colCount = sheet.columnCount;
-          for (let i = 1; i <= colCount; i++) {
-            const column = sheet.getColumn(i);
-            let maxLength = 0;
-            column.eachCell({ includeEmpty: true }, (cell) => {
-              const str = cell.value ? String(cell.value) : "";
-              let len = 0;
-              for (let j = 0; j < str.length; j++) {
-                len += str.charCodeAt(j) > 255 ? 2 : 1;
-              }
-              if (len > maxLength) maxLength = len;
-            });
-            column.width = Math.min(50, Math.max(10, maxLength + 2));
-          }
-        }
-
-        const buffer = await workbook.xlsx.writeBuffer();
+      const buffer = await exportDataToExcelBuffer(targetEntries);
         const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
@@ -666,9 +557,10 @@ export function BeetleManager() {
 
   const groupedEntries = useMemo(() => {
     const grouped = filteredEntries.reduce((acc, entry) => {
-      const sci = entry.scientificName || "学名未設定";
-      const jpn = entry.japaneseName || "和名未設定";
-      const key = `${sci}__${jpn}`;
+      const sci = (entry.scientificName || "学名未設定").trim() || "学名未設定";
+      const jpn = (entry.japaneseName || "和名未設定").trim() || "和名未設定";
+      // 区切り文字の衝突を避け、学名×和名の組み合わせで確実にフォルダ分けする
+      const key = `${encodeURIComponent(sci)}::${encodeURIComponent(jpn)}`;
       if (!acc[key]) {
         acc[key] = { key, scientificName: sci, japaneseName: jpn, entries: [] as BeetleEntry[] };
       }
