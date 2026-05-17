@@ -654,6 +654,11 @@ export function BeetleManager() {
     setLastSelectedId(filteredEntries[filteredEntries.length - 1]?.id ?? null);
   };
 
+  const handleSelectEntries = useCallback((targetEntries: BeetleEntry[]) => {
+    setSelectedIds(targetEntries.map(e => e.id));
+    setLastSelectedId(targetEntries[targetEntries.length - 1]?.id ?? null);
+  }, []);
+
   const handleDeselectAll = () => {
     setSelectedIds([]);
     setLastSelectedId(null);
@@ -678,6 +683,15 @@ export function BeetleManager() {
       return a.japaneseName.localeCompare(b.japaneseName, "ja", { numeric: true });
     });
   }, [filteredEntries]);
+
+  const selectedFolder = useMemo(
+    () => groupedEntries.find(g => g.key === selectedFolderKey) ?? null,
+    [groupedEntries, selectedFolderKey],
+  );
+
+  const selectedFolderEntries = selectedFolder?.entries ?? [];
+  const selectedFolderSelectedCount = selectedFolderEntries.filter(entry => selectedIds.includes(entry.id)).length;
+  const isAllSelectedInFolder = selectedFolderEntries.length > 0 && selectedFolderSelectedCount === selectedFolderEntries.length;
 
   useEffect(() => {
     setExpandedSpecies((prev) => {
@@ -1811,11 +1825,42 @@ export function BeetleManager() {
               </button>
               <div className="min-w-0 flex-1">
                 <h2 className="text-[22px] font-black text-[#3C3631] break-words whitespace-normal tracking-tight leading-tight mb-1">
-                  {groupedEntries.find(g => g.key === selectedFolderKey)?.japaneseName}
+                  {selectedFolder?.japaneseName}
                 </h2>
                 <p className="text-[13px] italic text-[#B0A495] font-serif break-words whitespace-normal leading-tight">
-                  {groupedEntries.find(g => g.key === selectedFolderKey)?.scientificName}
+                  {selectedFolder?.scientificName}
                 </p>
+              </div>
+              <div className="flex shrink-0 flex-col items-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSelectionMode(prev => !prev);
+                    setSelectedIds([]);
+                    setLastSelectedId(null);
+                  }}
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-2 text-[11px] font-black shadow-sm active:scale-95 transition-all ${isSelectionMode ? "bg-red-50 text-red-500 border border-red-100" : "bg-white text-[#FF9800] border border-orange-100"}`}
+                >
+                  {isSelectionMode ? <CloseIcon size={14} /> : <CheckSquare size={14} />}
+                  {isSelectionMode ? "終了" : "選択"}
+                </button>
+                {isSelectionMode && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isAllSelectedInFolder) {
+                        setSelectedIds(prev => prev.filter(id => !selectedFolderEntries.some(entry => entry.id === id)));
+                        setLastSelectedId(null);
+                      } else {
+                        handleSelectEntries(selectedFolderEntries);
+                      }
+                    }}
+                    className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[10px] font-black text-[#2D5A27] border border-[#E8E2DA] shadow-sm active:scale-95 transition-all"
+                  >
+                    {isAllSelectedInFolder ? <Square size={13} /> : <CheckSquare size={13} />}
+                    {isAllSelectedInFolder ? "解除" : "全選択"}
+                  </button>
+                )}
               </div>
             </div>
             
@@ -1839,8 +1884,8 @@ export function BeetleManager() {
             {/* ウィンドウ内のコンテンツエリア */}
             <div className="flex-1 overflow-y-auto px-6 pt-4 pb-32">
               <div className="space-y-4">
-                {groupedEntries.find(g => g.key === selectedFolderKey)?.entries.map((entry) => {
-                  const currentList = groupedEntries.find(g => g.key === selectedFolderKey)?.entries || [];
+                {selectedFolderEntries.map((entry) => {
+                  const currentList = selectedFolderEntries;
 
                   return (
                     <div
@@ -1850,7 +1895,7 @@ export function BeetleManager() {
                       onPointerDown={(event) => handlePointerDown(event, entry.id, currentList)}
                       onPointerMove={handlePointerMove}
                     >
-                      <div className="-mx-6 overflow-x-auto px-6 pb-2 snap-x snap-mandatory touch-pan-x hide-scrollbar">
+                      <div className="-mx-6 overflow-x-auto px-6 pb-2 snap-x snap-mandatory touch-auto hide-scrollbar">
                         <div className="flex items-stretch gap-3">
                           <div className="w-[calc(100vw-3rem)] max-w-full shrink-0 snap-start">
                             <EntryCard

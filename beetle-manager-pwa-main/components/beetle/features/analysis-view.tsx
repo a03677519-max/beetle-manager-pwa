@@ -269,6 +269,10 @@ export function AnalysisView({
 
   return (
     <div className="space-y-4">
+      <header className="px-2">
+        <h2 className="text-xl font-black text-[#333D33] tracking-tight">分析</h2>
+      </header>
+
       {groupedStats.map((stat) => (
         <div 
           key={stat.scientificName} 
