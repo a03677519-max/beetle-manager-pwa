@@ -1916,6 +1916,17 @@ export function BeetleManager() {
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 32, stiffness: 350, mass: 0.8 }}
+            drag="x"
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.08}
+            onDragEnd={(_, info) => {
+              const swipeThreshold = 80;
+              const velocityThreshold = 500;
+
+              if (info.offset.x > swipeThreshold || info.velocity.x > velocityThreshold) {
+                setSelectedFolderKey(null);
+              }
+            }}
             className="fixed inset-0 z-[60] bg-[#F8F5F2] flex flex-col"
           >
             {/* 前面ウィンドウのヘッダー */}
