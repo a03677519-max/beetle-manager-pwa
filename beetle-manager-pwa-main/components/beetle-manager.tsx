@@ -577,6 +577,21 @@ export function BeetleManager() {
     window.alert("管理名のクリーンアップが完了しました。");
   }, [entries, importData, createBackup]);
 
+  const handleTabChange = useCallback((tab: string) => {
+    // モーダルや詳細画面が開いていればすべて閉じる
+    setIsCreating(false);
+    startEditing(null);
+    setSelectedEntry(null);
+    setIsSettingsOpen(false);
+    setSelectedFolderKey(null);
+
+    if (tab === "設定") { setIsSettingsOpen(true); return; }
+    if (ENTRY_TYPES.includes(tab as EntryType)) { setVisibleTypes([tab as EntryType]); setSelectedType(tab as EntryType); }
+    else if (tab === "すべて") { setVisibleTypes(["成虫", "幼虫", "産卵セット"]); setSelectedType("すべて"); }
+  }, [setSelectedType, startEditing]);
+
+  const mainViewTabs = useMemo(() => ["成虫", "幼虫", "産卵セット", "分析", "タスク"], []);
+ 
   const handleBulkDelete = () => {
     if (selectedIds.length === 0) return;
     if (window.confirm(`${selectedIds.length}件のデータを一括削除しますか？`)) {
@@ -1237,61 +1252,52 @@ export function BeetleManager() {
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        onTabChange={(tab) => {
-          // モーダルや詳細画面が開いていればすべて閉じる
-          setIsCreating(false);
-          startEditing(null);
-          setSelectedEntry(null);
-          setIsSettingsOpen(false);
-          setSelectedFolderKey(null); // タブ切り替え時にフォルダ選択をリセット
-
-          if (tab === "設定") { setIsSettingsOpen(true); return; }
-          if (ENTRY_TYPES.includes(tab as EntryType)) { setVisibleTypes([tab as EntryType]); setSelectedType(tab as EntryType); }
-          else if (tab === "すべて") { setVisibleTypes(["成虫", "幼虫", "産卵セット"]); setSelectedType("すべて"); }
-        }}
+        onTabChange={handleTabChange}
         onAdd={() => setIsCreating(true)}
         showAddButton={!isCreating && !editingId && !selectedEntry && !isSettingsOpen}
       />
       {/* 固定ヘッダーセクション */}
-      <section className="sticky top-0 z-30 bg-[#F8F5F2]/80 backdrop-blur-xl pt-4 pb-2 px-4 border-b border-[#E8E2DA] mb-3 shadow-sm">
-        <DashboardToolbar
-          isSyncing={isSyncing}
-          isSelectionMode={isSelectionMode}
-          onRegenerateNames={() => handleRegenerateAllNames(false)}
-          onGitHubSync={handleGitHubSync}
-          onExcelExport={() => handleBulkCopyToExcel()}
-          onOpenSettings={() => setIsSettingsOpen(true)}
-          onToggleSelection={() => setIsSelectionMode(!isSelectionMode)}
-        />
-        
-        {isSelectionMode && (
-          <BulkSelectionBar
-            selectedCount={selectedIds.length}
-            onSelectAll={handleSelectAll}
-            onDeselectAll={handleDeselectAll}
-            onBulkExport={() => handleBulkCopyToExcel(selectedIds)}
-            onBulkDelete={() => { if(window.confirm("一括削除しますか？")) handleBulkDelete(); }}
-            onBulkEdit={() => setIsBulkEditing(true)}
-            onSelectByType={handleSelectByType}
-            availableTypes={availableTypesInView}
-            selectedTypeCounts={selectedTypeCounts}
+      {activeTab !== "分析" && activeTab !== "タスク" && (
+        <section className="sticky top-0 z-30 bg-[#F8F5F2]/80 backdrop-blur-xl pt-4 pb-2 px-4 border-b border-[#E8E2DA] mb-3 shadow-sm">
+          <DashboardToolbar
+            isSyncing={isSyncing}
+            isSelectionMode={isSelectionMode}
+            onRegenerateNames={() => handleRegenerateAllNames(false)}
+            onGitHubSync={handleGitHubSync}
+            onExcelExport={() => handleBulkCopyToExcel()}
+            onOpenSettings={() => setIsSettingsOpen(true)}
+            onToggleSelection={() => setIsSelectionMode(!isSelectionMode)}
           />
-        )}
+          
+          {isSelectionMode && (
+            <BulkSelectionBar
+              selectedCount={selectedIds.length}
+              onSelectAll={handleSelectAll}
+              onDeselectAll={handleDeselectAll}
+              onBulkExport={() => handleBulkCopyToExcel(selectedIds)}
+              onBulkDelete={() => { if(window.confirm("一括削除しますか？")) handleBulkDelete(); }}
+              onBulkEdit={() => setIsBulkEditing(true)}
+              onSelectByType={handleSelectByType}
+              availableTypes={availableTypesInView}
+              selectedTypeCounts={selectedTypeCounts}
+            />
+          )}
 
-        <DashboardStats
-          stats={stats}
-          visibleTypes={visibleTypes}
-          onToggleType={(type) => setVisibleTypes(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type])}
-          query={query}
-          onQueryChange={setQuery}
-          larvaFilter={larvaFilter}
-          onLarvaFilterChange={setLarvaFilter}
-          adultFilter={adultFilter}
-          onAdultFilterChange={setAdultFilter}
-          spawnSetFilter={spawnSetFilter}
-          onSpawnSetFilterChange={setSpawnSetFilter}
-        />
-      </section>
+          <DashboardStats
+            stats={stats}
+            visibleTypes={visibleTypes}
+            onToggleType={(type) => setVisibleTypes(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type])}
+            query={query}
+            onQueryChange={setQuery}
+            larvaFilter={larvaFilter}
+            onLarvaFilterChange={setLarvaFilter}
+            adultFilter={adultFilter}
+            onAdultFilterChange={setAdultFilter}
+            spawnSetFilter={spawnSetFilter}
+            onSpawnSetFilterChange={setSpawnSetFilter}
+          />
+        </section>
+      )}
 
       {/* クロップモーダル */}
       <Modal isOpen={isCropping} onClose={() => setIsCropping(false)} title="Select Ritual Range">
@@ -1668,12 +1674,12 @@ export function BeetleManager() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            className="touch-pan-y"
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.05}
             onDragEnd={(_, info) => {
-              const categories = ["成虫", "幼虫", "産卵セット"];
-              const currentIndex = categories.indexOf(activeTab);
+              const currentIndex = mainViewTabs.indexOf(activeTab);
               if (currentIndex === -1) return;
 
               const swipeThreshold = 50;
@@ -1681,17 +1687,17 @@ export function BeetleManager() {
 
               if (info.offset.x < -swipeThreshold || info.velocity.x < -velocityThreshold) {
                 // 左にスワイプ -> 次のカテゴリ（タブ）へ
-                if (currentIndex < categories.length - 1) {
-                  const next = categories[currentIndex + 1];
+                if (currentIndex < mainViewTabs.length - 1) {
+                  const next = mainViewTabs[currentIndex + 1];
                   setActiveTab(next);
-                  setSelectedType(next as any);
+                  handleTabChange(next);
                 }
               } else if (info.offset.x > swipeThreshold || info.velocity.x > velocityThreshold) {
                 // 右にスワイプ -> 前のカテゴリ（タブ）へ
                 if (currentIndex > 0) {
-                  const prev = categories[currentIndex - 1];
+                  const prev = mainViewTabs[currentIndex - 1];
                   setActiveTab(prev);
-                  setSelectedType(prev as any);
+                  handleTabChange(prev);
                 }
               }
             }}
