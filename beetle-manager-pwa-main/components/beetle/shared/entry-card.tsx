@@ -5,6 +5,7 @@ import { GrowthBar } from "@/components/ui/growth-bar";
 import { buildGenerationLabel } from "@/components/entry-fields";
 import type { BeetleEntry, SpawnSet } from "@/types/beetle";
 import { getDaysRange, today, getLarvaDateInfo, getSpawnSetDateInfo } from "@/lib/utils";
+import { useMemo } from "react";
 import Image from "next/image";
 import { Trash2 } from "lucide-react";
 
