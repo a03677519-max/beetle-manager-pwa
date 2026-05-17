@@ -14,7 +14,7 @@ import {
   ZAxis,
   Cell,
 } from "recharts";
-import type { BeetleEntry, EntryType, Gender, LarvaBeetle, SpawnSet } from "@/types/beetle";
+import type { BeetleEntry, EntryType, Gender, LarvaBeetle, AdultBeetle, SpawnSet } from "@/types/beetle";
 import { daysBetween } from "@/lib/utils";
 
 interface AnalysisViewProps {
