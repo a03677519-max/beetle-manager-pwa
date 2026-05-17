@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { AnimatePresence, motion, Reorder } from "framer-motion";
-import { Search, Clipboard, Camera, Loader2, Crop, Check, X as CloseIcon, Trash2, Edit, CheckSquare, Square, ArrowUpDown, ChevronDown, ChevronUp, Settings, ChevronLeft, ChevronRight, FileSpreadsheet, Hash, RefreshCw, Folder, FolderOpen } from "lucide-react";
+import { Search, Clipboard, Camera, Loader2, Crop, Check, X as CloseIcon, Trash2, Edit, CheckSquare, Square, ArrowUpDown, ChevronDown, ChevronUp, Settings, ChevronLeft, ChevronRight, FileSpreadsheet, RefreshCw, Folder, FolderOpen } from "lucide-react";
 import { Navbar } from "@/components/layout/navbar";
 import { Modal } from "./ui/modal"; // Ensure Modal is imported
 import { useSwitchBot } from "@/components/use-switchbot";
@@ -323,17 +323,44 @@ export function BeetleManager() {
   // なぞり選択用の状態管理
   const isDraggingRef = useRef(false);
   const dragModeRef = useRef<'add' | 'remove' | null>(null);
+  const activePointerIdRef = useRef<number | null>(null);
+  const lastDragSelectionIdRef = useRef<string | null>(null);
+  const suppressNextOpenRef = useRef(false);
 
-  const handlePointerDown = useCallback((id: string, currentList: BeetleEntry[]) => {
+  const applyDragSelection = useCallback((id: string) => {
+    if (!dragModeRef.current || lastDragSelectionIdRef.current === id) return;
+
+    setSelectedIds(prev => {
+      if (dragModeRef.current === 'add') {
+        if (prev.includes(id)) return prev;
+        return [...prev, id];
+      }
+      if (!prev.includes(id)) return prev;
+      return prev.filter(i => i !== id);
+    });
+    setLastSelectedId(id);
+    lastDragSelectionIdRef.current = id;
+
+    if (typeof window !== 'undefined' && window.navigator?.vibrate) {
+      window.navigator.vibrate(10);
+    }
+  }, []);
+
+  const handlePointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>, id: string, currentList: BeetleEntry[]) => {
     if (!isSelectionMode) return;
+    event.preventDefault();
     
     isDraggingRef.current = true;
+    activePointerIdRef.current = event.pointerId;
+    lastDragSelectionIdRef.current = null;
+    suppressNextOpenRef.current = true;
     // 最初に触れたカードが選択済みなら「解除モード」、未選択なら「追加モード」にする
     const isSelected = selectedIds.includes(id);
     dragModeRef.current = isSelected ? 'remove' : 'add';
+    applyDragSelection(id);
 
     startLongPress(id, currentList); // 長押しタイマーを開始
-  }, [isSelectionMode, selectedIds, handleToggleSelect, startLongPress]);
+  }, [isSelectionMode, selectedIds, applyDragSelection, startLongPress]);
 
   const cancelLongPress = useCallback(() => {
     if (longPressTimer.current) {
@@ -347,25 +374,28 @@ export function BeetleManager() {
 
     // 他の要素に入った（なぞり選択が開始された）場合は長押し判定をキャンセル
     cancelLongPress();
+    applyDragSelection(id);
+  }, [cancelLongPress, applyDragSelection]);
 
-    setSelectedIds(prev => {
-      if (dragModeRef.current === 'add') {
-        if (prev.includes(id)) return prev;
-        return [...prev, id];
-      } else {
-        if (!prev.includes(id)) return prev;
-        return prev.filter(i => i !== id);
-      }
-    });
-    setLastSelectedId(id);
-    
-    // 軽くバイブレーション（モバイル対応）
-    if (typeof window !== 'undefined' && window.navigator?.vibrate) {
-      window.navigator.vibrate(10);
-    }
-  }, [cancelLongPress, setSelectedIds, setLastSelectedId]);
+  const handlePointerMove = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingRef.current || !dragModeRef.current) return;
+    if (activePointerIdRef.current !== null && event.pointerId !== activePointerIdRef.current) return;
+
+    const target = document.elementFromPoint(event.clientX, event.clientY) as HTMLElement | null;
+    const entryElement = target?.closest<HTMLElement>('[data-selection-entry-id]');
+    const id = entryElement?.dataset.selectionEntryId;
+    if (!id) return;
+
+    cancelLongPress();
+    applyDragSelection(id);
+  }, [applyDragSelection, cancelLongPress]);
 
   const handleEntryClick = useCallback((entry: BeetleEntry) => { // Short click handler
+    if (suppressNextOpenRef.current) {
+      suppressNextOpenRef.current = false;
+      isLongPressActive.current = false;
+      return;
+    }
     if (isLongPressActive.current) {
       isLongPressActive.current = false;
       return;
@@ -375,13 +405,15 @@ export function BeetleManager() {
     } else {
       setSelectedEntry(entry);
     }
-  }, []);
+  }, [isSelectionMode, handleToggleSelect]);
 
   // なぞり選択の終了を検知するグローバルリスナー
   useEffect(() => {
     const handleGlobalPointerUp = () => {
       isDraggingRef.current = false;
       dragModeRef.current = null;
+      activePointerIdRef.current = null;
+      lastDragSelectionIdRef.current = null;
       // ここで reset しない（handleEntryClick で消費・リセットするため）
       cancelLongPress();
     };
@@ -548,6 +580,7 @@ export function BeetleManager() {
 
   const handleSelectAll = () => {
     setSelectedIds(filteredEntries.map(e => e.id));
+    setLastSelectedId(filteredEntries[filteredEntries.length - 1]?.id ?? null);
   };
 
   const handleDeselectAll = () => {
@@ -1148,11 +1181,10 @@ export function BeetleManager() {
           <div className="flex gap-2 items-center">
             <button 
               onClick={() => handleRegenerateAllNames(false)}
-              className="flex items-center gap-1 px-3 py-1.5 bg-white border border-[#E8E2DA] rounded-full text-[10px] font-black text-gray-500 hover:text-[#FF9800] transition-all shadow-sm active:scale-95"
+              className="px-2 py-1 bg-white border border-[#E8E2DA] rounded-full text-[10px] font-black text-gray-500 hover:text-[#FF9800] transition-all shadow-sm active:scale-95"
               title="規則に従って全個体の名前を付け直します"
             >
-              <Hash size={12} />
-              <span>一括採番</span>
+              一括採番
             </button>
             <button
               onClick={handleGitHubSync}
@@ -1814,7 +1846,9 @@ export function BeetleManager() {
                               <div
                                 key={entry.id}
                                 className={`space-y-2 ${isSelectionMode ? 'touch-none select-none' : ''}`}
-                                onPointerDown={() => handlePointerDown(entry.id, filteredEntries)}
+                                data-selection-entry-id={entry.id}
+                                onPointerDown={(event) => handlePointerDown(event, entry.id, filteredEntries)}
+                                onPointerMove={handlePointerMove}
                                 onPointerEnter={() => handlePointerEnter(entry.id)}
                                 onPointerUp={cancelLongPress}
                                 onPointerLeave={cancelLongPress}
