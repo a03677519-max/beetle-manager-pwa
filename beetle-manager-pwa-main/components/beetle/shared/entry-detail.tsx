@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { X, Edit2, Copy, Trash2, FileSpreadsheet, Network } from "lucide-react";
+import { X, Edit2, Copy, Trash2, FileSpreadsheet } from "lucide-react";
 import { useEffect, useRef } from "react";
 import type { BeetleEntry } from "@/types/beetle";
 import { AdultDetail } from "@/components/beetle/adult/adult-detail";
@@ -30,8 +30,6 @@ export function EntryDetail({
 }) {
   const startEditing = useBeetleStore((state) => state.startEditing);
   const deleteEntry = useBeetleStore((state) => state.deleteEntry);
-  const entries = useBeetleStore((state) => state.entries);
-  const linkedEntries = entries.filter((item) => entry.linkedEntryIds?.includes(item.id));
 
   const copyToClipboard = () => {
     const e = entry as any;
@@ -211,45 +209,6 @@ export function EntryDetail({
 
         <div className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-6 scroll-smooth [overflow-wrap:anywhere]">
           <PhotoSection entry={entry} />
-
-          {(entry.bloodline || linkedEntries.length > 0) && (
-            <section className="mt-5 rounded-[24px] border border-[#F1EDE8] bg-[#FFFBF7] p-4 shadow-inner">
-              <div className="mb-3 flex items-center gap-2 text-[11px] font-black uppercase tracking-wider text-[#A67C52]">
-                <Network size={15} className="text-[#FF9800]" /> 血統 / 家系図
-              </div>
-              {linkedEntries.length > 0 ? (
-                <div className="space-y-2">
-                  {linkedEntries.map((linked) => (
-                    <button
-                      key={linked.id}
-                      type="button"
-                      onClick={() => window.dispatchEvent(new CustomEvent('app:navigate-entry', { detail: { id: linked.id } }))}
-                      className="w-full rounded-2xl bg-white px-3 py-2 text-left border border-white shadow-sm active:scale-[0.99] transition-all"
-                    >
-                      <div className="flex items-start gap-2">
-                        <span className="mt-0.5 rounded-full bg-[#FF9800]/10 px-2 py-0.5 text-[10px] font-black text-[#FF9800]">親/関連</span>
-                        <div className="min-w-0 flex-1">
-                          <div className="text-sm font-bold text-[#4A3F35] break-words">{linked.managementName || linked.japaneseName}</div>
-                          <div className="text-[10px] text-gray-400 break-words">{linked.bloodline || linked.locality || "血統情報未入力"}</div>
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                  <div className="rounded-2xl bg-[#FF9800]/5 px-3 py-2 border border-[#FF9800]/10">
-                    <div className="flex items-start gap-2">
-                      <span className="mt-0.5 rounded-full bg-[#FF9800] px-2 py-0.5 text-[10px] font-black text-white">当個体</span>
-                      <div className="min-w-0 flex-1">
-                        <div className="text-sm font-bold text-[#4A3F35] break-words">{entry.managementName || entry.japaneseName}</div>
-                        <div className="text-[10px] text-[#A67C52] break-words">{entry.bloodline || "血統情報未入力"}</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-sm font-bold text-[#4A3F35] break-words">{entry.bloodline}</p>
-              )}
-            </section>
-          )}
 
           <div className="mt-6">
             {entry.type === "成虫" ? <AdultDetail entry={entry} /> : null}

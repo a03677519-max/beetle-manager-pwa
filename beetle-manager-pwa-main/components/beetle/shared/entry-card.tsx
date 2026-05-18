@@ -9,6 +9,33 @@ import { useMemo } from "react";
 import Image from "next/image";
 import { Edit2, Trash2 } from "lucide-react";
 
+function BloodlineTree({ entry }: { entry: BeetleEntry }) {
+  const linkedCount = entry.linkedEntryIds?.length ?? 0;
+
+  if (!entry.bloodline && linkedCount === 0) return null;
+
+  return (
+    <div className="mt-2 rounded-2xl border border-orange-100 bg-[#FFFBF7] px-3 py-2 text-[10px] text-[#A67C52] shadow-inner">
+      <div className="mb-1 font-black uppercase tracking-wider text-[#D97706]">血統</div>
+      <div className="relative pl-3">
+        <div className="absolute left-1 top-1 bottom-1 w-px bg-orange-200" />
+        {linkedCount > 0 && (
+          <div className="relative mb-1 flex min-w-0 items-start gap-2">
+            <span className="absolute -left-3 top-2 h-px w-3 bg-orange-200" />
+            <span className="shrink-0 rounded-full bg-orange-100 px-2 py-0.5 font-black text-[#D97706]">親</span>
+            <span className="min-w-0 break-words font-bold text-[#8B5A2B]">紐付け {linkedCount}件</span>
+          </div>
+        )}
+        <div className="relative flex min-w-0 items-start gap-2">
+          <span className="absolute -left-3 top-2 h-px w-3 bg-orange-200" />
+          <span className="shrink-0 rounded-full bg-[#FF9800] px-2 py-0.5 font-black text-white">個体</span>
+          <span className="min-w-0 break-words font-bold text-[#4A3F35]">{entry.bloodline || "血統情報未入力"}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function EntryCard({
   entry,
   onOpen,
@@ -75,6 +102,7 @@ export function EntryCard({
         )}
         <div className="min-w-0 p-3">
           <h3 className="font-bold text-gray-800 text-sm leading-snug break-words whitespace-normal">{entry.japaneseName}</h3>
+          <BloodlineTree entry={entry} />
           {entry.type === "産卵セット" && spawnTotals && (
             <div className="flex min-w-0 flex-wrap items-center gap-1 mt-1">
               <span className="text-[9px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded font-black tracking-tighter">卵:{spawnTotals.eggs}</span>
@@ -139,9 +167,9 @@ export function EntryCard({
                 </span>
               )}
               {entry.managementName && <span className="min-w-0 max-w-full text-[10px] font-black bg-[#F9F7F5] px-2 py-0.5 rounded-lg text-[#B0A495] border border-[#E8E2DA] shadow-inner break-words">{entry.managementName}</span>}
-              {entry.bloodline && <span className="min-w-0 max-w-full text-[10px] font-black bg-[#FFF4E5] px-2 py-0.5 rounded-lg text-[#D97706] border border-[#FFE0B2] break-words">血統: {entry.bloodline}</span>}
             </div>
             <p className="text-[12px] italic text-[#B0A495] font-serif leading-tight break-words whitespace-normal">{entry.scientificName}</p>
+            <BloodlineTree entry={entry} />
             {entry.memo && (
               <p className="text-[11px] text-gray-400 mt-1 break-words whitespace-pre-wrap italic">
                 {entry.memo}
@@ -233,7 +261,7 @@ export function EntryCard({
         </div>
 
         {(onEdit || onDelete) && !isSelectionMode && (
-          <div className="absolute bottom-4 right-4 flex items-center gap-2">
+          <div className="mt-4 flex flex-wrap items-center justify-end gap-2 border-t border-gray-50 pt-3">
             {onEdit && (
               <button onClick={(e) => { e.stopPropagation(); onEdit(e, entry.id); }} className="flex items-center gap-1 rounded-full bg-orange-50 px-2.5 py-1.5 text-[10px] font-black text-[#FF9800] shadow-sm active:scale-95">
                 <Edit2 size={14} /> 再編集
@@ -249,7 +277,7 @@ export function EntryCard({
 
         {/* スパイクライン */}
         {logs.length > 1 && (
-          <div className="absolute right-4 bottom-4 w-24 h-8 opacity-20 pointer-events-none">
+          <div className="absolute right-4 bottom-16 w-24 h-8 opacity-20 pointer-events-none">
               <svg viewBox="0 0 100 40" className="w-full h-full">
               <path // Keep path
                 d={`M ${logs.slice(0, 5).reverse().map((l, i) => `${(i * 25)},${40 - (l.weight / 50 * 30)}`).join(' L ')}`}
