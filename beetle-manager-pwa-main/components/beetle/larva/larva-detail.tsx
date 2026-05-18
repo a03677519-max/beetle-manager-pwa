@@ -28,6 +28,7 @@ export function LarvaDetail({
   onFetchTemperature: (setter: (value: string) => void) => void;
   isFetchingTemperature: boolean;
 }) {
+  const [isBloodlineOpen, setIsBloodlineOpen] = useState(false);
   const [editingLog, setEditingLog] = useState<LarvaBeetle['logs'][0] | null>(null);
   const [isAddLogOpen, setIsAddLogOpen] = useState(false);
   const deleteLarvaLog = useBeetleStore((state) => state.deleteLarvaLog);
@@ -95,10 +96,15 @@ export function LarvaDetail({
           <div className="text-xs text-gray-500">累代</div>
           <div className="font-bold text-gray-800 break-words whitespace-normal">{buildGenerationLabel(entry.generation)}</div>
         </div>
-        <div className="min-w-0 bg-gray-50 p-4 rounded-2xl col-span-2">
+        <button
+          type="button"
+          onClick={() => setIsBloodlineOpen(true)}
+          className="min-w-0 bg-gray-50 p-4 rounded-2xl col-span-2 text-left active:bg-gray-100 transition-colors"
+        >
           <div className="text-xs text-gray-500">血統</div>
-          <div className="font-bold text-gray-800 break-words whitespace-normal">{entry.bloodline || "-"}</div>
-        </div>
+          <div className="font-bold text-gray-800 truncate">{entry.bloodline || "-"}</div>
+          <div className="mt-1 text-[10px] font-bold text-[#FF9800]">タップで詳細表示</div>
+        </button>
         <div className="min-w-0 bg-gray-50 p-4 rounded-2xl col-span-2">
           {(() => {
             const { label, value } = getLarvaDateInfo(entry);
@@ -305,6 +311,11 @@ export function LarvaDetail({
           onFetchTemperature={onFetchTemperature}
           isFetchingTemperature={isFetchingTemperature}
         />
+      </Modal>
+      <Modal isOpen={isBloodlineOpen} onClose={() => setIsBloodlineOpen(false)} title="血統詳細" centered>
+        <div className="rounded-2xl bg-[#FFFBF7] p-4 text-sm font-bold leading-relaxed text-[#4A3F35] whitespace-pre-wrap break-words">
+          {entry.bloodline || "血統情報未入力"}
+        </div>
       </Modal>
     </>
   );

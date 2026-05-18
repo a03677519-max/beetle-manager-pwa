@@ -1,11 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import { buildGenerationLabel } from "@/components/entry-fields";
+import { Modal } from "@/components/ui/modal";
 import type { AdultBeetle } from "@/types/beetle";
 import { formatDate } from "@/lib/utils";
 import { useBeetleStore } from "@/store/use-beetle-store";
 
 export function AdultDetail({ entry }: { entry: AdultBeetle }) {
+  const [isBloodlineOpen, setIsBloodlineOpen] = useState(false);
   const allEntries = useBeetleStore((state) => state.entries);
 
   // 紐付けられた幼虫データを検索（IDまたは管理名+学名の組み合わせ）
@@ -51,10 +54,15 @@ export function AdultDetail({ entry }: { entry: AdultBeetle }) {
               <div className="text-xs text-gray-400">累代</div>
               <div className="font-bold text-gray-700 text-sm break-words whitespace-normal">{buildGenerationLabel(entry.generation)}</div>
             </div>
-            <div className="min-w-0 bg-gray-50 p-3 rounded-xl border border-gray-50 col-span-2">
+            <button
+              type="button"
+              onClick={() => setIsBloodlineOpen(true)}
+              className="min-w-0 bg-gray-50 p-3 rounded-xl border border-gray-50 col-span-2 text-left active:bg-gray-100 transition-colors"
+            >
               <div className="text-xs text-gray-400">血統</div>
-              <div className="font-bold text-gray-700 text-sm break-words whitespace-normal">{entry.bloodline || "-"}</div>
-            </div>
+              <div className="font-bold text-gray-700 text-sm truncate">{entry.bloodline || "-"}</div>
+              <div className="mt-1 text-[10px] font-bold text-[#FF9800]">タップで詳細表示</div>
+            </button>
             <div className="min-w-0 bg-gray-50 p-3 rounded-xl border border-gray-50">
               <div className="text-xs text-gray-400">羽化日</div>
               <div className="font-bold text-gray-700 text-sm break-words whitespace-normal">{formatDate(entry.emergenceDate)}</div>
@@ -100,6 +108,11 @@ export function AdultDetail({ entry }: { entry: AdultBeetle }) {
           </button>
         )}
       </div>
+      <Modal isOpen={isBloodlineOpen} onClose={() => setIsBloodlineOpen(false)} title="血統詳細" centered>
+        <div className="rounded-2xl bg-[#FFFBF7] p-4 text-sm font-bold leading-relaxed text-[#4A3F35] whitespace-pre-wrap break-words">
+          {entry.bloodline || "血統情報未入力"}
+        </div>
+      </Modal>
     </div>
   );
 }
