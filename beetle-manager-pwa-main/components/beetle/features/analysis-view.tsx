@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useRef, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, ChevronUp, Download, Upload, X, FileSpreadsheet, BarChart3, ExternalLink, PlusCircle, RefreshCw, Loader2 } from "lucide-react";
+import { ChevronDown, ChevronUp, X, PlusCircle } from "lucide-react";
 import {
   ScatterChart,
   Scatter,
@@ -583,40 +583,6 @@ export function AnalysisView({
         )}
       </AnimatePresence>
 
-      <section className="bg-white/80 backdrop-blur-md p-6 rounded-[24px] border border-white/60 shadow-sm mt-8">
-        {onRegenerateNames && (
-          <div className="grid grid-cols-2 gap-3 mb-3">
-            <button 
-              onClick={handleSync}
-              disabled={isSyncing}
-              className="flex items-center justify-center gap-2 bg-blue-50 text-blue-600 py-3 rounded-xl text-xs font-bold active:scale-95 transition-all disabled:opacity-50"
-            >
-              {isSyncing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} GitHubへ保存
-            </button>
-          <button 
-            onClick={onRegenerateNames}
-            className="flex items-center justify-center gap-2 bg-gray-100 text-gray-600 py-3 rounded-xl text-xs font-bold active:scale-95 transition-all"
-          >
-            管理名を新規則で一括更新
-          </button>
-          </div>
-        )}
-        {onFillEmptyNames && (
-          <button 
-            onClick={onFillEmptyNames}
-            className="w-full mb-3 flex items-center justify-center gap-2 bg-[#FF9800]/5 text-[#FF9800] py-3 rounded-xl text-xs font-bold border border-[#FF9800]/10 active:scale-95 transition-all"
-          >
-            空欄の管理名のみ一括採番
-          </button>
-        )}
-        <div className="grid grid-cols-2 gap-3"> {/* Keep grid layout */}
-          <button onClick={handleExport} className="flex items-center justify-center gap-2 bg-white/80 py-3 rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-all"><Download size={14} /> 書き出し</button>
-          <label className="flex items-center justify-center gap-2 bg-white/80 py-3 rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-all cursor-pointer"><Upload size={14} /> JSON読込<input type="file" hidden onChange={handleImport} accept=".json" /></label>
-          <label className="flex items-center justify-center gap-2 bg-white/80 py-3 rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-all cursor-pointer col-span-2">
-            <FileSpreadsheet size={14} /> Excel読込<input type="file" hidden onChange={handleExcelImport} accept=".xlsx" />
-          </label>
-        </div>
-      </section>
     </div>
   );
 }

@@ -96,6 +96,10 @@ export function LarvaDetail({
           <div className="font-bold text-gray-800 break-words whitespace-normal">{buildGenerationLabel(entry.generation)}</div>
         </div>
         <div className="min-w-0 bg-gray-50 p-4 rounded-2xl col-span-2">
+          <div className="text-xs text-gray-500">血統</div>
+          <div className="font-bold text-gray-800 break-words whitespace-normal">{entry.bloodline || "-"}</div>
+        </div>
+        <div className="min-w-0 bg-gray-50 p-4 rounded-2xl col-span-2">
           {(() => {
             const { label, value } = getLarvaDateInfo(entry);
             return (

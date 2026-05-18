@@ -51,6 +51,10 @@ export function AdultDetail({ entry }: { entry: AdultBeetle }) {
               <div className="text-xs text-gray-400">累代</div>
               <div className="font-bold text-gray-700 text-sm break-words whitespace-normal">{buildGenerationLabel(entry.generation)}</div>
             </div>
+            <div className="min-w-0 bg-gray-50 p-3 rounded-xl border border-gray-50 col-span-2">
+              <div className="text-xs text-gray-400">血統</div>
+              <div className="font-bold text-gray-700 text-sm break-words whitespace-normal">{entry.bloodline || "-"}</div>
+            </div>
             <div className="min-w-0 bg-gray-50 p-3 rounded-xl border border-gray-50">
               <div className="text-xs text-gray-400">羽化日</div>
               <div className="font-bold text-gray-700 text-sm break-words whitespace-normal">{formatDate(entry.emergenceDate)}</div>

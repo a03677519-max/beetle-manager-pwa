@@ -64,6 +64,10 @@ export function SpawnSetDetail({
             <div className="text-xs text-gray-500">産地</div>
             <div className="font-bold text-gray-800 break-words whitespace-normal">{entry.locality || "-"}</div>
           </div>
+          <div className="min-w-0 bg-gray-50 p-4 rounded-2xl col-span-2">
+            <div className="text-xs text-gray-500">血統</div>
+            <div className="font-bold text-gray-800 break-words whitespace-normal">{entry.bloodline || "-"}</div>
+          </div>
           <div className="min-w-0 bg-gray-50 p-4 rounded-2xl">
             <div className="text-xs text-gray-500">温度</div>
             <div className="font-bold text-gray-800 break-words whitespace-normal">{entry.temperature}℃</div>
