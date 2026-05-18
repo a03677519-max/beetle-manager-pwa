@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Upload, Trash2 } from "lucide-react";
+import { Camera, ImagePlus, Trash2 } from "lucide-react";
 import { useBeetleStore } from "@/store/use-beetle-store";
 import type { BeetleEntry } from "@/types/beetle";
 import { toBase64 } from "@/lib/utils";
@@ -20,13 +20,20 @@ export function PhotoSection({ entry }: { entry: BeetleEntry }) {
 
   return (
     <section className="card">
-      <div className="section-heading">
+      <div className="section-heading flex flex-wrap items-center justify-between gap-2">
         <div className="section-title">写真</div>
-        <label className="button button-secondary upload-button">
-          <Upload size={16} />
-          追加
-          <input type="file" accept="image/*" capture="environment" hidden onChange={handlePhotoSelect} />
-        </label>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <label className="button button-secondary upload-button">
+            <Camera size={16} />
+            撮影
+            <input type="file" accept="image/*" capture="environment" hidden onChange={handlePhotoSelect} />
+          </label>
+          <label className="button button-secondary upload-button">
+            <ImagePlus size={16} />
+            ライブラリ
+            <input type="file" accept="image/*" multiple hidden onChange={handlePhotoSelect} />
+          </label>
+        </div>
       </div>
       {entry.photos.length === 0 ? (
         <p className="empty-text">写真はまだありません。</p>

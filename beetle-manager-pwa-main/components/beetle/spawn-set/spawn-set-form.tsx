@@ -105,7 +105,9 @@ export function SpawnSetForm({
           scientificName={values.scientificName}
           locality={values.locality}
           generation={values.generation}
+          bloodline={values.bloodline}
           managementName={values.managementName || ""}
+          linkedEntryIds={values.linkedEntryIds}
           allEntries={allEntries}
           autoNumberingDate={values.setDate}
           generationLabelSuffix="(次世代)"

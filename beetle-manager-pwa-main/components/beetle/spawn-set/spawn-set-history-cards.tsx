@@ -92,15 +92,15 @@ export function SpawnSetHistoryCards({
       {historySets.map((set, index) => (
         <div key={set.id} className="w-[17rem] sm:w-80 shrink-0 snap-start flex flex-col gap-2">
           <article className="min-w-0 rounded-[28px] border border-orange-100 bg-white p-4 shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
-            <div className="flex items-start justify-between gap-3 mb-3">
-              <div className="min-w-0">
+            <div className="flex min-w-0 items-start justify-between gap-3 mb-3">
+              <div className="min-w-0 flex-1 pr-1">
                 <div className="text-[10px] font-black text-[#BCAAA4] uppercase tracking-widest mb-1">{set.isPrimary ? "初回セット" : "産卵履歴"}</div>
                 <div className="flex flex-wrap items-center gap-2">
                   <span className={`text-[11px] font-black px-2 py-0.5 rounded-lg ${set.isPrimary ? "text-white bg-[#FF9800]" : "text-[#FF9800] bg-orange-50"}`}>{set.title}</span>
                   <span className="text-[10px] font-black text-gray-300">{index + 1}/{historySets.length}</span>
                 </div>
               </div>
-              <div className="flex shrink-0 gap-1">
+              <div className="flex shrink-0 flex-col gap-1 sm:flex-row">
                 <button
                   type="button"
                   onClick={(event) => {

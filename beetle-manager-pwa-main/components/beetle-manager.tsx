@@ -2084,8 +2084,18 @@ export function BeetleManager() {
         onClose={() => { setIsAddingSecondSet(false); setEditingChildSet(null); setSecondSetParentId(null); }} 
         title={editingChildSet ? "履歴の編集" : "追加のセット登録"}
       >
+        <div className="sticky top-0 z-40 -mx-6 -mt-2 mb-2 flex justify-end border-b border-gray-100 bg-white/95 px-6 py-2 backdrop-blur-md">
+          <button
+            type="submit"
+            form="spawn-set-second-form"
+            className="bg-[#2D5A27] text-white px-4 py-1.5 rounded-lg font-black text-[10px] shadow-sm hover:brightness-110 active:scale-95 transition-all select-none whitespace-nowrap"
+          >
+            保存
+          </button>
+        </div>
         {((secondSetParentId ? entries.find(e => e.id === secondSetParentId) : selectedEntry) || editingChildSet) && (
           <SpawnSetSecondForm
+            id="spawn-set-second-form"
             initialValues={editingChildSet ? editingChildSet : { 
               ...emptySpawnSetForm, 
               id: undefined,

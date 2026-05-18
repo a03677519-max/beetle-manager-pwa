@@ -135,11 +135,6 @@ export function SpawnSetSecondForm({
         />
         <div className="h-20" />
       </div>
-      <div className="p-4 border-t border-gray-100 bg-white">
-        <button type="submit" className="w-full py-3 bg-[#2D5A27] text-white rounded-xl font-black shadow-lg shadow-green-100 active:scale-[0.98] transition-all">
-          {initialValues.id ? "保存" : "登録"}
-        </button>
-      </div>
     </form>
   );
 }

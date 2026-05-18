@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Trash2, Download, Edit2, ExternalLink } from "lucide-react";
+import { Trash2, Download, Edit2, ExternalLink, Plus, X } from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -29,6 +29,7 @@ export function LarvaDetail({
   isFetchingTemperature: boolean;
 }) {
   const [editingLog, setEditingLog] = useState<LarvaBeetle['logs'][0] | null>(null);
+  const [isAddLogOpen, setIsAddLogOpen] = useState(false);
   const deleteLarvaLog = useBeetleStore((state) => state.deleteLarvaLog);
   const allEntries = useBeetleStore((state) => state.entries);
 
@@ -161,7 +162,30 @@ export function LarvaDetail({
       </div>
 
       <section className="mt-6 bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm">
-        <div className="text-[10px] font-black text-[#BCAAA4] mb-6 uppercase tracking-widest border-l-4 border-[#FF9800] pl-3">History Log</div>
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <div className="text-[10px] font-black text-[#BCAAA4] uppercase tracking-widest border-l-4 border-[#FF9800] pl-3">History Log</div>
+          <button
+            type="button"
+            onClick={() => setIsAddLogOpen((current) => !current)}
+            className="flex items-center gap-1 rounded-full bg-[#FF9800] px-4 py-2 text-[11px] font-black text-white shadow-sm active:scale-95 transition-all"
+          >
+            {isAddLogOpen ? <X size={14} /> : <Plus size={14} />}
+            {isAddLogOpen ? "閉じる" : "ログを入力"}
+          </button>
+        </div>
+        {isAddLogOpen && (
+          <div className="mb-6 rounded-[24px] border border-orange-100 bg-orange-50/20 p-2">
+            <LarvaLogForm
+              lastLog={entry.logs[0]}
+              onSubmit={(value) => {
+                useBeetleStore.getState().addLarvaLog(entry.id, value);
+                setIsAddLogOpen(false);
+              }}
+              onFetchTemperature={onFetchTemperature}
+              isFetchingTemperature={isFetchingTemperature}
+            />
+          </div>
+        )}
         <div className="space-y-3">
           {entry.logs.length === 0 ? (
             <p className="text-sm text-gray-400 text-center py-4">飼育ログはまだありません。</p>
@@ -225,12 +249,6 @@ export function LarvaDetail({
         </div>
       </section>
 
-      <LarvaLogForm
-        lastLog={entry.logs[0]}
-        onSubmit={(value) => useBeetleStore.getState().addLarvaLog(entry.id, value)}
-        onFetchTemperature={onFetchTemperature}
-        isFetchingTemperature={isFetchingTemperature}
-      />
       <section className="mt-6 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider">体重推移グラフ</h3>
