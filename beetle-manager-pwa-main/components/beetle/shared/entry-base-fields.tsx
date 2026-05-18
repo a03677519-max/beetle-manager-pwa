@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Search, Link as LinkIcon } from "lucide-react";
+import { X, Search, Link as LinkIcon, Network } from "lucide-react";
 import { Field, GenerationRollField, BottomSheetInput } from "@/components/entry-fields";
 import { today } from "@/types/utils";
 import type { AdultFormValues, BeetleEntry } from "@/types/beetle";
@@ -13,6 +13,7 @@ export function EntryBaseFields({
   scientificName,
   locality,
   generation,
+  bloodline,
   linkedEntryIds = [],
   allEntries,
   autoNumberingDate,
@@ -25,6 +26,7 @@ export function EntryBaseFields({
   scientificName: string;
   locality: string;
   generation: AdultFormValues["generation"];
+  bloodline?: string;
   linkedEntryIds?: string[];
   generationLabelSuffix?: string;
   onNext?: () => void;
@@ -36,6 +38,7 @@ export function EntryBaseFields({
     scientificName?: string;
     locality?: string;
     generation?: AdultFormValues["generation"];
+    bloodline?: string;
     linkedEntryIds?: string[];
   }) => void;
 }) {
@@ -101,6 +104,7 @@ export function EntryBaseFields({
     const sSet = new Set<string>();
     const lSet = new Set<string>();
     const mSet = new Set<string>();
+    const bSet = new Set<string>();
 
     // 文脈フィルタリング: 入力済みの名前と関連のある個体のみを抽出
     const contextEntries = allEntries.filter(e => 
@@ -114,12 +118,14 @@ export function EntryBaseFields({
       if (entry.locality) lSet.add(entry.locality);
       // 管理名は数値部分を除去してサジェスト
       if (entry.managementName) mSet.add(entry.managementName.replace(/[- ]\d+$/, ""));
+      if (entry.bloodline) bSet.add(entry.bloodline);
     });
     return {
       japanese: Array.from(jSet).sort(),
       scientific: Array.from(sSet).sort(),
       locality: Array.from(lSet).sort(),
       management: Array.from(mSet).filter(v => v.length > 0).sort(),
+      bloodline: Array.from(bSet).filter(v => v.length > 0).sort(),
     };
   }, [allEntries, japaneseName, scientificName]);
 
@@ -210,6 +216,14 @@ export function EntryBaseFields({
         labelSuffix={generationLabelSuffix}
         onChange={(value) => onChange({ generation: value })}
       />
+      <BottomSheetInput
+        label="血統"
+        value={bloodline || ""}
+        placeholder="例: A血統 / 親名 / ライン情報"
+        suggestions={suggestions.bloodline}
+        onNext={onNext}
+        onChange={(val) => onChange({ bloodline: val })}
+      />
       <Field label="紐付け個体 (親個体/ペア)">
         <button
           type="button"
@@ -226,6 +240,35 @@ export function EntryBaseFields({
           </div>
         </button>
       </Field>
+
+      {selectedLinkedEntries.length > 0 && (
+        <div className="rounded-2xl border border-[#E8E2DA] bg-[#FFFBF7] p-3 shadow-inner">
+          <div className="mb-2 flex items-center gap-2 text-[11px] font-black uppercase tracking-wider text-[#A67C52]">
+            <Network size={14} className="text-[#FF9800]" />
+            自動生成された家系図
+          </div>
+          <div className="space-y-2">
+            {selectedLinkedEntries.map((linked) => (
+              <div key={linked.id} className="flex items-start gap-2 rounded-xl bg-white/80 px-3 py-2 text-[11px] border border-white">
+                <span className="mt-0.5 rounded-full bg-[#FF9800]/10 px-2 py-0.5 font-black text-[#FF9800]">親</span>
+                <div className="min-w-0 flex-1">
+                  <div className="font-bold text-[#4A3F35] break-words">{linked.managementName || linked.japaneseName}</div>
+                  <div className="text-[10px] text-gray-400 break-words">
+                    {linked.bloodline || linked.locality || "血統情報未入力"}
+                  </div>
+                </div>
+              </div>
+            ))}
+            <div className="flex items-start gap-2 rounded-xl bg-[#FF9800]/5 px-3 py-2 text-[11px] border border-[#FF9800]/10">
+              <span className="mt-0.5 rounded-full bg-[#FF9800] px-2 py-0.5 font-black text-white">子</span>
+              <div className="min-w-0 flex-1">
+                <div className="font-bold text-[#4A3F35] break-words">{managementName || japaneseName || "登録中の個体"}</div>
+                <div className="text-[10px] text-[#A67C52] break-words">{bloodline || "血統情報を入力するとここに反映されます"}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <AnimatePresence>
         {isLinkedSelectOpen && (

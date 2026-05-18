@@ -198,6 +198,7 @@ export function LarvaForm({
           scientificName={values.scientificName}
           locality={values.locality}
           generation={values.generation}
+          bloodline={values.bloodline}
           managementName={values.managementName || ""}
           allEntries={allEntries}
           autoNumberingDate={dateType === "set" ? setStartDate : (dateType === "hatch" ? values.hatchDate : values.extractionDate)}

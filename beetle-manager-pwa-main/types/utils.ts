@@ -157,7 +157,7 @@ export const buildDateFromParts = (y: string, m: string, d: string) => {
 export const createDateOptions = () => {
   const years = ["-", ...Array.from({ length: 11 }, (_, i) => String(2020 + i))];
   const months = ["-", ...Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'))];
-  const days = ["-", ...Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0')), "上", "中", "下"];
+  const days = ["-", "月", "上", "中", "下", ...Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0'))];
   return { years, months, days };
 };
 

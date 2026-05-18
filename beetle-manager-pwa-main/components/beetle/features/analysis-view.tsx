@@ -6,6 +6,8 @@ import { ChevronDown, ChevronUp, Download, Upload, X, FileSpreadsheet, BarChart3
 import {
   ScatterChart,
   Scatter,
+  BarChart,
+  Bar,
   CartesianGrid,
   ResponsiveContainer,
   Tooltip,
@@ -132,6 +134,27 @@ export function AnalysisView({
   // 管理名で自然順ソートするユーティリティ
   const sortRecords = (records: AnalysisRecord[]) => {
     return [...records].sort((a, b) => a.mName.localeCompare(b.mName, "ja", { numeric: true }));
+  };
+
+  const getAnalysisUnit = (label: string) => {
+    if (label.includes("体重")) return "g";
+    if (label.includes("サイズ")) return "mm";
+    if (label.includes("期間") || label.includes("寿命") || label.includes("休眠") || label.includes("幼虫")) return "日";
+    if (label.includes("卵")) return "個";
+    if (label.includes("幼虫数")) return "頭";
+    if (label.includes("回収") || label.includes("合算") || label.includes("産卵")) return "個体";
+    return "件";
+  };
+
+  const openEntryFromAnalysis = (entryId?: string) => {
+    if (!entryId) return;
+    const entry = entries.find((item) => item.id === entryId);
+    if (!entry) return;
+    setSelectedEntry(entry);
+    setSelectedAnalysis(null);
+    setSelectedSpawnTable(null);
+    setSelectedType(entry.type);
+    setActiveTab(entry.type);
   };
 
   const groupedStats = useMemo(() => {
@@ -308,7 +331,7 @@ export function AnalysisView({
                 <div className="grid grid-cols-2 gap-3">
                 <AnalysisItem label="産卵状況" value={stat.spawnSetEntries.length > 0 ? `${stat.spawnSetEntries.length}件の記録` : "-"} onClick={() => setSelectedSpawnTable(stat as any)} isLink />
                 <AnalysisItem label="成虫サイズ範囲" value={stat.sizeRange ? `${stat.sizeRange[0]}～${stat.sizeRange[1]}mm` : "-"} onClick={() => setSelectedAnalysis({ label: "成虫サイズ分布", records: stat.adultSizeRecords })} isLink />
-                <AnalysisItem label="回収合計(卵+幼虫)" value={stat.spawnResultRange.total ? `${stat.spawnResultRange.total[0]}～${stat.spawnResultRange.total[1]}個` : "-"} onClick={() => setSelectedAnalysis({ label: "回収合計データ", records: stat.recoveryRecords })} isLink />
+                <AnalysisItem label="回収合計(卵+幼虫)" value={stat.spawnResultRange.total ? `${stat.spawnResultRange.total[0]}～${stat.spawnResultRange.total[1]}個体` : "-"} onClick={() => setSelectedAnalysis({ label: "回収合計データ", records: stat.recoveryRecords })} isLink />
                 <AnalysisItem label="休眠期間範囲" value={stat.dormancyRange ? `${stat.dormancyRange[0]}～${stat.dormancyRange[1]}日` : "-"} onClick={() => setSelectedAnalysis({ label: "休眠データ", records: stat.dormancyRecords })} isLink />
                 <AnalysisItem label="寿命範囲" value={stat.lifespanRange ? `${stat.lifespanRange[0]}～${stat.lifespanRange[1]}日` : "-"} onClick={() => setSelectedAnalysis({ label: "生存データ", records: stat.lifespanRecords })} isLink />
                 <AnalysisItem label="幼虫期間範囲" value={stat.larvaRange ? `${stat.larvaRange[0]}～${stat.larvaRange[1]}日` : "-"} onClick={() => setSelectedAnalysis({ label: "幼虫データ", records: stat.larvaRecords })} isLink />
@@ -381,21 +404,21 @@ export function AnalysisView({
                            data={selectedAnalysis.scatterData.filter(d => viewGender === "不明" || d.gender === viewGender)}
                            fill={viewGender === "オス" ? "#E67E22" : viewGender === "メス" ? "#EC407A" : "#D35400"}
                            style={{ cursor: "pointer" }}
-                           onClick={(d: any) => { if (d?.entryId) { setSelectedEntry(entries.find(e => e.id === d.entryId) || null); setSelectedAnalysis(null); } }}
-                         />
+                            onClick={(d: any) => openEntryFromAnalysis(d?.entryId)}
+                          />
                        </ScatterChart>
                      </ResponsiveContainer>
                    </div>
                    <div className="flex-1 overflow-y-auto space-y-2 mb-4 pr-2 custom-scrollbar">
                      {selectedAnalysis.scatterData.filter(d => viewGender === "不明" || d.gender === viewGender).length > 0 ? (
                        selectedAnalysis.scatterData.filter(d => viewGender === "不明" || d.gender === viewGender).map((rec, i) => (
-                         <div key={i} className="flex justify-between items-center p-3 bg-white shadow-sm rounded-xl font-black border border-gray-200">
-                           <span className="text-gray-400 text-[10px] truncate max-w-[120px]">{rec.mName}</span>
-                           <span className="text-[#FF9800] text-sm leading-none">
-                             {rec.x}g / {rec.y}mm
-                           </span>
-                         </div>
-                       ))
+                          <button key={i} type="button" onClick={() => openEntryFromAnalysis(rec.entryId)} className="w-full flex justify-between items-center p-3 bg-white shadow-sm rounded-xl font-black border border-gray-200 active:scale-[0.99] transition-all text-left">
+                            <span className="text-gray-400 text-[10px] truncate max-w-[120px]">{rec.mName}</span>
+                            <span className="text-[#FF9800] text-sm leading-none">
+                              {rec.x}g / {rec.y}mm
+                            </span>
+                          </button>
+                        ))
                      ) : (
                        <p className="text-center text-gray-400 py-10">データがありません</p>
                      )}
@@ -404,50 +427,42 @@ export function AnalysisView({
                ) : (
                  <>
                    <div className="h-44 mb-4 bg-gray-50/50 rounded-2xl p-4 shrink-0">
-                     <ResponsiveContainer width="100%" height="100%">
-                       <ScatterChart margin={{ top: 10, right: 10, bottom: 20, left: -20 }}>
-                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                         <XAxis type="category" dataKey="name" fontSize={10} axisLine={false} tickLine={false} tick={{fill: '#9ca3af'}} />
-                         <YAxis type="number" dataKey="val" fontSize={10} axisLine={false} tickLine={false} tick={{fill: '#9ca3af'}} />
-                         <ZAxis type="number" range={[100, 100]} />
-                         <Tooltip cursor={{ strokeDasharray: '3 3' }} content={({ active, payload }) => {
-                             if (active && payload && payload.length) {
-                               const unit = selectedAnalysis.label.includes("体重") ? "g" :
-                                            selectedAnalysis.label.includes("期間") || selectedAnalysis.label.includes("寿命") ? "日" :
-                                            selectedAnalysis.label.includes("サイズ") ? "mm" :
-                                            selectedAnalysis.label.includes("卵") ? "個" : "頭";
-                               return <div className="bg-white/90 p-2 rounded-lg text-[10px] font-bold shadow-xl">
-                                 <p>{payload[0].payload.name}</p>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={sortRecords(selectedAnalysis.records || []).filter(r => viewGender === "不明" || r.gender === viewGender).map(r => ({ name: r.mName, val: r.val, entryId: r.entryId }))} margin={{ top: 8, right: 8, bottom: 22, left: -12 }}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                          <XAxis dataKey="name" fontSize={9} axisLine={false} tickLine={false} tick={{fill: '#9ca3af'}} interval={0} angle={-25} textAnchor="end" height={34} />
+                          <YAxis type="number" unit={getAnalysisUnit(selectedAnalysis.label)} fontSize={10} axisLine={false} tickLine={false} tick={{fill: '#9ca3af'}} />
+                          <Tooltip cursor={{ strokeDasharray: '3 3' }} content={({ active, payload }) => {
+                              if (active && payload && payload.length) {
+                                const unit = getAnalysisUnit(selectedAnalysis.label);
+                                return <div className="bg-white/90 p-2 rounded-lg text-[10px] font-bold shadow-xl">
+                                  <p>{payload[0].payload.name}</p>
                                  <p className="text-[#FF9800] text-sm font-black">
                                    {payload[0].value}{unit}
                                  </p>
                                </div>;
-                             }
-                             return null;
-                           }} />
-                         <Scatter
-                           data={(selectedAnalysis.records || []).filter(r => r.gender === viewGender).map(r => ({ name: r.mName, val: r.val, entryId: r.entryId }))}
-                           fill={viewGender === "オス" ? "#E67E22" : viewGender === "メス" ? "#EC407A" : "#D35400"}
-                           style={{ cursor: "pointer" }}
-                           onClick={(d: any) => { if (d?.entryId) { setSelectedEntry(entries.find(e => e.id === d.entryId) || null); setSelectedAnalysis(null); } }}
-                         />
-                       </ScatterChart>
-                     </ResponsiveContainer>
+                              }
+                              return null;
+                            }} />
+                          <Bar dataKey="val" radius={[8, 8, 2, 2]} onClick={(d: any) => openEntryFromAnalysis(d?.entryId)}>
+                            {sortRecords(selectedAnalysis.records || []).filter(r => viewGender === "不明" || r.gender === viewGender).map((rec) => (
+                              <Cell key={rec.entryId || rec.mName} fill={rec.gender === "オス" ? "#E67E22" : rec.gender === "メス" ? "#EC407A" : "#D35400"} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
                    </div>
 
                    <div className="flex-1 overflow-y-auto space-y-2 mb-4 pr-2 custom-scrollbar">
-                     {(selectedAnalysis.records || []).filter(r => r.gender === viewGender).length > 0 ? (
-                       sortRecords(selectedAnalysis.records || []).filter(r => r.gender === viewGender).map((rec, i) => (
-                       <div key={i} className="flex justify-between items-center p-4 bg-white shadow-sm rounded-xl font-black border border-gray-200">
-                          <span className="text-gray-400 text-[10px] truncate max-w-[120px]">{rec.mName}</span> {/* Keep gray for subtle text */}
-                          <span className="text-[#FF9800] text-lg leading-none">{rec.val}<span className="text-xs ml-0.5 font-bold">
-                            {selectedAnalysis.label.includes("体重") ? "g" :
-                             selectedAnalysis.label.includes("期間") || selectedAnalysis.label.includes("寿命") ? "日" :
-                             selectedAnalysis.label.includes("サイズ") ? "mm" :
-                             selectedAnalysis.label.includes("卵") ? "個" : "頭"}
-                          </span></span>
-                       </div>
-                     ))
+                      {(selectedAnalysis.records || []).filter(r => viewGender === "不明" || r.gender === viewGender).length > 0 ? (
+                        sortRecords(selectedAnalysis.records || []).filter(r => viewGender === "不明" || r.gender === viewGender).map((rec, i) => (
+                        <button key={i} type="button" onClick={() => openEntryFromAnalysis(rec.entryId)} disabled={!rec.entryId} className="w-full flex justify-between items-center p-4 bg-white shadow-sm rounded-xl font-black border border-gray-200 active:scale-[0.99] transition-all disabled:opacity-70 text-left">
+                           <span className="text-gray-400 text-[10px] truncate max-w-[120px]">{rec.mName}</span> {/* Keep gray for subtle text */}
+                           <span className="text-[#FF9800] text-lg leading-none">{rec.val}<span className="text-xs ml-0.5 font-bold">
+                             {getAnalysisUnit(selectedAnalysis.label)}
+                           </span></span>
+                        </button>
+                      ))
                      ) : (
                        <p className="text-center text-gray-400 py-10">データがありません</p>
                      )}

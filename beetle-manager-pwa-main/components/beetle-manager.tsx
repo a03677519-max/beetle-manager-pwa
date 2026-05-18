@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { AnimatePresence, motion, Reorder } from "framer-motion";
-import { Search, Clipboard, Camera, Loader2, Crop, Check, X as CloseIcon, Trash2, Edit, CheckSquare, Square, ArrowUpDown, ChevronDown, ChevronUp, Settings, ChevronLeft, ChevronRight, FileSpreadsheet, RefreshCw, Folder, FolderOpen, Plus } from "lucide-react";
+import { Search, Clipboard, Camera, Loader2, Crop, Check, X as CloseIcon, Trash2, Edit, CheckSquare, Square, ArrowUpDown, ChevronDown, ChevronUp, Settings, ChevronLeft, ChevronRight, FileSpreadsheet, RefreshCw, Plus } from "lucide-react";
 import { Navbar } from "@/components/layout/navbar";
 import { Modal } from "./ui/modal"; // Ensure Modal is imported
 import { useSwitchBot } from "@/components/use-switchbot";
@@ -1872,9 +1872,9 @@ export function BeetleManager() {
                     const mainType = (Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0]) as EntryType;
 
                     const themes = {
-                      "成虫": { bg: "to-orange-50/40", icon: "bg-orange-50 text-orange-500 border-orange-100/50", badge: "bg-orange-500 shadow-orange-100", hover: "hover:border-orange-200" },
-                      "幼虫": { bg: "to-emerald-50/40", icon: "bg-emerald-50 text-emerald-600 border-emerald-100/50", badge: "bg-emerald-600 shadow-emerald-100", hover: "hover:border-emerald-200" },
-                      "産卵セット": { bg: "to-amber-50/40", icon: "bg-amber-50 text-amber-600 border-amber-100/50", badge: "bg-amber-600 shadow-amber-100", hover: "hover:border-amber-200" }
+                      "成虫": { bg: "to-orange-50/40", accent: "from-orange-300 to-amber-500", badge: "bg-orange-500 shadow-orange-100", hover: "hover:border-orange-200" },
+                      "幼虫": { bg: "to-emerald-50/40", accent: "from-emerald-300 to-green-600", badge: "bg-emerald-600 shadow-emerald-100", hover: "hover:border-emerald-200" },
+                      "産卵セット": { bg: "to-amber-50/40", accent: "from-amber-300 to-orange-500", badge: "bg-amber-600 shadow-amber-100", hover: "hover:border-amber-200" }
                     };
                     const theme = themes[mainType] || themes["成虫"];
 
@@ -1882,16 +1882,9 @@ export function BeetleManager() {
                       <button
                         key={group.key}
                         onClick={() => setSelectedFolderKey(group.key)}
-                        className={`w-full bg-white rounded-[32px] p-5 shadow-[0_10px_40px_rgba(0,0,0,0.03)] border border-[#F1EDE8] text-left active:scale-[0.97] transition-all flex items-center gap-5 group relative overflow-hidden bg-gradient-to-br from-white via-white ${theme.bg} ${theme.hover}`}
+                        className={`w-full bg-white rounded-[32px] p-5 shadow-[0_10px_40px_rgba(0,0,0,0.03)] border border-[#F1EDE8] text-left active:scale-[0.97] transition-all flex items-center gap-4 group relative overflow-hidden bg-gradient-to-br from-white via-white ${theme.bg} ${theme.hover}`}
                       >
-                        {/* 背景の装飾パターン */}
-                        <div className="absolute -right-6 -bottom-6 opacity-[0.04] rotate-12 pointer-events-none transition-transform group-hover:scale-110 group-hover:rotate-0 duration-700">
-                          <Folder size={120} strokeWidth={1} />
-                        </div>
-
-                        <div className={`w-14 h-14 rounded-[22px] ${theme.icon} border flex items-center justify-center shrink-0 shadow-inner group-active:scale-90 transition-transform relative z-10`}>
-                          <Folder size={28} strokeWidth={2.5} />
-                        </div>
+                        <div className={`h-14 w-2 rounded-full bg-gradient-to-b ${theme.accent} shadow-sm shrink-0 relative z-10`} />
 
                       <div className="flex-1 min-w-0">
                         <div className="flex min-w-0 flex-wrap items-center gap-2 mb-0.5 relative z-10">
@@ -2051,6 +2044,8 @@ export function BeetleManager() {
                             <EntryCard
                               entry={entry}
                               onOpen={() => handleEntryClick(entry)}
+                              onEdit={(event, id) => { event.stopPropagation(); startEditing(id); }}
+                              onDelete={(event, id) => { event.stopPropagation(); const target = entries.find(item => item.id === id); if (target && window.confirm(`${target.japaneseName || "この個体"}を削除しますか？`)) deleteEntry(id); }}
                               isSelected={selectedIds.includes(entry.id)}
                               isSelectionMode={isSelectionMode}
                             />

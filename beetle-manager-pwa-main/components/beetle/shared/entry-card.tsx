@@ -7,11 +7,12 @@ import type { BeetleEntry, SpawnSet } from "@/types/beetle";
 import { getDaysRange, today, getLarvaDateInfo, getSpawnSetDateInfo } from "@/lib/utils";
 import { useMemo } from "react";
 import Image from "next/image";
-import { Trash2 } from "lucide-react";
+import { Edit2, Trash2 } from "lucide-react";
 
 export function EntryCard({
   entry,
   onOpen,
+  onEdit,
   onDelete,
   isSelectionMode = false,
   isSelected = false,
@@ -19,6 +20,7 @@ export function EntryCard({
 }: {
   entry: BeetleEntry;
   onOpen: (entry: BeetleEntry) => void;
+  onEdit?: (e: React.MouseEvent, id: string) => void;
   onDelete?: (e: React.MouseEvent, id: string) => void;
   isSelectionMode?: boolean;
   isSelected?: boolean;
@@ -86,10 +88,19 @@ export function EntryCard({
             </div>
           )}
         </div>
-        {onDelete && (
-          <button onClick={(e) => { e.stopPropagation(); onDelete(e, entry.id); }} className="absolute bottom-2 right-2 p-1.5 bg-black/50 text-white rounded-full">
-            <Trash2 size={14} />
-          </button>
+        {(onEdit || onDelete) && (
+          <div className="absolute bottom-2 right-2 flex gap-1.5">
+            {onEdit && (
+              <button onClick={(e) => { e.stopPropagation(); onEdit(e, entry.id); }} className="p-1.5 bg-white/90 text-[#FF9800] rounded-full shadow-sm">
+                <Edit2 size={14} />
+              </button>
+            )}
+            {onDelete && (
+              <button onClick={(e) => { e.stopPropagation(); onDelete(e, entry.id); }} className="p-1.5 bg-black/50 text-white rounded-full">
+                <Trash2 size={14} />
+              </button>
+            )}
+          </div>
         )}
       </article>
     );
@@ -128,6 +139,7 @@ export function EntryCard({
                 </span>
               )}
               {entry.managementName && <span className="min-w-0 max-w-full text-[10px] font-black bg-[#F9F7F5] px-2 py-0.5 rounded-lg text-[#B0A495] border border-[#E8E2DA] shadow-inner break-words">{entry.managementName}</span>}
+              {entry.bloodline && <span className="min-w-0 max-w-full text-[10px] font-black bg-[#FFF4E5] px-2 py-0.5 rounded-lg text-[#D97706] border border-[#FFE0B2] break-words">血統: {entry.bloodline}</span>}
             </div>
             <p className="text-[12px] italic text-[#B0A495] font-serif leading-tight break-words whitespace-normal">{entry.scientificName}</p>
             {entry.memo && (
@@ -220,10 +232,19 @@ export function EntryCard({
           )}
         </div>
 
-        {onDelete && !isSelectionMode && ( // 選択モード時は削除ボタンを非表示
-          <button onClick={(e) => { e.stopPropagation(); onDelete(e, entry.id); }} className="absolute bottom-4 right-4 text-gray-400 hover:text-red-500">
-            <Trash2 size={18} />
-          </button>
+        {(onEdit || onDelete) && !isSelectionMode && (
+          <div className="absolute bottom-4 right-4 flex items-center gap-2">
+            {onEdit && (
+              <button onClick={(e) => { e.stopPropagation(); onEdit(e, entry.id); }} className="flex items-center gap-1 rounded-full bg-orange-50 px-2.5 py-1.5 text-[10px] font-black text-[#FF9800] shadow-sm active:scale-95">
+                <Edit2 size={14} /> 再編集
+              </button>
+            )}
+            {onDelete && (
+              <button onClick={(e) => { e.stopPropagation(); onDelete(e, entry.id); }} className="flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1.5 text-[10px] font-black text-red-500 shadow-sm active:scale-95">
+                <Trash2 size={14} /> 削除
+              </button>
+            )}
+          </div>
         )}
 
         {/* スパイクライン */}

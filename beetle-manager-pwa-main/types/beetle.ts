@@ -34,6 +34,7 @@ export type BaseBeetle = {
   scientificName: string;
   locality: string;
   generation: GenerationValue;
+  bloodline?: string;
   photos: string[];
   createdAt: string;
   updatedAt: string;
