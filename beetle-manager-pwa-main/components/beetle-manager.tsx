@@ -268,6 +268,53 @@ export function BeetleManager() {
     return dates.length > 0 ? [...dates].sort()[0] : (spawnSet.createdAt || today());
   }, []);
 
+  const getManualManagementNamePart = useCallback((entry: BeetleEntry) => {
+    const rawName = (entry.managementName || "").trim();
+    if (!rawName || rawName === "-") return "";
+
+    const shortenedSciName = entry.scientificName
+      .trim()
+      .split(/\s+/)
+      .map((part, index) => (index === 0 ? part[0]?.toUpperCase() : part.slice(0, 1).toLowerCase()) || "")
+      .join("");
+
+    const manualPart = rawName
+      .replace(/([_-]?\d{2,4}[._/-]?\d{1,2}[._/-]?\d{1,2})([_-]?\d+)?$/g, "")
+      .replace(/([_-]?\d{6,8})([_-]?\d+)?$/g, "")
+      .replace(/[_-]?\d+$/g, "")
+      .replace(/[_-]{2,}/g, "_")
+      .replace(/^[_-]+|[_-]+$/g, "")
+      .trim();
+
+    if (!manualPart || manualPart === "-" || manualPart === shortenedSciName) return "";
+    return manualPart;
+  }, []);
+
+  const buildSpawnSetParentManagementBase = useCallback((entry: BeetleEntry) => {
+    if (entry.type !== "産卵セット") return "";
+
+    const linkedAdults = (entry.linkedEntryIds || [])
+      .map((id) => entries.find((item) => item.id === id))
+      .filter((item): item is AdultBeetle => !!item && item.type === "成虫");
+
+    const maleName = linkedAdults
+      .find((item) => item.gender === "オス")
+      ?.["id"];
+    const femaleName = linkedAdults
+      .find((item) => item.gender === "メス")
+      ?.["id"];
+
+    const orderedIds = [maleName, femaleName, ...linkedAdults.map((item) => item.id)]
+      .filter((id, index, ids): id is string => !!id && ids.indexOf(id) === index);
+
+    const parts = orderedIds
+      .map((id) => linkedAdults.find((item) => item.id === id))
+      .map((item) => item ? getManualManagementNamePart(item) : "")
+      .filter((part) => part.length > 0);
+
+    return parts.join("+");
+  }, [entries, getManualManagementNamePart]);
+
   const buildNumberedManagementName = useCallback((entry: BeetleEntry, currentName: string | undefined, existingEntries: BeetleEntry[]) => (
     generateUniqueMName(
       getManagementNameDate(entry),
@@ -275,7 +322,7 @@ export function BeetleManager() {
       existingEntries,
       entry.type,
       managementNameFormats[entry.type],
-      currentName,
+      entry.type === "産卵セット" ? (buildSpawnSetParentManagementBase(entry) || currentName) : currentName,
       {
         japaneseName: entry.japaneseName,
         locality: entry.locality,
@@ -283,7 +330,7 @@ export function BeetleManager() {
       },
       { keepAlreadyNumbered: keepAlreadyNumberedNames, currentEntryId: entry.id }
     )
-  ), [getManagementNameDate, keepAlreadyNumberedNames, managementNameFormats]);
+  ), [buildSpawnSetParentManagementBase, getManagementNameDate, keepAlreadyNumberedNames, managementNameFormats]);
 
   const filteredEntries = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -1725,19 +1772,17 @@ export function BeetleManager() {
             initialValues={pastedData && pastedData.type === "産卵セット" ? { ...emptySpawnSetForm, ...pastedData } : (spawnTemplate ? { ...emptySpawnSetForm, ...spawnTemplate } : getInitialValues("産卵セット", emptySpawnSetForm))}
             allEntries={entries}
             onSubmit={(value) => {
-              const mName = generateUniqueMName(
-                (value.setDate && value.setDate !== "-") ? value.setDate : today(), 
-                value.scientificName, 
-                entries, 
-                "産卵セット", 
-                managementNameFormats["産卵セット"], 
-                value.managementName,
+              const mName = buildNumberedManagementName(
                 {
-                  japaneseName: value.japaneseName,
-                  locality: value.locality,
-                  generation: formatGeneration(value.generation)
+                  ...value,
+                  id: value.id || "new-spawn-set",
+                  type: "産卵セット",
+                  photos: value.photos || [],
+                  createdAt: (value as any).createdAt || today(),
+                  updatedAt: (value as any).updatedAt || today(),
                 },
-                { keepAlreadyNumbered: keepAlreadyNumberedNames }
+                value.managementName,
+                entries
               );
               addSpawnSet({ ...value, managementName: mName });
               setIsCreating(false);
