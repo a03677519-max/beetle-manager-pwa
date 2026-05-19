@@ -161,6 +161,14 @@ export function EntryDetail({
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
         transition={{ type: "spring", damping: 30, stiffness: 450, mass: 0.8 }}
+        drag="x"
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={0.18}
+        onDragEnd={(_, info) => {
+          if (Math.abs(info.offset.x) > 90 || Math.abs(info.velocity.x) > 600) {
+            onClose();
+          }
+        }}
         className="bg-white rounded-t-[36px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] h-[90dvh] z-10 w-full max-w-md mx-auto overscroll-contain pointer-events-auto flex min-w-0 flex-col overflow-hidden"
       >
         <div className="flex min-w-0 justify-between items-start gap-3 p-6 sticky top-0 bg-white/90 backdrop-blur-sm z-10 min-h-[72px] border-b border-gray-50 shrink-0">

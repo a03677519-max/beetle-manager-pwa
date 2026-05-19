@@ -179,12 +179,15 @@ export function BeetleManager() {
       const target = entries.find((item) => item.id === e.detail.id);
       if (target) {
         resetViewportScale();
+        setActiveTab(target.type);
+        setVisibleTypes([target.type]);
+        setSelectedType(target.type);
         setSelectedEntry(target);
       }
     };
     window.addEventListener('app:navigate-entry', handleNavigate);
     return () => window.removeEventListener('app:navigate-entry', handleNavigate);
-  }, [entries]);
+  }, [entries, setSelectedType]);
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);

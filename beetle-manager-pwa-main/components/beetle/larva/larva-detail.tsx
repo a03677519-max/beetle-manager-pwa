@@ -42,6 +42,14 @@ export function LarvaDetail({
     )
   );
 
+  const linkedSpawnSets = allEntries.filter((e) =>
+    e.type === "産卵セット" && (
+      e.linkedEntryIds?.includes(entry.id) ||
+      entry.linkedEntryIds?.includes(e.id) ||
+      (entry.managementName && e.managementName === entry.managementName && e.scientificName === entry.scientificName)
+    )
+  );
+
   const handleNavigate = (id: string) => {
     window.dispatchEvent(new CustomEvent('app:navigate-entry', { detail: { id } }));
   };
@@ -141,6 +149,16 @@ export function LarvaDetail({
             成虫データを確認する
           </button>
         )}
+        {linkedSpawnSets.map((spawnSet) => (
+          <button
+            key={spawnSet.id}
+            onClick={() => handleNavigate(spawnSet.id)}
+            className="col-span-2 flex items-center justify-center gap-2 py-4 bg-[#FF9800]/10 text-[#EF6C00] rounded-2xl text-sm font-bold border border-[#FF9800]/20 active:scale-95 transition-all"
+          >
+            <ExternalLink size={18} />
+            産卵セットを確認する
+          </button>
+        ))}
         <div className="min-w-0 bg-[#F1F3F5] p-4 rounded-2xl border border-gray-100">
           <div className="text-[10px] font-black text-[#8B5A2B] uppercase tracking-widest">総ログ数</div>
           <div className="text-xl font-bold text-[#212529] break-words whitespace-normal">{entry.logs.length}件</div>

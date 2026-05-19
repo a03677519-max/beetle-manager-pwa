@@ -1,4 +1,5 @@
-import { ReactNode, useEffect } from "react";
+import type { PointerEvent, ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import { resetViewportScale } from "@/lib/utils";
 
 interface ModalProps {
@@ -11,6 +12,10 @@ interface ModalProps {
 }
 
 export function Modal({ isOpen, onClose, title, children, centered = false, className = "" }: ModalProps) {
+  const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
+  const [swipeX, setSwipeX] = useState(0);
+  const [isSwiping, setIsSwiping] = useState(false);
+
   const resetModalSize = () => {
     const modal = document.getElementById('modal-container');
     if (modal) {
@@ -21,7 +26,36 @@ export function Modal({ isOpen, onClose, title, children, centered = false, clas
 
   const handleClose = () => {
     resetModalSize();
+    setSwipeX(0);
+    setIsSwiping(false);
     onClose();
+  };
+
+  const handlePointerDown = (e: PointerEvent<HTMLDivElement>) => {
+    swipeStartRef.current = { x: e.clientX, y: e.clientY };
+    setIsSwiping(false);
+  };
+
+  const handlePointerMove = (e: PointerEvent<HTMLDivElement>) => {
+    const start = swipeStartRef.current;
+    if (!start) return;
+
+    const dx = e.clientX - start.x;
+    const dy = e.clientY - start.y;
+    if (Math.abs(dx) < 12 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
+
+    setIsSwiping(true);
+    setSwipeX(dx);
+  };
+
+  const handlePointerEnd = () => {
+    if (isSwiping && Math.abs(swipeX) > 90) {
+      handleClose();
+    } else {
+      setSwipeX(0);
+      setIsSwiping(false);
+    }
+    swipeStartRef.current = null;
   };
 
   useEffect(() => {
@@ -72,7 +106,15 @@ export function Modal({ isOpen, onClose, title, children, centered = false, clas
       <div 
         id="modal-container" 
         className={`flex flex-col bg-white/95 backdrop-blur-2xl ${centered ? 'rounded-[36px]' : 'rounded-t-[36px]'} shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-white/80 w-full max-w-md max-h-[85dvh] overflow-hidden overscroll-contain fixed`}
-        style={{ bottom: 0 }}
+        style={{
+          bottom: 0,
+          transform: `translateX(${swipeX}px)`,
+          transition: isSwiping ? 'none' : 'transform 180ms ease-out',
+        }}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerEnd}
+        onPointerCancel={handlePointerEnd}
       >
         <div className="flex justify-between items-center p-6 shrink-0">
           <h2 className="text-xl font-bold text-gray-800">{title}</h2>

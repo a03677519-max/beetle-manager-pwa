@@ -6,6 +6,7 @@ import { Modal } from "@/components/ui/modal";
 import type { AdultBeetle } from "@/types/beetle";
 import { formatDate } from "@/lib/utils";
 import { useBeetleStore } from "@/store/use-beetle-store";
+import { ExternalLink } from "lucide-react";
 
 export function AdultDetail({ entry }: { entry: AdultBeetle }) {
   const [isBloodlineOpen, setIsBloodlineOpen] = useState(false);
@@ -15,6 +16,14 @@ export function AdultDetail({ entry }: { entry: AdultBeetle }) {
   const linkedLarva = allEntries.find((e) => 
     e.type === "幼虫" && (
       entry.linkedEntryIds?.includes(e.id) || 
+      (entry.managementName && e.managementName === entry.managementName && e.scientificName === entry.scientificName)
+    )
+  );
+
+  const linkedSpawnSets = allEntries.filter((e) =>
+    e.type === "産卵セット" && (
+      e.linkedEntryIds?.includes(entry.id) ||
+      entry.linkedEntryIds?.includes(e.id) ||
       (entry.managementName && e.managementName === entry.managementName && e.scientificName === entry.scientificName)
     )
   );
@@ -97,7 +106,17 @@ export function AdultDetail({ entry }: { entry: AdultBeetle }) {
       </div>
 
       {/* 追従する登録/遷移ボタン */}
-      <div className="sticky bottom-0 bg-white/95 backdrop-blur-sm border-t border-gray-100 p-4 -mx-6 z-20">
+      <div className="sticky bottom-0 space-y-2 bg-white/95 backdrop-blur-sm border-t border-gray-100 p-4 -mx-6 z-20">
+        {linkedSpawnSets.map((spawnSet) => (
+          <button
+            key={spawnSet.id}
+            onClick={() => handleNavigate(spawnSet.id)}
+            className="w-full flex items-center justify-center gap-2 py-4 bg-[#FF9800]/10 text-[#EF6C00] rounded-[20px] text-sm font-bold border border-[#FF9800]/20 active:scale-[0.98] transition-all"
+          >
+            <ExternalLink size={18} />
+            産卵セットを確認する
+          </button>
+        ))}
         {linkedLarva && (
           <button
             onClick={() => handleNavigate(linkedLarva.id)}
