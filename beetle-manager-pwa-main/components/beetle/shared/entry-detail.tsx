@@ -175,7 +175,7 @@ export function EntryDetail({
           <div className="min-w-0 flex-1 text-left">
             <h2 className="text-[18px] font-bold leading-tight text-[#4A3F35] break-words whitespace-normal">{entry.japaneseName}</h2>
             <p className="text-[12px] font-serif italic leading-snug text-gray-400 break-words whitespace-normal">{entry.scientificName}</p>
-            {entry.bloodline && <p className="mt-1 text-[11px] font-black text-[#FF9800] break-words">血統: {entry.bloodline}</p>}
+            {entry.bloodline && <p className="mt-1 text-[11px] font-black text-[#FF9800] break-words">血統情報あり</p>}
           </div>
           <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
             <button 

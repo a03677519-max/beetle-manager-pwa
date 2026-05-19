@@ -110,8 +110,12 @@ export function LarvaDetail({
           className="min-w-0 bg-gray-50 p-4 rounded-2xl col-span-2 text-left active:bg-gray-100 transition-colors"
         >
           <div className="text-xs text-gray-500">血統</div>
-          <div className="font-bold text-gray-800 break-words whitespace-normal">{entry.bloodline || "-"}</div>
-          <div className="mt-1 text-[10px] font-bold text-[#FF9800]">タップで詳細表示</div>
+          <div className="font-bold text-gray-800 break-words whitespace-normal">
+            {entry.bloodline ? "血統情報あり" : "未入力"}
+          </div>
+          <div className="mt-1 text-[10px] font-bold text-[#FF9800]">
+            タップで血統の全文を確認
+          </div>
         </button>
         <div className="min-w-0 bg-gray-50 p-4 rounded-2xl col-span-2">
           {(() => {
