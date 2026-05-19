@@ -25,10 +25,9 @@ export function AdultDetail({ entry }: { entry: AdultBeetle }) {
 
   return (
     <div className="flex flex-col h-full bg-white">
-      {/* 横スクロールコンテナ - snap機能でカード単位の移動を実現 */}
-      <div className="flex-1 overflow-x-auto flex gap-6 px-1 pb-6 snap-x snap-mandatory hide-scrollbar">
+      <div className="flex-1 min-w-0 space-y-3 px-1 pb-6 overflow-x-hidden [overflow-wrap:anywhere]">
         {/* カード1: 基本情報 */}
-        <div className="min-w-full shrink-0 snap-center space-y-3">
+        <div className="min-w-0 space-y-3">
           <div className="min-w-0 bg-gray-50 p-4 rounded-2xl border border-gray-100">
             <div className="text-xs text-gray-500 mb-0.5">名称</div>
             <div className="font-bold text-gray-800 text-lg leading-tight break-words whitespace-normal">{entry.japaneseName}</div>
@@ -60,7 +59,7 @@ export function AdultDetail({ entry }: { entry: AdultBeetle }) {
               className="min-w-0 bg-gray-50 p-3 rounded-xl border border-gray-50 col-span-2 text-left active:bg-gray-100 transition-colors"
             >
               <div className="text-xs text-gray-400">血統</div>
-              <div className="font-bold text-gray-700 text-sm truncate">{entry.bloodline || "-"}</div>
+              <div className="font-bold text-gray-700 text-sm break-words whitespace-normal">{entry.bloodline || "-"}</div>
               <div className="mt-1 text-[10px] font-bold text-[#FF9800]">タップで詳細表示</div>
             </button>
             <div className="min-w-0 bg-gray-50 p-3 rounded-xl border border-gray-50">
@@ -76,7 +75,7 @@ export function AdultDetail({ entry }: { entry: AdultBeetle }) {
 
         {/* カード2: 履歴・メモ */}
         {(entry.memo || entry.larvaMemo) && (
-          <div className="min-w-full shrink-0 snap-center space-y-3">
+          <div className="min-w-0 space-y-3">
             {entry.memo && (
               <div className="min-w-0 bg-orange-50/30 p-4 rounded-2xl border border-orange-100/50">
                 <div className="text-xs text-orange-600 font-bold mb-2">管理メモ</div>
