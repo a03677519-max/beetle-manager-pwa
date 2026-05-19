@@ -1886,6 +1886,25 @@ export function BeetleManager() {
       {/* 一括編集モーダル */}
       <Modal isOpen={isBulkEditing} onClose={() => setIsBulkEditing(false)} title={`一括編集 (${selectedIds.length}件)`}>
         <div className="p-1 h-full flex flex-col overflow-hidden">
+          <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md -mx-6 px-6 pt-1 pb-1 border-b border-gray-100 mb-2">
+            <div className="flex items-center justify-between gap-4">
+              <button
+                type="button"
+                onClick={() => setIsBulkEditing(false)}
+                className="text-gray-400 font-bold text-[10px] px-1 hover:bg-gray-50 rounded-lg transition-colors whitespace-nowrap"
+              >
+                閉じる
+              </button>
+              <button
+                type="submit"
+                form={bulkFormId}
+                disabled={!bulkEntryType}
+                className="bg-[#2D5A27] text-white px-4 py-1 rounded-lg font-black text-[10px] shadow-sm hover:brightness-110 active:scale-95 transition-all select-none whitespace-nowrap disabled:opacity-40 disabled:active:scale-100"
+              >
+                保存
+              </button>
+            </div>
+          </div>
           <div className="flex-1 overflow-y-auto px-1">
             {bulkEntryType === "幼虫" ? (
               <LarvaForm
@@ -1908,13 +1927,6 @@ export function BeetleManager() {
               <p className="text-center p-4 text-gray-400">一括編集は同じ種別の個体のみ可能です。</p>
             )}
           </div>
-          <button 
-             type="submit"
-             form={bulkFormId}
-             className="w-full bg-[#2D5A27] text-white py-3 rounded-xl font-black mt-4"
-          >
-            保存
-          </button>
         </div>
       </Modal>
 
