@@ -5,6 +5,39 @@ export const today = () => {
   return `${y}-${m}-上`;
 };
 
+const VIEWPORT_CONTENT = "width=device-width, initial-scale=1, viewport-fit=cover";
+
+export const resetViewportScale = () => {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
+
+  const activeElement = document.activeElement as HTMLElement | null;
+  if (
+    activeElement &&
+    (activeElement.tagName === "INPUT" ||
+      activeElement.tagName === "TEXTAREA" ||
+      activeElement.tagName === "SELECT" ||
+      activeElement.isContentEditable)
+  ) {
+    activeElement.blur();
+  }
+
+  const applyViewport = (content: string) => {
+    let viewport = document.querySelector<HTMLMetaElement>('meta[name="viewport"]');
+    if (!viewport) {
+      viewport = document.createElement("meta");
+      viewport.name = "viewport";
+      document.head.appendChild(viewport);
+    }
+    viewport.content = content;
+  };
+
+  applyViewport(`${VIEWPORT_CONTENT}, maximum-scale=1`);
+  window.setTimeout(() => {
+    applyViewport(VIEWPORT_CONTENT);
+    window.scrollTo({ left: 0, top: window.scrollY, behavior: "auto" });
+  }, 0);
+};
+
 export const addDays = (date: string, days: number) => {
   const d = parseAmbiguousDate(date) || new Date();
   d.setDate(d.getDate() + days);

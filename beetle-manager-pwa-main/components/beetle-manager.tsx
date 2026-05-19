@@ -8,6 +8,7 @@ import { Modal } from "./ui/modal"; // Ensure Modal is imported
 import { useSwitchBot } from "@/components/use-switchbot";
 import { formatGeneration, today, isSpawnSetFinished, createId, generateUniqueMName, formatDate } from "@/types/utils";
 import { pushDataToGitHub } from "@/lib/github";
+import { resetViewportScale } from "@/lib/utils";
 import {
   emptyAdultForm,
   emptyLarvaForm,
@@ -176,7 +177,10 @@ export function BeetleManager() {
   useEffect(() => {
     const handleNavigate = (e: any) => {
       const target = entries.find((item) => item.id === e.detail.id);
-      if (target) setSelectedEntry(target);
+      if (target) {
+        resetViewportScale();
+        setSelectedEntry(target);
+      }
     };
     window.addEventListener('app:navigate-entry', handleNavigate);
     return () => window.removeEventListener('app:navigate-entry', handleNavigate);
@@ -190,6 +194,10 @@ export function BeetleManager() {
   const [selectedFolderKey, setSelectedFolderKey] = useState<string | null>(null);
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const isLongPressActive = useRef(false);
+
+  useEffect(() => {
+    resetViewportScale();
+  }, [activeTab, selectedEntry?.id, isCreating, editingId, isAddingSecondSet, isBulkEditing, isSettingsOpen, selectedFolderKey, isCropping]);
 
   // ソート値取得ヘルパー関数 (useMemo/useCallback の外で定義し、依存配列から参照可能にする)
   const getSortValue = useCallback((e: BeetleEntry, key: string): string | number => {
@@ -681,6 +689,7 @@ export function BeetleManager() {
   }, [entries, importData, createBackup]);
 
   const handleTabChange = useCallback((tab: string) => {
+    resetViewportScale();
     // モーダルや詳細画面が開いていればすべて閉じる
     setIsCreating(false);
     startEditing(null);

@@ -1,4 +1,5 @@
 import { ReactNode, useEffect } from "react";
+import { resetViewportScale } from "@/lib/utils";
 
 interface ModalProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ export function Modal({ isOpen, onClose, title, children, centered = false, clas
 
   useEffect(() => {
     if (isOpen) {
+      resetViewportScale();
       document.body.style.overflow = "hidden";
       const handler = () => {
         if (window.visualViewport) {
