@@ -25,9 +25,17 @@ export function TaskView({
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
   const { groupedTasks, totalCount } = useMemo(() => {
+    const isCompletedLarva = (entry: LarvaBeetle) => {
+      const e = entry as any;
+      const isEmerged = !!e.actualEmergenceDate;
+      const isDeceased = !!e.deathDate && e.deathDate !== "-";
+      const isSold = (!!e.soldDate && e.soldDate !== "-") || e.status === "販売済み";
+      return isEmerged || isDeceased || isSold;
+    };
+
     const visibleEntries = entries.filter((e) => !skippedTaskIds.includes(e.id));
     const exchangeTasks = visibleEntries
-      .filter((e): e is LarvaBeetle => e.type === "幼虫")
+      .filter((e): e is LarvaBeetle => e.type === "幼虫" && !isCompletedLarva(e))
       .map(e => {
         const lastExchange = e.logs[0]?.date || e.createdAt;
         const daysSinceExchange = daysBetween(lastExchange, today()) ?? 0;
@@ -36,8 +44,11 @@ export function TaskView({
       .filter(t => t.days >= 60);
 
     const emergenceTasks = visibleEntries
-      .filter((e): e is LarvaBeetle => e.type === "幼虫" && !!e.actualEmergenceDate)
-      .map(e => ({ entry: e, days: daysBetween(today(), e.actualEmergenceDate) ?? 0, type: "emergence" as const }))
+      .filter((e): e is LarvaBeetle => {
+        if (e.type !== "幼虫" || isCompletedLarva(e)) return false;
+        return !!e.plannedEmergenceDate;
+      })
+      .map(e => ({ entry: e, days: daysBetween(today(), e.plannedEmergenceDate) ?? 0, type: "emergence" as const }))
       .filter(t => t.days <= 14 && t.days >= -7);
 
     const allTasks = [...exchangeTasks, ...emergenceTasks];

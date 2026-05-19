@@ -246,6 +246,45 @@ export function BeetleManager() {
 
   const bulkFormId = "bulk-edit-form";
 
+  const getManagementNameDate = useCallback((entry: BeetleEntry) => {
+    if (entry.type === "成虫") {
+      const adult = entry as AdultBeetle;
+      return adult.emergenceDate || adult.createdAt || today();
+    }
+
+    if (entry.type === "幼虫") {
+      const larva = entry as LarvaBeetle;
+      return (larva.hatchDate && larva.hatchDate !== "-")
+        ? larva.hatchDate
+        : ((larva.extractionDate && larva.extractionDate !== "-") ? larva.extractionDate : (larva.createdAt || today()));
+    }
+
+    const spawnSet = entry as SpawnSet;
+    const dates = [
+      spawnSet.setDate,
+      ...(spawnSet.sets || []).map((set: any) => set.setDate),
+      entry.createdAt?.slice(0, 10),
+    ].filter((date) => date && date !== "-");
+    return dates.length > 0 ? [...dates].sort()[0] : (spawnSet.createdAt || today());
+  }, []);
+
+  const buildNumberedManagementName = useCallback((entry: BeetleEntry, currentName: string | undefined, existingEntries: BeetleEntry[]) => (
+    generateUniqueMName(
+      getManagementNameDate(entry),
+      entry.scientificName,
+      existingEntries,
+      entry.type,
+      managementNameFormats[entry.type],
+      currentName,
+      {
+        japaneseName: entry.japaneseName,
+        locality: entry.locality,
+        generation: formatGeneration(entry.generation),
+      },
+      { keepAlreadyNumbered: keepAlreadyNumberedNames, currentEntryId: entry.id }
+    )
+  ), [getManagementNameDate, keepAlreadyNumberedNames, managementNameFormats]);
+
   const filteredEntries = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     const list = entries.filter((entry) => {
@@ -636,45 +675,13 @@ export function BeetleManager() {
         return;
       }
 
-      let date: string;
-      if (entry.type === "成虫") {
-        date = (entry as AdultBeetle).emergenceDate || entry.createdAt || today();
-      } else if (entry.type === "幼虫") {
-        const larvaEntry = entry as LarvaBeetle;
-        // セット開始日(hatchDate)を優先し、無ければ割出日(extractionDate)を使用
-        date = (larvaEntry.hatchDate && larvaEntry.hatchDate !== "-" ? larvaEntry.hatchDate : (larvaEntry.extractionDate && larvaEntry.extractionDate !== "-" ? larvaEntry.extractionDate : (larvaEntry.createdAt || today())));
-      } else { // SpawnSet
-        const ss = entry as SpawnSet;
-        // 履歴も含めた最古の日付を基準にする
-        const allDates = [
-          ss.setDate, 
-          ...(ss.sets || []).map((s: any) => s.setDate),
-          (entry as any).createdAt?.slice(0, 10)
-        ]
-          .filter(d => d && d !== "-");
-        date = allDates.length > 0 ? [...allDates].sort()[0] : (ss.createdAt || today());
-      }
-      
-      const newName = generateUniqueMName(
-        date, 
-        entry.scientificName, 
-        processed, 
-        entry.type,
-        managementNameFormats[entry.type],
-        entry.managementName,
-        {
-          japaneseName: entry.japaneseName,
-          locality: entry.locality,
-          generation: formatGeneration(entry.generation)
-        },
-        { keepAlreadyNumbered: keepAlreadyNumberedNames }
-      );
+      const newName = buildNumberedManagementName(entry, entry.managementName, processed);
       processed.push({ ...entry, managementName: newName });
     });
     
     importData(processed);
     window.alert("管理名の一括更新が完了しました。");
-  }, [entries, managementNameFormats, keepAlreadyNumberedNames, importData]);
+  }, [entries, buildNumberedManagementName, importData]);
 
   // 設定画面から呼び出されるクリーンアップ機能の実装
   const handleCleanupManagementNames = useCallback(() => {
@@ -735,6 +742,7 @@ export function BeetleManager() {
   const handleBulkEditSubmit = (values: any) => {
     createBackup();
     // 変更された項目のみを一括適用
+    const numberedEntries = [...entries];
     selectedIds.forEach(id => {
       const entry = entries.find(e => e.id === id);
       if (!entry) return;
@@ -747,7 +755,12 @@ export function BeetleManager() {
       if (values.managementName !== undefined) {
         let mName = values.managementName;
         if (mName && /^(\d{2,4})(\d{2,6})?[A-Za-z.]*$/.test(mName)) mName = "";
-        patch.managementName = mName;
+        const targetEntry = { ...entry, ...patch, managementName: mName } as BeetleEntry;
+        patch.managementName = buildNumberedManagementName(
+          targetEntry,
+          mName,
+          numberedEntries.filter((item) => item.id !== id)
+        );
       }
       
       // 累代: デフォルトの状態（- / - / 空）でない場合のみ更新対象にする
@@ -763,9 +776,14 @@ export function BeetleManager() {
       if (values.extractionDate && values.extractionDate !== "") patch.extractionDate = values.extractionDate;
       if (values.memo && values.memo.trim() !== "") patch.memo = values.memo;
 
-      if (entry.type === "成虫") updateAdult(id, { ...entry, ...patch });
-      else if (entry.type === "幼虫") updateLarva(id, { ...entry, ...patch });
-      else if (entry.type === "産卵セット") updateSpawnSet(id, { ...entry, ...patch });
+      const updatedEntry = { ...entry, ...patch } as BeetleEntry;
+      const existingIndex = numberedEntries.findIndex((item) => item.id === id);
+      if (existingIndex >= 0) numberedEntries[existingIndex] = updatedEntry;
+      else numberedEntries.push(updatedEntry);
+
+      if (entry.type === "成虫") updateAdult(id, updatedEntry as AdultBeetle);
+      else if (entry.type === "幼虫") updateLarva(id, updatedEntry as LarvaBeetle);
+      else if (entry.type === "産卵セット") updateSpawnSet(id, updatedEntry as SpawnSet);
     });
     
     setIsBulkEditing(false);
@@ -1735,7 +1753,15 @@ export function BeetleManager() {
             id="edit-form"
             initialValues={editingEntry}
             onSubmit={(value) => {
-              updateAdult(editingEntry.id, value);
+              const numberedValue = {
+                ...value,
+                managementName: buildNumberedManagementName(
+                  { ...editingEntry, ...value },
+                  value.managementName,
+                  entries.filter((entry) => entry.id !== editingEntry.id)
+                ),
+              };
+              updateAdult(editingEntry.id, numberedValue);
               startEditing(null);
             }}
             onCancel={() => startEditing(null)}
@@ -1749,9 +1775,17 @@ export function BeetleManager() {
             onDateTypeChange={setLarvaDateType}
             allEntries={entries}
             onSubmit={(value, count) => {
-              updateLarva(editingEntry.id, value);
+              const numberedValue = {
+                ...value,
+                managementName: buildNumberedManagementName(
+                  { ...editingEntry, ...value },
+                  value.managementName,
+                  entries.filter((entry) => entry.id !== editingEntry.id)
+                ),
+              };
+              updateLarva(editingEntry.id, numberedValue);
               if (count > 1) {
-                let currentEntries = [...entries];
+                let currentEntries = entries.map((entry) => entry.id === editingEntry.id ? ({ ...entry, ...numberedValue } as BeetleEntry) : entry);
                 for (let i = 1; i < count; i++) {
                   // 採番基準をセット開始日(hatchDate)優先に変更
                   const targetDate = (value.hatchDate && value.hatchDate !== "-") ? value.hatchDate : (value.extractionDate && value.extractionDate !== "-" ? value.extractionDate : today());
@@ -1786,7 +1820,15 @@ export function BeetleManager() {
             initialValues={editingEntry}
             allEntries={entries}
             onSubmit={(value) => {
-              updateSpawnSet(editingEntry.id, value);
+              const numberedValue = {
+                ...value,
+                managementName: buildNumberedManagementName(
+                  { ...editingEntry, ...value },
+                  value.managementName,
+                  entries.filter((entry) => entry.id !== editingEntry.id)
+                ),
+              };
+              updateSpawnSet(editingEntry.id, numberedValue);
               startEditing(null);
             }}
             onCancel={() => startEditing(null)}

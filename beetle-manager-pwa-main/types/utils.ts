@@ -73,7 +73,7 @@ export function generateUniqueMName(
   format: string,
   currentName?: string,
   metadata?: { japaneseName?: string; locality?: string; generation?: string },
-  options?: { keepAlreadyNumbered?: boolean }
+  options?: { keepAlreadyNumbered?: boolean; currentEntryId?: string }
 ) {
   let d = parseAmbiguousDate(date);
   if (!d || isNaN(d.getTime())) d = new Date();
@@ -102,7 +102,7 @@ export function generateUniqueMName(
 
   const trimmedCurrentName = (currentName || "").trim();
   if (options?.keepAlreadyNumbered && hasNumberingSuffix(trimmedCurrentName)) {
-    const collision = entries.some(e => e.managementName === trimmedCurrentName && e.type === type);
+    const collision = entries.some(e => e.id !== options.currentEntryId && e.managementName === trimmedCurrentName && e.type === type);
     if (!collision) return trimmedCurrentName;
   }
 
