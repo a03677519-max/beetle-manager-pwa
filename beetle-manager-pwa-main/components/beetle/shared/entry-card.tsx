@@ -80,12 +80,10 @@ function BloodlineTree({
   return (
     <div className="mt-2 rounded-2xl border border-orange-100 bg-[#FFFBF7] px-3 py-2 text-[10px] text-[#A67C52] shadow-inner">
       <div className="mb-1 flex min-w-0 items-center gap-2 font-black uppercase tracking-wider text-[#D97706]">
-        <span className="shrink-0">ライン</span>
-        {currentManagementLabel && (
-          <span className="min-w-0 break-words rounded-full bg-white/90 px-2 py-0.5 text-[#4A3F35] shadow-sm ring-1 ring-orange-100">
-            <DiffText sourceText={currentBloodlineName} extractedText={currentManagementLabel} />
-          </span>
-        )}
+        <span className="min-w-0 break-words">
+          {currentManagementLabel && <DiffText sourceText={currentBloodlineName} extractedText={currentManagementLabel} />}
+          ライン
+        </span>
       </div>
       <div className="relative pl-3">
         <div className="absolute left-1 top-1 bottom-1 w-px bg-orange-200" />
