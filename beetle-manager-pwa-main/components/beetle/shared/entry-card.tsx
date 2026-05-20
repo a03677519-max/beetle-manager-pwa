@@ -13,20 +13,28 @@ function getBloodlineName(entry: BeetleEntry) {
   return (entry.managementName || "").trim();
 }
 
-function getLineBaseFromManagementName(managementName?: string) {
-  const rawName = (managementName || "").trim();
+function getManualManagementNamePart(entry: BeetleEntry) {
+  const rawName = (entry.managementName || "").trim().replace(/＿/g, "_");
   if (!rawName || rawName === "-") return "";
-  const baseName = rawName
+
+  const shortenedSciName = entry.scientificName
+    .trim()
+    .split(/\s+/)
+    .map((part, index) => (index === 0 ? part[0]?.toUpperCase() : part.slice(0, 1).toLowerCase()) || "")
+    .join("");
+
+  const manualPart = rawName
+    .replace(/(?:^|[_-])\d{6,8}(?:[_-][A-Za-z.]+)?(?:[_-]\d+)?$/g, "")
+    .replace(/([_-]?\d{2,4}[._/-]?\d{1,2}[._/-]?\d{1,2})([_-]?\d+)?$/g, "")
+    .replace(/([_-]?\d{6,8})([_-]?\d+)?$/g, "")
+    .replace(/[_-]?\d+$/g, "")
     .replace(/ライン$/g, "")
-    .split(/[_\-\s]/)[0]
+    .replace(/[_-]{2,}/g, "_")
+    .replace(/^[_-]+|[_-]+$/g, "")
     .trim();
 
-  return baseName || rawName;
-}
-
-function getLineName(entry: BeetleEntry) {
-  const lineBase = getLineBaseFromManagementName(entry.managementName);
-  return lineBase ? `${lineBase}ライン` : "";
+  if (!manualPart || manualPart === "-" || manualPart === shortenedSciName || /^\d+$/.test(manualPart)) return "";
+  return manualPart;
 }
 
 function DiffText({ sourceText, extractedText }: { sourceText: string; extractedText: string }) {
@@ -64,15 +72,20 @@ function BloodlineTree({
   onNavigateLinkedEntry?: (entry: BeetleEntry) => void;
 }) {
   const currentBloodlineName = getBloodlineName(entry);
-  const currentLineName = getLineName(entry);
+  const currentManagementLabel = getManualManagementNamePart(entry);
   const linkedCount = linkedEntries.length || (entry.linkedEntryIds?.length ?? 0);
 
   if (!currentBloodlineName && linkedCount === 0) return null;
 
   return (
     <div className="mt-2 rounded-2xl border border-orange-100 bg-[#FFFBF7] px-3 py-2 text-[10px] text-[#A67C52] shadow-inner">
-      <div className="mb-1 font-black uppercase tracking-wider text-[#D97706]">
-        ライン{currentLineName && <span className="ml-1 text-[#4A3F35]">（{currentLineName}）</span>}
+      <div className="mb-1 flex min-w-0 items-center gap-2 font-black uppercase tracking-wider text-[#D97706]">
+        <span className="shrink-0">ライン</span>
+        {currentManagementLabel && (
+          <span className="min-w-0 break-words rounded-full bg-white/90 px-2 py-0.5 text-[#4A3F35] shadow-sm ring-1 ring-orange-100">
+            <DiffText sourceText={currentBloodlineName} extractedText={currentManagementLabel} />
+          </span>
+        )}
       </div>
       <div className="relative pl-3">
         <div className="absolute left-1 top-1 bottom-1 w-px bg-orange-200" />
@@ -108,11 +121,7 @@ function BloodlineTree({
           <span className="absolute -left-3 top-2 h-px w-3 bg-orange-200" />
           <span className="shrink-0 rounded-full bg-[#FF9800] px-2 py-0.5 font-black text-white">個体</span>
           <span className="min-w-0 break-words font-bold text-[#4A3F35]">
-            {currentLineName ? (
-              <DiffText sourceText={currentBloodlineName} extractedText={currentLineName} />
-            ) : (
-              "ライン未入力"
-            )}
+            {currentManagementLabel}
           </span>
         </div>
       </div>
