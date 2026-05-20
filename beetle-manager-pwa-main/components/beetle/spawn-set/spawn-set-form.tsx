@@ -77,6 +77,8 @@ export function SpawnSetForm({
       .join("");
 
     const manualPart = rawName
+      .replace(new RegExp(`(?:^|[_-])\\d{6}${shortenedSciName}(?:[_-]\\d+)?$`, "i"), "")
+      .replace(/(?:^|[_-])\d{6}[A-Za-z.]{1,8}(?:[_-]\d+)?$/g, "")
       .replace(/(?:^|[_-])\d{6,8}(?:[_-][A-Za-z.]+)?(?:[_-]\d+)?$/g, "")
       .replace(/([_-]?\d{2,4}[._/-]?\d{1,2}[._/-]?\d{1,2})([_-]?\d+)?$/g, "")
       .replace(/([_-]?\d{6,8})([_-]?\d+)?$/g, "")
