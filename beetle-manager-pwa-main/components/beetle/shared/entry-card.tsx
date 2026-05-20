@@ -63,9 +63,6 @@ function DiffText({ sourceText, extractedText }: { sourceText: string; extracted
     <>
       {sameText && <span className="text-[#4A3F35]">{sameText}</span>}
       {diffText && <span className="text-[#FF9800]">{diffText}</span>}
-      {sourceText !== extractedText && (
-        <span className="ml-1 text-[9px] font-black text-[#B0A495]">元:{sourceText}</span>
-      )}
     </>
   );
 }
