@@ -282,6 +282,7 @@ export function BeetleManager() {
       .join("");
 
     const manualPart = rawName
+      .replace(/(?:^|[_-])\d{6,8}(?:[_-][A-Za-z.]+)?(?:[_-]\d+)?$/g, "")
       .replace(/([_-]?\d{2,4}[._/-]?\d{1,2}[._/-]?\d{1,2})([_-]?\d+)?$/g, "")
       .replace(/([_-]?\d{6,8})([_-]?\d+)?$/g, "")
       .replace(/[_-]?\d+$/g, "")
@@ -313,7 +314,7 @@ export function BeetleManager() {
     const parts = orderedIds
       .map((id) => linkedAdults.find((item) => item.id === id))
       .map((item) => item ? getManualManagementNamePart(item) : "")
-      .filter((part) => part.length > 0);
+      .filter((part, index, list) => part.length > 0 && list.indexOf(part) === index);
 
     return parts.join("+");
   }, [entries, getManualManagementNamePart]);
@@ -461,9 +462,29 @@ export function BeetleManager() {
   const handleNavigateLinkedEntry = useCallback((entry: BeetleEntry) => {
     resetViewportScale();
     setActiveTab(entry.type);
+    setQuery("");
     setVisibleTypes([entry.type]);
     setSelectedType(entry.type);
-    setSelectedEntry(entry);
+    setSelectedFolderKey(`${encodeURIComponent((entry.scientificName || "学名未設定").trim() || "学名未設定")}::${encodeURIComponent((entry.japaneseName || "和名未設定").trim() || "和名未設定")}`);
+
+    if (entry.type === "成虫") {
+      const isDeceased = !!(entry as any).deathDate && (entry as any).deathDate !== "-";
+      const isSold = (((entry as any).soldDate && (entry as any).soldDate !== "-") || (entry as any).status === "販売済み") && !isDeceased;
+      setAdultFilter(isDeceased ? "deceased" : isSold ? "sold" : "active");
+    } else if (entry.type === "幼虫") {
+      const isDeceased = !!(entry as any).deathDate && (entry as any).deathDate !== "-";
+      const isSold = ((entry as any).soldDate && (entry as any).soldDate !== "-") || (entry as any).status === "販売済み";
+      const isEmerged = !!(entry as any).actualEmergenceDate;
+      setLarvaFilter(isDeceased ? "deceased" : isSold ? "sold" : isEmerged ? "emerged" : "active");
+    } else if (entry.type === "産卵セット") {
+      setSpawnSetFilter(isSpawnSetFinished(entry) ? "finished" : "active");
+    }
+
+    window.setTimeout(() => {
+      document
+        .querySelector<HTMLElement>(`[data-selection-entry-id="${entry.id}"]`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 100);
   }, [setSelectedType]);
 
   const startLongPress = useCallback((id: string, currentList: BeetleEntry[]) => {    
