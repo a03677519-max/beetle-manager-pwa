@@ -446,6 +446,26 @@ export function BeetleManager() {
     if (typeof window !== 'undefined' && window.navigator?.vibrate) window.navigator.vibrate(20);
   }, [filteredEntries, selectedTypeCounts]);
 
+  const getLinkedEntriesForCard = useCallback((entry: BeetleEntry) => {
+    const linkedIds = new Set(entry.linkedEntryIds || []);
+
+    entries.forEach((item) => {
+      if (item.id !== entry.id && item.linkedEntryIds?.includes(entry.id)) {
+        linkedIds.add(item.id);
+      }
+    });
+
+    return entries.filter((item) => linkedIds.has(item.id));
+  }, [entries]);
+
+  const handleNavigateLinkedEntry = useCallback((entry: BeetleEntry) => {
+    resetViewportScale();
+    setActiveTab(entry.type);
+    setVisibleTypes([entry.type]);
+    setSelectedType(entry.type);
+    setSelectedEntry(entry);
+  }, [setSelectedType]);
+
   const startLongPress = useCallback((id: string, currentList: BeetleEntry[]) => {    
     isLongPressActive.current = false;
     longPressTimer.current = setTimeout(() => {
@@ -2159,6 +2179,8 @@ export function BeetleManager() {
                               onDelete={(event, id) => { event.stopPropagation(); const target = entries.find(item => item.id === id); if (target && window.confirm(`${target.japaneseName || "この個体"}を削除しますか？`)) deleteEntry(id); }}
                               isSelected={selectedIds.includes(entry.id)}
                               isSelectionMode={isSelectionMode}
+                              linkedEntries={getLinkedEntriesForCard(entry)}
+                              onNavigateLinkedEntry={handleNavigateLinkedEntry}
                             />
                           </div>
                           {entry.type === "産卵セット" && !isSelectionMode && (

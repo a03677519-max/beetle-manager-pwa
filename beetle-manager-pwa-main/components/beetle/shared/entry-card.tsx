@@ -7,12 +7,54 @@ import type { BeetleEntry, SpawnSet } from "@/types/beetle";
 import { getDaysRange, today, getLarvaDateInfo, getSpawnSetDateInfo } from "@/lib/utils";
 import { useMemo } from "react";
 import Image from "next/image";
-import { Edit2, Trash2 } from "lucide-react";
+import { Edit2, ExternalLink, Trash2 } from "lucide-react";
 
-function BloodlineTree({ entry }: { entry: BeetleEntry }) {
-  const linkedCount = entry.linkedEntryIds?.length ?? 0;
+function getManualManagementNamePart(entry: BeetleEntry) {
+  const rawName = (entry.managementName || "").trim();
+  if (!rawName || rawName === "-") return "";
 
-  if (!entry.bloodline && linkedCount === 0) return null;
+  const shortenedSciName = entry.scientificName
+    .trim()
+    .split(/\s+/)
+    .map((part, index) => (index === 0 ? part[0]?.toUpperCase() : part.slice(0, 1).toLowerCase()) || "")
+    .join("");
+
+  const manualPart = rawName
+    .replace(/(?:^|[_-])\d{6,8}(?:[_-][A-Za-z.]+)?(?:[_-]\d+)?$/g, "")
+    .replace(/([_-]?\d{2,4}[._/-]?\d{1,2}[._/-]?\d{1,2})([_-]?\d+)?$/g, "")
+    .replace(/([_-]?\d{6,8})([_-]?\d+)?$/g, "")
+    .replace(/[_-]?\d+$/g, "")
+    .replace(/[_-]{2,}/g, "_")
+    .replace(/^[_-]+|[_-]+$/g, "")
+    .trim();
+
+  if (!manualPart || manualPart === "-" || manualPart === shortenedSciName) return "";
+  return manualPart;
+}
+
+function getBloodlineName(entry: BeetleEntry) {
+  return (entry.bloodline || "").trim() || getManualManagementNamePart(entry);
+}
+
+function getLinkedEntryLabel(entry: BeetleEntry) {
+  const bloodlineName = getBloodlineName(entry);
+  const baseName = bloodlineName || entry.managementName || entry.japaneseName || "名称未設定";
+  return `${entry.type}: ${baseName}`;
+}
+
+function BloodlineTree({
+  entry,
+  linkedEntries = [],
+  onNavigateLinkedEntry,
+}: {
+  entry: BeetleEntry;
+  linkedEntries?: BeetleEntry[];
+  onNavigateLinkedEntry?: (entry: BeetleEntry) => void;
+}) {
+  const currentBloodlineName = getBloodlineName(entry);
+  const linkedCount = linkedEntries.length || (entry.linkedEntryIds?.length ?? 0);
+
+  if (!currentBloodlineName && linkedCount === 0) return null;
 
   return (
     <div className="mt-2 rounded-2xl border border-orange-100 bg-[#FFFBF7] px-3 py-2 text-[10px] text-[#A67C52] shadow-inner">
@@ -20,16 +62,37 @@ function BloodlineTree({ entry }: { entry: BeetleEntry }) {
       <div className="relative pl-3">
         <div className="absolute left-1 top-1 bottom-1 w-px bg-orange-200" />
         {linkedCount > 0 && (
-          <div className="relative mb-1 flex min-w-0 items-start gap-2">
+          <div className="relative mb-1 min-w-0">
             <span className="absolute -left-3 top-2 h-px w-3 bg-orange-200" />
-            <span className="shrink-0 rounded-full bg-orange-100 px-2 py-0.5 font-black text-[#D97706]">親</span>
-            <span className="min-w-0 break-words font-bold text-[#8B5A2B]">紐付け {linkedCount}件</span>
+            <div className="flex min-w-0 items-start gap-2">
+              <span className="shrink-0 rounded-full bg-orange-100 px-2 py-0.5 font-black text-[#D97706]">紐付け先</span>
+              <div className="min-w-0 flex-1 space-y-1">
+                {linkedEntries.length > 0 ? (
+                  linkedEntries.map((linkedEntry) => (
+                    <button
+                      key={linkedEntry.id}
+                      type="button"
+                      className="flex max-w-full items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-left font-bold text-[#8B5A2B] shadow-sm ring-1 ring-orange-100 active:scale-[0.98]"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onNavigateLinkedEntry?.(linkedEntry);
+                      }}
+                    >
+                      <span className="min-w-0 break-words">{getLinkedEntryLabel(linkedEntry)}</span>
+                      {onNavigateLinkedEntry && <ExternalLink size={11} className="shrink-0 text-[#D97706]" />}
+                    </button>
+                  ))
+                ) : (
+                  <span className="min-w-0 break-words font-bold text-[#8B5A2B]">紐付け {linkedCount}件</span>
+                )}
+              </div>
+            </div>
           </div>
         )}
         <div className="relative flex min-w-0 items-start gap-2">
           <span className="absolute -left-3 top-2 h-px w-3 bg-orange-200" />
           <span className="shrink-0 rounded-full bg-[#FF9800] px-2 py-0.5 font-black text-white">個体</span>
-          <span className="min-w-0 break-words font-bold text-[#4A3F35]">{entry.bloodline || "血統情報未入力"}</span>
+          <span className="min-w-0 break-words font-bold text-[#4A3F35]">{currentBloodlineName || "血統情報未入力"}</span>
         </div>
       </div>
     </div>
@@ -44,6 +107,8 @@ export function EntryCard({
   isSelectionMode = false,
   isSelected = false,
   viewMode = "list",
+  linkedEntries = [],
+  onNavigateLinkedEntry,
 }: {
   entry: BeetleEntry;
   onOpen: (entry: BeetleEntry) => void;
@@ -52,6 +117,8 @@ export function EntryCard({
   isSelectionMode?: boolean;
   isSelected?: boolean;
   viewMode?: "list" | "grid";
+  linkedEntries?: BeetleEntry[];
+  onNavigateLinkedEntry?: (entry: BeetleEntry) => void;
 }) {
   const logs = entry.type === "幼虫" ? entry.logs : [];
   const latestWeight = logs.length > 0 ? logs[0].weight : null;
@@ -102,7 +169,7 @@ export function EntryCard({
         )}
         <div className="min-w-0 p-3">
           <h3 className="font-bold text-gray-800 text-sm leading-snug break-words whitespace-normal">{entry.japaneseName}</h3>
-          <BloodlineTree entry={entry} />
+          <BloodlineTree entry={entry} linkedEntries={linkedEntries} onNavigateLinkedEntry={onNavigateLinkedEntry} />
           {entry.type === "産卵セット" && spawnTotals && (
             <div className="flex min-w-0 flex-wrap items-center gap-1 mt-1">
               <span className="text-[9px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded font-black tracking-tighter">卵:{spawnTotals.eggs}</span>
@@ -169,7 +236,7 @@ export function EntryCard({
               {entry.managementName && <span className="min-w-0 max-w-full text-[10px] font-black bg-[#F9F7F5] px-2 py-0.5 rounded-lg text-[#B0A495] border border-[#E8E2DA] shadow-inner break-words">{entry.managementName}</span>}
             </div>
             <p className="text-[12px] italic text-[#B0A495] font-serif leading-tight break-words whitespace-normal">{entry.scientificName}</p>
-            <BloodlineTree entry={entry} />
+            <BloodlineTree entry={entry} linkedEntries={linkedEntries} onNavigateLinkedEntry={onNavigateLinkedEntry} />
             {entry.memo && (
               <p className="text-[11px] text-gray-400 mt-1 break-words whitespace-pre-wrap italic">
                 {entry.memo}
