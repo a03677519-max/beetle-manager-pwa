@@ -168,6 +168,13 @@ export function EntryBaseFields({
     onChange(patch);
   };
 
+  const formatLinkedEntryLabel = (entry: BeetleEntry) => {
+    const genderMark = entry.type === "成虫"
+      ? ((entry as any).gender === "オス" ? "♂" : ((entry as any).gender === "メス" ? "♀" : ""))
+      : "";
+    return `${entry.japaneseName}${entry.managementName ? `[${entry.managementName}${genderMark}]` : genderMark}`;
+  };
+
   return (
     <>
       <div className="flex justify-end px-1 -mb-1">
@@ -231,13 +238,13 @@ export function EntryBaseFields({
           onClick={() => setIsLinkedSelectOpen(true)}
         > {/* Keep button */}
           <div className="flex items-center gap-2 overflow-hidden">
-            <LinkIcon size={14} className={selectedLinkedEntries.length > 0 ? "text-[#FF9800]" : "text-gray-300"} />
-            <span className={`truncate ${selectedLinkedEntries.length > 0 ? "text-gray-800 font-bold" : "text-gray-300"}`}>
-              {selectedLinkedEntries.length > 0 
-                ? selectedLinkedEntries.map(e => `${e.japaneseName}${e.managementName ? `[${e.managementName}]` : ""}`).join(", ")
+             <LinkIcon size={14} className={selectedLinkedEntries.length > 0 ? "text-[#FF9800]" : "text-gray-300"} />
+             <span className={`truncate ${selectedLinkedEntries.length > 0 ? "text-gray-800 font-bold" : "text-gray-300"}`}>
+               {selectedLinkedEntries.length > 0 
+                ? selectedLinkedEntries.map(formatLinkedEntryLabel).join(", ")
                 : "タップして個体を選択"}
-            </span>
-          </div>
+             </span>
+           </div>
         </button>
       </Field>
 
@@ -251,8 +258,8 @@ export function EntryBaseFields({
             {selectedLinkedEntries.map((linked) => (
               <div key={linked.id} className="flex items-start gap-2 rounded-xl bg-white/80 px-3 py-2 text-[11px] border border-white">
                 <span className="mt-0.5 rounded-full bg-[#FF9800]/10 px-2 py-0.5 font-black text-[#FF9800]">親</span>
-                <div className="min-w-0 flex-1">
-                  <div className="font-bold text-[#4A3F35] break-words">{linked.managementName || linked.japaneseName}</div>
+                 <div className="min-w-0 flex-1">
+                  <div className="font-bold text-[#4A3F35] break-words">{formatLinkedEntryLabel(linked)}</div>
                   <div className="text-[10px] text-gray-400 break-words">
                     {linked.bloodline || linked.locality || "血統情報未入力"}
                   </div>
@@ -338,7 +345,7 @@ export function EntryBaseFields({
                     <span className="text-[10px] opacity-70">
                       {e.managementName || "管理名なし"} / {e.locality || "産地不明"}
                       {(e.type === "成虫" && (e as any).emergenceDate) && ` / 羽化:${(e as any).emergenceDate}`}
-                      {(e.type === "成虫" && (e as any).gender) && ` / 性別:${(e as any).gender}`}
+                      {(e.type === "成虫" && (e as any).gender) && ` / ${(e as any).gender === "オス" ? "♂" : ((e as any).gender === "メス" ? "♀" : (e as any).gender)}`}
                     </span>
                   </button>
                 ))}

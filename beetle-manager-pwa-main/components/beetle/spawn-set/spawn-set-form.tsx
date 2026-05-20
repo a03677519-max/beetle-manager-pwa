@@ -9,7 +9,7 @@ import {
   SwitchBotTemperatureField,
   useNextFieldNavigation,
 } from "@/components/entry-fields";
-import type { BeetleEntry, SpawnSetFormValues } from "@/types/beetle";
+import type { AdultBeetle, BeetleEntry, SpawnSetFormValues } from "@/types/beetle";
 import { EntryBaseFields } from "@/components/beetle/shared/entry-base-fields";
 import { today, addDays } from "@/types/utils";
 
@@ -65,6 +65,56 @@ export function SpawnSetForm({
     };
   }, [allEntries]);
 
+  const getManualManagementNamePart = (entry?: BeetleEntry) => {
+    if (!entry) return "";
+    const rawName = (entry.managementName || "").trim();
+    if (!rawName || rawName === "-") return "";
+
+    const shortenedSciName = entry.scientificName
+      .trim()
+      .split(/\s+/)
+      .map((part, index) => (index === 0 ? part[0]?.toUpperCase() : part.slice(0, 1).toLowerCase()) || "")
+      .join("");
+
+    const manualPart = rawName
+      .replace(/(?:^|[_-])\d{6,8}(?:[_-][A-Za-z.]+)?(?:[_-]\d+)?$/g, "")
+      .replace(/([_-]?\d{2,4}[._/-]?\d{1,2}[._/-]?\d{1,2})([_-]?\d+)?$/g, "")
+      .replace(/([_-]?\d{6,8})([_-]?\d+)?$/g, "")
+      .replace(/[_-]?\d+$/g, "")
+      .replace(/[_-]{2,}/g, "_")
+      .replace(/^[_-]+|[_-]+$/g, "")
+      .trim();
+
+    if (!manualPart || manualPart === "-" || manualPart === shortenedSciName) return "";
+    return manualPart;
+  };
+
+  const buildLinkedParentManagementBase = (linkedEntryIds: string[]) => {
+    const linkedAdults = linkedEntryIds
+      .map((entryId) => allEntries.find((entry) => entry.id === entryId))
+      .filter((entry): entry is AdultBeetle => !!entry && entry.type === "成虫");
+
+    const maleBaseName = getManualManagementNamePart(linkedAdults.find((entry) => entry.gender === "オス"));
+    const femaleBaseName = getManualManagementNamePart(linkedAdults.find((entry) => entry.gender === "メス"));
+
+    if (!maleBaseName && !femaleBaseName) return "";
+    if (!maleBaseName) return femaleBaseName;
+    if (!femaleBaseName) return maleBaseName;
+    if (maleBaseName === femaleBaseName) return maleBaseName;
+    return `${maleBaseName}${femaleBaseName}`;
+  };
+
+  const updateValues = (patch: Partial<SpawnSetFormValues>) => {
+    setValues((prev) => {
+      const next = { ...prev, ...patch };
+      if (patch.linkedEntryIds) {
+        const parentBaseName = buildLinkedParentManagementBase(patch.linkedEntryIds);
+        if (parentBaseName) next.managementName = parentBaseName;
+      }
+      return next;
+    });
+  };
+
   // 外部からの初期値変更を同期
   useEffect(() => {
     const fmt = (d?: string) => (d ? d.slice(0, 10) : "");
@@ -112,7 +162,7 @@ export function SpawnSetForm({
           autoNumberingDate={values.setDate}
           generationLabelSuffix="(次世代)"
           onNext={focusNextField}
-          onChange={(patch) => setValues({ ...values, ...patch })}
+          onChange={updateValues}
         />
 
         <div className="grid grid-cols-2 gap-3">

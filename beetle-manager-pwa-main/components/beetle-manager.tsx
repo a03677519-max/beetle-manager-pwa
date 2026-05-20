@@ -302,21 +302,18 @@ export function BeetleManager() {
       .filter((item): item is AdultBeetle => !!item && item.type === "成虫");
 
     const maleName = linkedAdults
-      .find((item) => item.gender === "オス")
-      ?.["id"];
+      .find((item) => item.gender === "オス");
     const femaleName = linkedAdults
-      .find((item) => item.gender === "メス")
-      ?.["id"];
+      .find((item) => item.gender === "メス");
 
-    const orderedIds = [maleName, femaleName, ...linkedAdults.map((item) => item.id)]
-      .filter((id, index, ids): id is string => !!id && ids.indexOf(id) === index);
+    const maleBaseName = maleName ? getManualManagementNamePart(maleName) : "";
+    const femaleBaseName = femaleName ? getManualManagementNamePart(femaleName) : "";
 
-    const parts = orderedIds
-      .map((id) => linkedAdults.find((item) => item.id === id))
-      .map((item) => item ? getManualManagementNamePart(item) : "")
-      .filter((part, index, list) => part.length > 0 && list.indexOf(part) === index);
-
-    return parts.join("+");
+    if (!maleBaseName && !femaleBaseName) return "";
+    if (!maleBaseName) return femaleBaseName;
+    if (!femaleBaseName) return maleBaseName;
+    if (maleBaseName === femaleBaseName) return maleBaseName;
+    return `${maleBaseName}${femaleBaseName}`;
   }, [entries, getManualManagementNamePart]);
 
   const buildNumberedManagementName = useCallback((entry: BeetleEntry, currentName: string | undefined, existingEntries: BeetleEntry[]) => (
