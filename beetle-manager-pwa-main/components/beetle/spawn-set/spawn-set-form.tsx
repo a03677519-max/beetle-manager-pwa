@@ -115,6 +115,14 @@ export function SpawnSetForm({
     });
   };
 
+  useEffect(() => {
+    setValues((prev) => {
+      const parentBaseName = buildLinkedParentManagementBase(prev.linkedEntryIds || []);
+      if (!parentBaseName || prev.managementName === parentBaseName) return prev;
+      return { ...prev, managementName: parentBaseName };
+    });
+  }, [values.linkedEntryIds, allEntries]);
+
   // 外部からの初期値変更を同期
   useEffect(() => {
     const fmt = (d?: string) => (d ? d.slice(0, 10) : "");
@@ -131,11 +139,15 @@ export function SpawnSetForm({
     const initialSetDate = initialValues.setDate || latestEndDate;
     const initialSetEndDate = initialValues.setEndDate || addDays(initialSetDate, 30);
 
-    setValues(prev => ({
-      ...initialValues,
-      setDate: prev.setDate || fmt(initialSetDate),
-      setEndDate: prev.setEndDate || fmt(initialSetEndDate),
-    }));
+    setValues(prev => {
+      const parentBaseName = buildLinkedParentManagementBase(initialValues.linkedEntryIds || []);
+      return {
+        ...initialValues,
+        managementName: parentBaseName || initialValues.managementName,
+        setDate: prev.setDate || fmt(initialSetDate),
+        setEndDate: prev.setEndDate || fmt(initialSetEndDate),
+      };
+    });
   }, [initialValues.id, initialValues.setDate, initialValues.setEndDate, initialValues.managementName, initialValues.scientificName, allEntries]);
 
   return (
