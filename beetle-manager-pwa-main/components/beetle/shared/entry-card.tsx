@@ -23,7 +23,7 @@ function getManualManagementNamePart(entry: BeetleEntry) {
     .map((part, index) => (index === 0 ? part[0]?.toUpperCase() : part.slice(0, 1).toLowerCase()) || "")
     .join("");
 
-  const manualPart = rawName
+  const withoutKnownSuffix = rawName
     .replace(/(?:^|[_-])\d{6,8}(?:[_-][A-Za-z.]+)?(?:[_-]\d+)?$/g, "")
     .replace(/([_-]?\d{2,4}[._/-]?\d{1,2}[._/-]?\d{1,2})([_-]?\d+)?$/g, "")
     .replace(/([_-]?\d{6,8})([_-]?\d+)?$/g, "")
@@ -31,6 +31,20 @@ function getManualManagementNamePart(entry: BeetleEntry) {
     .replace(/ライン$/g, "")
     .replace(/[_-]{2,}/g, "_")
     .replace(/^[_-]+|[_-]+$/g, "")
+    .trim();
+
+  const manualPart = withoutKnownSuffix
+    .split(/[_\-\s]+/)
+    .filter((part) => {
+      if (!part) return false;
+      if (/^\d+$/.test(part)) return false;
+      if (/^\d{2,4}[._/-]?\d{1,2}[._/-]?\d{1,2}$/.test(part)) return false;
+      if (/^\d{6,8}[A-Za-z.]+$/.test(part)) return false;
+      if (part === shortenedSciName) return false;
+      return true;
+    })
+    .join("_")
+    .replace(/ライン$/g, "")
     .trim();
 
   if (!manualPart || manualPart === "-" || manualPart === shortenedSciName || /^\d+$/.test(manualPart)) return "";
