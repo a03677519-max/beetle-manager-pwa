@@ -515,7 +515,7 @@ export function AnalysisView({
                     >
                       <div className="flex justify-between items-start mb-3">
                         <div>
-                          <div className="font-bold text-gray-800">{s.managementName || "管理名なし"}</div>
+                          <div className="font-bold text-gray-800">{s.managementName || "血統なし"}</div>
                           <div className="text-[10px] text-gray-400 font-medium">
                             {(s.setDate || "").replace(/-/g, "/")} 〜 {s.setEndDate?.replace(/-/g, "/") || "継続中"}
                           </div>

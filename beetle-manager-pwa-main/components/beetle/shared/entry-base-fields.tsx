@@ -187,7 +187,7 @@ export function EntryBaseFields({
         </button>
       </div>
       <BottomSheetInput
-        label="管理名 (No/名前)"
+        label="血統 (No/名前)"
         value={managementName || ""}
         placeholder="例: P-01 / L-24-01"
         suggestions={suggestions.management}
@@ -224,9 +224,9 @@ export function EntryBaseFields({
         onChange={(value) => onChange({ generation: value })}
       />
       <BottomSheetInput
-        label="血統"
+        label="紐付けデータ"
         value={bloodline || ""}
-        placeholder="例: A血統 / 親名 / ライン情報"
+        placeholder="例: 親名 / ペア情報 / ライン補足"
         suggestions={suggestions.bloodline}
         onNext={onNext}
         onChange={(val) => onChange({ bloodline: val })}
@@ -261,7 +261,7 @@ export function EntryBaseFields({
                  <div className="min-w-0 flex-1">
                   <div className="font-bold text-[#4A3F35] break-words">{formatLinkedEntryLabel(linked)}</div>
                   <div className="text-[10px] text-gray-400 break-words">
-                    {linked.bloodline || linked.locality || "血統情報未入力"}
+                    {linked.bloodline || linked.locality || "紐付けデータ未入力"}
                   </div>
                 </div>
               </div>
@@ -270,7 +270,7 @@ export function EntryBaseFields({
               <span className="mt-0.5 rounded-full bg-[#FF9800] px-2 py-0.5 font-black text-white">子</span>
               <div className="min-w-0 flex-1">
                 <div className="font-bold text-[#4A3F35] break-words">{managementName || japaneseName || "登録中の個体"}</div>
-                <div className="text-[10px] text-[#A67C52] break-words">{bloodline || "血統情報を入力するとここに反映されます"}</div>
+                <div className="text-[10px] text-[#A67C52] break-words">{bloodline || "紐付けデータを入力するとここに反映されます"}</div>
               </div>
             </div>
           </div>
@@ -305,7 +305,7 @@ export function EntryBaseFields({
                 <input
                   ref={searchInputRef}
                   type="text"
-                  placeholder="名前や管理名で検索..."
+                  placeholder="名前や血統で検索..."
                   value={searchQuery} // Keep value
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full h-12 bg-gray-50 rounded-2xl pl-11 pr-4 text-[16px] font-bold outline-none border border-transparent focus:border-[#FF9800]/20 transition-all"
@@ -343,7 +343,7 @@ export function EntryBaseFields({
                   >
                     <span className="text-sm">{e.japaneseName}</span>
                     <span className="text-[10px] opacity-70">
-                      {e.managementName || "管理名なし"} / {e.locality || "産地不明"}
+                      {e.managementName || "血統なし"} / {e.locality || "産地不明"}
                       {(e.type === "成虫" && (e as any).emergenceDate) && ` / 羽化:${(e as any).emergenceDate}`}
                       {(e.type === "成虫" && (e as any).gender) && ` / ${(e as any).gender === "オス" ? "♂" : ((e as any).gender === "メス" ? "♀" : (e as any).gender)}`}
                     </span>

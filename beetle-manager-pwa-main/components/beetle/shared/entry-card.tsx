@@ -9,31 +9,8 @@ import { useMemo } from "react";
 import Image from "next/image";
 import { Edit2, ExternalLink, Trash2 } from "lucide-react";
 
-function getManualManagementNamePart(entry: BeetleEntry) {
-  const rawName = (entry.managementName || "").trim();
-  if (!rawName || rawName === "-") return "";
-
-  const shortenedSciName = entry.scientificName
-    .trim()
-    .split(/\s+/)
-    .map((part, index) => (index === 0 ? part[0]?.toUpperCase() : part.slice(0, 1).toLowerCase()) || "")
-    .join("");
-
-  const manualPart = rawName
-    .replace(/(?:^|[_-])\d{6,8}(?:[_-][A-Za-z.]+)?(?:[_-]\d+)?$/g, "")
-    .replace(/([_-]?\d{2,4}[._/-]?\d{1,2}[._/-]?\d{1,2})([_-]?\d+)?$/g, "")
-    .replace(/([_-]?\d{6,8})([_-]?\d+)?$/g, "")
-    .replace(/[_-]?\d+$/g, "")
-    .replace(/[_-]{2,}/g, "_")
-    .replace(/^[_-]+|[_-]+$/g, "")
-    .trim();
-
-  if (!manualPart || manualPart === "-" || manualPart === shortenedSciName) return "";
-  return manualPart;
-}
-
 function getBloodlineName(entry: BeetleEntry) {
-  return (entry.bloodline || "").trim() || getManualManagementNamePart(entry);
+  return (entry.managementName || "").trim();
 }
 
 function getLinkedEntryLabel(entry: BeetleEntry) {
@@ -92,7 +69,7 @@ function BloodlineTree({
         <div className="relative flex min-w-0 items-start gap-2">
           <span className="absolute -left-3 top-2 h-px w-3 bg-orange-200" />
           <span className="shrink-0 rounded-full bg-[#FF9800] px-2 py-0.5 font-black text-white">個体</span>
-          <span className="min-w-0 break-words font-bold text-[#4A3F35]">{currentBloodlineName || "血統情報未入力"}</span>
+          <span className="min-w-0 break-words font-bold text-[#4A3F35]">{currentBloodlineName || "血統未入力"}</span>
         </div>
       </div>
     </div>

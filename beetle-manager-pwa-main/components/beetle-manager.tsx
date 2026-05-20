@@ -236,7 +236,7 @@ export function BeetleManager() {
     { id: 'locality', label: '産地' },
     { id: 'gender', label: '性別' },
     { id: 'type', label: '種別' },
-    { id: 'managementName', label: '管理名' },
+    { id: 'managementName', label: '血統' },
     { id: 'date', label: '日付' },
   ];
 

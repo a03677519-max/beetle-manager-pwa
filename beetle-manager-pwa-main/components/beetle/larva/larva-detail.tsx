@@ -96,6 +96,10 @@ export function LarvaDetail({
   return (
     <>
       <div className="grid grid-cols-2 gap-3 mb-6">
+        <div className="min-w-0 bg-gray-50 p-4 rounded-2xl col-span-2">
+          <div className="text-xs text-gray-500">血統</div>
+          <div className="font-bold text-gray-800 break-words whitespace-normal">{entry.managementName || "-"}</div>
+        </div>
         <div className="min-w-0 bg-gray-50 p-4 rounded-2xl">
           <div className="text-xs text-gray-500">産地</div>
           <div className="font-bold text-gray-800 break-words whitespace-normal">{entry.locality || "-"}</div>
@@ -109,12 +113,12 @@ export function LarvaDetail({
           onClick={() => setIsBloodlineOpen(true)}
           className="min-w-0 bg-gray-50 p-4 rounded-2xl col-span-2 text-left active:bg-gray-100 transition-colors"
         >
-          <div className="text-xs text-gray-500">血統</div>
+          <div className="text-xs text-gray-500">紐付けデータ</div>
           <div className="font-bold text-gray-800 break-words whitespace-normal">
-            {entry.bloodline ? "血統情報あり" : "未入力"}
+            {entry.bloodline ? "紐付けデータあり" : "未入力"}
           </div>
           <div className="mt-1 text-[10px] font-bold text-[#FF9800]">
-            タップで血統の全文を確認
+            タップで紐付けデータの全文を確認
           </div>
         </button>
         <div className="min-w-0 bg-gray-50 p-4 rounded-2xl col-span-2">
@@ -334,9 +338,9 @@ export function LarvaDetail({
           isFetchingTemperature={isFetchingTemperature}
         />
       </Modal>
-      <Modal isOpen={isBloodlineOpen} onClose={() => setIsBloodlineOpen(false)} title="血統詳細" centered>
+      <Modal isOpen={isBloodlineOpen} onClose={() => setIsBloodlineOpen(false)} title="紐付けデータ詳細" centered>
         <div className="rounded-2xl bg-[#FFFBF7] p-4 text-sm font-bold leading-relaxed text-[#4A3F35] whitespace-pre-wrap break-words">
-          {entry.bloodline || "血統情報未入力"}
+          {entry.bloodline || "紐付けデータ未入力"}
         </div>
       </Modal>
     </>
