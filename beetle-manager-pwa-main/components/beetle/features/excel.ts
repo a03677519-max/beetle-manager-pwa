@@ -4,8 +4,40 @@ import { createId, today, parseAmbiguousDate, formatGeneration, formatDate, isAd
 // Helper to parse a date string into YYYY-MM-DD format
 const parseDateToISO = (dateStr: string | number | Date | undefined): string => {
   if (!dateStr || dateStr === "-") return "-";
+  if (dateStr instanceof Date && !isNaN(dateStr.getTime())) return dateStr.toISOString().split('T')[0];
   const date = parseAmbiguousDate(String(dateStr));
   return date ? date.toISOString().split('T')[0] : "-";
+};
+
+const getCellValue = (value: unknown): string | number | Date | undefined => {
+  if (value === null || value === undefined) return undefined;
+  if (value instanceof Date) return value;
+  if (typeof value === "string" || typeof value === "number") return value;
+  if (typeof value === "object") {
+    const v = value as any;
+    if (typeof v.text === "string") return v.text;
+    if (Array.isArray(v.richText)) return v.richText.map((part: any) => part.text || "").join("");
+    if (v.result !== undefined) return getCellValue(v.result);
+    if (v.hyperlink && v.text) return String(v.text);
+  }
+  return String(value);
+};
+
+const getRowValues = (row: any): (string | number | Date | undefined)[] => {
+  const values: (string | number | Date | undefined)[] = [];
+  row.eachCell({ includeEmpty: true }, (cell: any, colNumber: number) => {
+    values[colNumber - 1] = getCellValue(cell.value);
+  });
+  return values;
+};
+
+const detectEntryTypeFromHeaders = (headers: string[]): EntryType | null => {
+  const headerSet = new Set(headers.filter(Boolean));
+  if (!headerSet.has("管理名") || !headerSet.has("和名") || !headerSet.has("学名") || !headerSet.has("累代")) return null;
+  if (headerSet.has("性別") && headerSet.has("羽化日") && headerSet.has("後食日")) return "成虫";
+  if (headerSet.has("孵化/割出日") && headerSet.has("羽化(実績)")) return "幼虫";
+  if (headerSet.has("開始日") && headerSet.has("終了日") && headerSet.has("合計回収")) return "産卵セット";
+  return null;
 };
 
 // Helper to parse a number string
@@ -23,7 +55,7 @@ const parseGeneration = (genStr: string | undefined): GenerationValue => {
   const defaultGen: GenerationValue = { primary: "-", secondary: "-", count: "" };
   if (!genStr || genStr === "-") return defaultGen;
 
-  const match = String(genStr).match(/^(WD|CB|WF|CBF)(\d+)?(?:\((WD|CBF)\))?$/);
+  const match = String(genStr).match(/^(WD|CB|WF|CBF)(\d+)?(?:\((WF|CBF)\))?$/);
   if (match) {
     return {
       primary: (match[1] || "-") as GenerationValue["primary"],
@@ -179,11 +211,18 @@ export async function importDataFromExcel(file: File): Promise<BeetleEntry[]> {
 
     let currentEntryType: EntryType | null = null;
     let currentHeaders: string[] = [];
-    let sectionStartRow = 0;
 
     sheet.eachRow((row, rowNumber) => {
-      const rowValues = row.values as (string | number | Date)[];
-      const firstCell = String(rowValues[1] || "").trim();
+      const rowValues = getRowValues(row);
+      const firstCell = String(rowValues[0] || "").trim();
+      const normalizedRowValues = rowValues.map(v => String(v || "").trim());
+      const detectedType = detectEntryTypeFromHeaders(normalizedRowValues);
+
+      if (detectedType) {
+        currentEntryType = detectedType;
+        currentHeaders = normalizedRowValues;
+        return;
+      }
 
       // Detect section headers (e.g., "■ 成虫一覧")
       if (firstCell.startsWith("■ ")) {
@@ -195,22 +234,24 @@ export async function importDataFromExcel(file: File): Promise<BeetleEntry[]> {
           currentEntryType = "産卵セット";
         }
         currentHeaders = []; // Reset headers for new section
-        sectionStartRow = rowNumber + 1; // Headers are on the next row
         return;
       }
 
-      // Read headers for the current section
-      if (rowNumber === sectionStartRow && currentEntryType) {
-        currentHeaders = rowValues.map(v => String(v || "").trim());
+      // Read headers for the legacy section format
+      if (currentEntryType && currentHeaders.length === 0) {
+        const legacyHeaders = normalizedRowValues;
+        if (legacyHeaders.includes("管理名") && legacyHeaders.includes("和名") && legacyHeaders.includes("学名")) {
+          currentHeaders = legacyHeaders;
+        }
         return;
       }
 
       // Read data rows
-      if (currentEntryType && currentHeaders.length > 0 && rowNumber > sectionStartRow) {
+      if (currentEntryType && currentHeaders.length > 0) {
         const entryData: Record<string, any> = {};
         currentHeaders.forEach((header, index) => {
-          const value = rowValues[index + 1]; // ExcelJS row.values is 1-indexed
-          entryData[header] = value;
+          if (!header) return;
+          entryData[header] = rowValues[index];
         });
 
         // Skip empty rows that might appear after sections

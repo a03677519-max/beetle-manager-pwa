@@ -1,6 +1,6 @@
 "use client";
 
-import { X, Hash, Type, ChevronRight, Info, RotateCcw, Trash2, Eraser, RotateCw, Save, RefreshCw } from "lucide-react";
+import { X, Hash, Type, ChevronRight, Info, RotateCcw, Trash2, Eraser, Save, RefreshCw, FileSpreadsheet, Upload, Download } from "lucide-react";
 import { MANAGEMENT_NAME_PRESETS } from "@/store/use-beetle-store";
 import { useState } from "react";
 import type { EntryType } from "@/types/beetle";
@@ -19,7 +19,12 @@ export function SettingsView({
   onRegenerateNames,
   onSaveManagementNameFormats,
   keepAlreadyNumberedNames,
-  onUpdateKeepAlreadyNumberedNames
+  onUpdateKeepAlreadyNumberedNames,
+  onExportJson,
+  onImportJson,
+  onExportExcel,
+  onImportExcel,
+  isSyncing
 }: any) {
   const types: EntryType[] = ["成虫", "幼虫", "産卵セット"];
   const [showCustom, setShowCustom] = useState<Record<string, boolean>>({});
@@ -212,6 +217,52 @@ export function SettingsView({
             ) : (
               <p className="text-xs text-gray-400 font-bold text-center py-2">保存されたバックアップはありません</p>
             )}
+          </div>
+        </section>
+
+        {/* データ入出力 */}
+        <section className="space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <FileSpreadsheet size={18} className="text-[#FF9800]" />
+            <h3 className="font-black text-[#4A3F35]">データ入出力</h3>
+          </div>
+          <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={onExportExcel}
+                disabled={isSyncing}
+                className="flex items-center justify-center gap-2 py-3 bg-green-50 text-green-600 rounded-xl text-xs font-black shadow-sm active:scale-95 transition-all disabled:opacity-50"
+              >
+                <Download size={14} /> Excel出力
+              </button>
+              <label className={`flex items-center justify-center gap-2 py-3 bg-[#FF9800] text-white rounded-xl text-xs font-black shadow-sm active:scale-95 transition-all ${isSyncing ? "opacity-50 pointer-events-none" : "cursor-pointer"}`}>
+                <Upload size={14} /> Excel読込
+                <input
+                  type="file"
+                  accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+                  hidden
+                  onChange={onImportExcel}
+                  disabled={isSyncing}
+                />
+              </label>
+            </div>
+            <p className="text-[10px] text-gray-400 font-bold leading-relaxed">
+              Excel読込は既存データへの追加・統合、または入れ替えを選択できます。読込前のデータは自動でバックアップされます。
+            </p>
+            <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={onExportJson}
+                className="flex items-center justify-center gap-2 py-3 bg-gray-50 text-gray-500 rounded-xl text-xs font-black shadow-sm active:scale-95 transition-all"
+              >
+                <Download size={14} /> JSON保存
+              </button>
+              <label className="flex items-center justify-center gap-2 py-3 bg-gray-50 text-gray-500 rounded-xl text-xs font-black shadow-sm active:scale-95 transition-all cursor-pointer">
+                <Upload size={14} /> JSON読込
+                <input type="file" accept="application/json,.json" hidden onChange={onImportJson} />
+              </label>
+            </div>
           </div>
         </section>
       </div>

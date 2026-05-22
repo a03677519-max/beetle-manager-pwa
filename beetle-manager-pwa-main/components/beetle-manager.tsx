@@ -2322,6 +2322,11 @@ export function BeetleManager() {
           onCleanupManagementNames={handleCleanupManagementNames}
           onRegenerateNames={() => handleRegenerateAllNames(false)}
           onSaveManagementNameFormats={() => window.alert("管理名テンプレートが保存されました。")}
+          onExportJson={handleExport}
+          onImportJson={handleImport}
+          onExportExcel={() => handleBulkCopyToExcel()}
+          onImportExcel={handleExcelImport}
+          isSyncing={isSyncing}
         />
       )}
     </div>
