@@ -1,7 +1,15 @@
 "use client";
 
 import type { LarvaBeetle, LarvaLog } from "@/types/beetle";
-import { formatDate, getDaysRange, today } from "@/lib/utils";
+import { formatDate, getDaysRange } from "@/lib/utils";
+
+const getCurrentDate = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 
 const formatRangeDays = (range: { min: number; max: number } | null) => {
   if (!range) return "-";
@@ -10,14 +18,15 @@ const formatRangeDays = (range: { min: number; max: number } | null) => {
 
 export function LarvaHistoryCards({ entry }: { entry: LarvaBeetle }) {
   const logs = [...(entry.logs || [])].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+  const currentDate = getCurrentDate();
 
   if (logs.length === 0) return null;
 
   return (
     <>
       {logs.map((log: LarvaLog, index) => {
-        const exchangeRange = getDaysRange(log.date, today());
-        const hatchRange = entry.hatchDate ? getDaysRange(entry.hatchDate, log.date || today()) : null;
+        const exchangeRange = log.date ? getDaysRange(log.date, currentDate) : null;
+        const hatchRange = entry.hatchDate && log.date ? getDaysRange(entry.hatchDate, log.date) : null;
 
         return (
           <div key={log.id} className="w-[17rem] sm:w-80 shrink-0 snap-start flex flex-col gap-2">

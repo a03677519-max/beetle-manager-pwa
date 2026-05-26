@@ -4,10 +4,18 @@ import { StatusBadge, Stage } from "@/components/ui/status-badge";
 import { GrowthBar } from "@/components/ui/growth-bar";
 import { buildGenerationLabel } from "@/components/entry-fields";
 import type { BeetleEntry, SpawnSet } from "@/types/beetle";
-import { getDaysRange, today, getLarvaDateInfo, getSpawnSetDateInfo } from "@/lib/utils";
+import { getDaysRange, getLarvaDateInfo, getSpawnSetDateInfo } from "@/lib/utils";
 import { useMemo } from "react";
 import Image from "next/image";
 import { Edit2, ExternalLink, Trash2 } from "lucide-react";
+
+const getCurrentDate = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 
 function getBloodlineName(entry: BeetleEntry) {
   return (entry.managementName || "").trim();
@@ -186,11 +194,12 @@ export function EntryCard({
       .sort((a, b) => b.localeCompare(a))[0] || "";
   }, [entry]);
 
-  const exchangeRange = latestLog?.date ? getDaysRange(latestLog.date, today()) : null;
-  const hatchRange = entry.type === "幼虫" && entry.hatchDate ? getDaysRange(entry.hatchDate, today()) : null;
-  const spawnSetStartRange = latestSpawnSetDate ? getDaysRange(latestSpawnSetDate, today()) : null;
+  const currentDate = getCurrentDate();
+  const exchangeRange = latestLog?.date ? getDaysRange(latestLog.date, currentDate) : null;
+  const hatchRange = entry.type === "幼虫" && entry.hatchDate ? getDaysRange(entry.hatchDate, currentDate) : null;
+  const spawnSetStartRange = latestSpawnSetDate ? getDaysRange(latestSpawnSetDate, currentDate) : null;
   const adultEmergenceRange = entry.type === "成虫" && entry.emergenceDate
-    ? getDaysRange(entry.emergenceDate, today())
+    ? getDaysRange(entry.emergenceDate, currentDate)
     : null;
   
   // 曖昧な日付の場合は「最大日数（最も時間が経過している可能性）」を基準に色を決定し
