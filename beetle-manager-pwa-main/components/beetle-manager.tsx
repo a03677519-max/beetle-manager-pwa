@@ -26,6 +26,7 @@ import { ENTRY_TYPES } from "@/types/beetle";
 
 import { AdultForm } from "./beetle/adult/adult-form";
 import { LarvaForm } from "./beetle/larva/larva-form";
+import { LarvaHistoryCards } from "./beetle/larva/larva-history-cards";
 import { SpawnSetForm } from "./beetle/spawn-set/spawn-set-form";
 import { SpawnSetSecondForm } from "./beetle/spawn-set/spawn-set-second-form";
 import { SpawnSetHistoryCards } from "./beetle/spawn-set/spawn-set-history-cards";
@@ -1007,7 +1008,7 @@ export function BeetleManager() {
     };
   }, [entries, getSortValue, mainSortConfig, selectedFolderKey]);
 
-  const selectedFolderEntries = selectedFolder?.entries ?? [];
+  const selectedFolderEntries = selectedFolder?.entries.filter((entry) => entry.type === activeTab) ?? [];
   const selectedFolderSelectedCount = selectedFolderEntries.filter(entry => selectedIds.includes(entry.id)).length;
   const isAllSelectedInFolder = selectedFolderEntries.length > 0 && selectedFolderSelectedCount === selectedFolderEntries.length;
 
@@ -2276,6 +2277,9 @@ export function BeetleManager() {
                               onEditSet={(spawnEntry, set) => handleEditSet(spawnEntry.id, set)}
                               onDeleteSet={(spawnEntry, setId) => handleDeleteSet(spawnEntry.id, setId)}
                             />
+                          )}
+                          {entry.type === "幼虫" && !isSelectionMode && (
+                            <LarvaHistoryCards entry={entry as LarvaBeetle} />
                           )}
                         </div>
                       </div>

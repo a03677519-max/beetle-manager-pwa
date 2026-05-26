@@ -159,8 +159,11 @@ export function EntryCard({
   linkedEntries?: BeetleEntry[];
   onNavigateLinkedEntry?: (entry: BeetleEntry) => void;
 }) {
-  const logs = entry.type === "幼虫" ? entry.logs : [];
-  const latestWeight = logs.length > 0 ? logs[0].weight : null;
+  const logs = useMemo(() => entry.type === "幼虫"
+    ? [...entry.logs].sort((a, b) => (b.date || "").localeCompare(a.date || ""))
+    : [], [entry]);
+  const latestLog = logs[0];
+  const latestWeight = latestLog ? latestLog.weight : null;
   const prevWeight = logs.length > 1 ? logs[1].weight : null;
   const weightDiff = latestWeight && prevWeight ? latestWeight - prevWeight : 0;
 
@@ -175,13 +178,24 @@ export function EntryCard({
     return { eggs: primaryEggs + historyEggs, larvae: primaryLarvae + historyLarvae };
   }, [entry]);
 
-  // エサ交換アラート（信号機）
-  const lastLogDate = logs.length > 0 ? logs[0].date : entry.createdAt;
-  const range = getDaysRange(lastLogDate, today());
+  const latestSpawnSetDate = useMemo(() => {
+    if (entry.type !== "産卵セット") return "";
+    const spawnSet = entry as SpawnSet;
+    return [spawnSet.setDate, ...(spawnSet.sets || []).map((set) => set.setDate)]
+      .filter((date): date is string => !!date)
+      .sort((a, b) => b.localeCompare(a))[0] || "";
+  }, [entry]);
+
+  const exchangeRange = latestLog?.date ? getDaysRange(latestLog.date, today()) : null;
+  const hatchRange = entry.type === "幼虫" && entry.hatchDate ? getDaysRange(entry.hatchDate, today()) : null;
+  const spawnSetStartRange = latestSpawnSetDate ? getDaysRange(latestSpawnSetDate, today()) : null;
+  const adultEmergenceRange = entry.type === "成虫" && entry.emergenceDate
+    ? getDaysRange(entry.emergenceDate, today())
+    : null;
   
   // 曖昧な日付の場合は「最大日数（最も時間が経過している可能性）」を基準に色を決定し
   // メンテナンスの遅れ（通知の見逃し）を防ぎます。
-  const diffDays = range?.max ?? 0;
+  const diffDays = exchangeRange?.max ?? 0;
 
   let dateColor = "text-[#FF9800]"; // 明るいオレンジ (既に暖色)
   if (diffDays >= 90) dateColor = "text-[#E74C3C]"; // 赤
@@ -295,14 +309,14 @@ export function EntryCard({
                 {(entry as any).deathDate && <div className="text-red-500 break-words"><span className="text-muted">死亡日:</span> {(entry as any).deathDate.replace(/-/g, "/")}</div>}
               </div>
             )}
-            {entry.type === "幼虫" && logs[0] && (
+            {entry.type === "幼虫" && latestLog && (
               <div className="min-w-0 text-[11px] font-bold text-gray-600 bg-gray-50/80 p-2 rounded-xl mb-2 border border-gray-100">
                 <div className="flex min-w-0 flex-wrap gap-x-2 gap-y-0.5 mb-0.5">
-                  <span className="min-w-0 break-words">{logs[0].substrate}</span>
-                  <span className="shrink-0">{logs[0].bottleSize}</span>
+                  <span className="min-w-0 break-words">{latestLog.substrate}</span>
+                  <span className="shrink-0">{latestLog.bottleSize}</span>
                 </div>
                 <div className="text-[9px] text-gray-400 font-normal leading-snug break-words">
-                  水:{logs[0].moisture} 圧:{logs[0].pressure} 温:{logs[0].temperature || "-"}℃ ステージ:{logs[0].stage}
+                  水:{latestLog.moisture} 圧:{latestLog.pressure} 温:{latestLog.temperature || "-"}℃ ステージ:{latestLog.stage}
                 </div>
               </div>
             )}
@@ -327,11 +341,32 @@ export function EntryCard({
                 })()}
               </div>
             )}
-            <div className={`text-[11px] font-bold mt-1 break-words ${dateColor}`}>
-              {range 
-                ? (range.min === range.max ? `${range.min}日前に交換` : `${range.min}〜${range.max}日前に交換`)
-                : "今日交換"}
-            </div>
+            {entry.type === "成虫" ? (
+              adultEmergenceRange && (
+                <div className="text-[11px] font-bold mt-1 break-words text-[#FF9800]">
+                  羽化から{adultEmergenceRange.min === adultEmergenceRange.max ? adultEmergenceRange.min : `${adultEmergenceRange.min}〜${adultEmergenceRange.max}`}日経過
+                </div>
+              )
+            ) : entry.type === "産卵セット" ? (
+              spawnSetStartRange && (
+                <div className="text-[11px] font-bold mt-1 break-words text-[#EF6C00]">
+                  前回セット開始から{spawnSetStartRange.min === spawnSetStartRange.max ? spawnSetStartRange.min : `${spawnSetStartRange.min}〜${spawnSetStartRange.max}`}日
+                </div>
+              )
+            ) : (
+              <div className="mt-1 flex min-w-0 flex-wrap gap-1.5">
+                {exchangeRange && (
+                  <span className={`rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-black ${dateColor}`}>
+                    交換から{exchangeRange.min === exchangeRange.max ? exchangeRange.min : `${exchangeRange.min}〜${exchangeRange.max}`}日
+                  </span>
+                )}
+                {hatchRange && (
+                  <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-black text-emerald-700">
+                    ふ化から{hatchRange.min === hatchRange.max ? hatchRange.min : `${hatchRange.min}〜${hatchRange.max}`}日
+                  </span>
+                )}
+              </div>
+            )}
           </dl>
           
           {latestWeight && (
