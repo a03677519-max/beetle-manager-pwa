@@ -941,10 +941,41 @@ export function BeetleManager() {
       });
   }, [filteredEntries, getSortValue, mainSortConfig]);
 
-  const selectedFolder = useMemo(
-    () => groupedEntries.find(g => g.key === selectedFolderKey) ?? null,
-    [groupedEntries, selectedFolderKey],
-  );
+  const selectedFolder = useMemo(() => {
+    if (!selectedFolderKey) return null;
+
+    // フォルダ詳細を開いている最中に産卵セットが「終了」扱いになると、
+    // active フィルターから外れて groupedEntries から消え、続けて次セットを登録できなくなる。
+    // 詳細画面内では現在のフィルターに依存せず、同じ学名×和名のデータを表示し続ける。
+    const folderEntries = entries.filter((entry) => {
+      const sci = (entry.scientificName || "学名未設定").trim() || "学名未設定";
+      const jpn = (entry.japaneseName || "和名未設定").trim() || "和名未設定";
+      const key = `${encodeURIComponent(sci)}::${encodeURIComponent(jpn)}`;
+      return key === selectedFolderKey;
+    });
+
+    if (folderEntries.length === 0) return null;
+    return {
+      key: selectedFolderKey,
+      scientificName: (folderEntries[0].scientificName || "学名未設定").trim() || "学名未設定",
+      japaneseName: (folderEntries[0].japaneseName || "和名未設定").trim() || "和名未設定",
+      entries: [...folderEntries].sort((a, b) => {
+        const primaryCmp = getSortValue(a, mainSortConfig.primary.key).toString().localeCompare(
+          getSortValue(b, mainSortConfig.primary.key).toString(),
+          "ja",
+          { numeric: true },
+        );
+        if (primaryCmp !== 0) return mainSortConfig.primary.direction === "asc" ? primaryCmp : -primaryCmp;
+
+        const secondaryCmp = getSortValue(a, mainSortConfig.secondary.key).toString().localeCompare(
+          getSortValue(b, mainSortConfig.secondary.key).toString(),
+          "ja",
+          { numeric: true },
+        );
+        return mainSortConfig.secondary.direction === "asc" ? secondaryCmp : -secondaryCmp;
+      }),
+    };
+  }, [entries, getSortValue, mainSortConfig, selectedFolderKey]);
 
   const selectedFolderEntries = selectedFolder?.entries ?? [];
   const selectedFolderSelectedCount = selectedFolderEntries.filter(entry => selectedIds.includes(entry.id)).length;

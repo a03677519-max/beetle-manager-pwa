@@ -30,6 +30,7 @@ export function EntryDetail({
 }) {
   const startEditing = useBeetleStore((state) => state.startEditing);
   const deleteEntry = useBeetleStore((state) => state.deleteEntry);
+  const entries = useBeetleStore((state) => state.entries);
 
   const copyToClipboard = () => {
     const e = entry as any;
@@ -231,7 +232,7 @@ export function EntryDetail({
             {entry.type === "産卵セット" ? (
               <SpawnSetDetail 
                 entry={entry} 
-                allEntries={useBeetleStore((state) => state.entries)}
+                allEntries={entries}
                 onAddSecondSet={onAddSecondSet || (() => {})} 
                 onDeleteSet={onDeleteSet || (() => {})}
                 onEditSet={onEditSet || (() => {})}
