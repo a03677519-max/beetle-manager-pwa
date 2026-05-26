@@ -25,6 +25,7 @@ export function SpawnSetForm({
   onEndDateTypeChange,
   id,
   className,
+  isEditingHistory = false, // 追加
 }: {
   initialValues: SpawnSetFormValues;
   onSubmit: (value: SpawnSetFormValues) => void;
@@ -36,6 +37,7 @@ export function SpawnSetForm({
   onEndDateTypeChange?: (type: "割出" | "掘出") => void;
   id?: string;
   className?: string;
+  isEditingHistory?: boolean; // 追加
 }) {
   const [values, setValues] = useState<SpawnSetFormValues>(initialValues);
   const valuesRef = useRef(values);
@@ -162,8 +164,11 @@ export function SpawnSetForm({
         event.preventDefault();
         const isFinished = isSpawnSetFinished(valuesRef.current);
         if (isFinished) {
-          if (window.confirm("産卵セットを終了しますか？終了すると以後の記録ができなくなります。")) {
+          const result = window.confirm("産卵を終了しますか？\n[OK]:終了する\n[キャンセル]:次のセット登録へ進む");
+          if (result) {
             onSubmit(valuesRef.current);
+          } else {
+            onSubmit({ ...valuesRef.current, proceedToNextSet: true } as SpawnSetFormValues);
           }
         } else {
           onSubmit(valuesRef.current);
@@ -187,92 +192,104 @@ export function SpawnSetForm({
           onChange={updateValues}
         />
 
-        <div className="grid grid-cols-2 gap-3">
-          <DateRollField
-            label="開始日"
-            value={values.setDate || ""}
-            onChange={(value) => setValues((prev) => ({ ...prev, setDate: value }))}
-          />
-          <DateRollField
-            label={endDateType === '割出' ? '割出日' : '掘り出し日'}
-            value={values.setEndDate || ""}
-            onChange={(value) => setValues((prev) => ({ ...prev, setEndDate: value }))}
-          />
-        </div>
+        {!isEditingHistory && (
+          <>
+            <div className="grid grid-cols-2 gap-3">
+              <DateRollField
+                label="開始日"
+                value={values.setDate || ""}
+                onChange={(value) => setValues((prev) => ({ ...prev, setDate: value }))}
+              />
+              <DateRollField
+                label={endDateType === '割出' ? '割出日' : '掘り出し日'}
+                value={values.setEndDate || ""}
+                onChange={(value) => setValues((prev) => ({ ...prev, setEndDate: value }))}
+              />
+            </div>
+            <label className="flex items-center gap-2 text-xs font-bold text-gray-500 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={!!values.setEndDate && values.setEndDate !== "-"}
+                onChange={(e) => setValues((prev) => ({ ...prev, setEndDate: e.target.checked ? today() : "" }))}
+              />
+              産卵を終了する
+            </label>
 
-        <div className="grid grid-cols-2 gap-3">
-          <BottomSheetInput
-            label="使用マット"
-            value={values.substrate || ""}
-            placeholder="例: クヌギマット"
-            suggestions={suggestions.container}
-            onNext={focusNextField}
-            onChange={(val) => setValues((prev) => ({ ...prev, substrate: val }))}
-          />
-          <BottomSheetInput
-            label="容器サイズ"
-            value={values.containerSize || ""}
-            placeholder="例: 2000cc"
-            onNext={focusNextField}
-            suggestions={suggestions.container}
-            onChange={(val) => setValues((prev) => ({ ...prev, containerSize: val }))}
-          />
-        </div>
-        <BottomSheetInput
-          label="詰圧"
-          value={values.pressure || ""}
-          placeholder="例: 硬め / 3"
-          onNext={focusNextField}
-          onChange={(val) => setValues((prev) => ({ ...prev, pressure: val }))}
-        />
-        <MoistureField
-          value={values.moisture || 3}
-          onNext={focusNextField}
-          onChange={(value) => setValues((prev) => ({ ...prev, moisture: value }))}
-        />
-      <SwitchBotTemperatureField
-        value={values.temperature}
-        suggestions={suggestions.temperature}
-        onChange={(value) => setValues({ ...values, temperature: value })}
-        onNext={focusNextField}
-        onFetch={() =>
-          onFetchTemperature((value) =>
-            setValues((current) => ({ ...current, temperature: value }))
-          )
-        }
-        isFetching={isFetchingTemperature}
-      />
-      <CohabitationField
-        value={values.cohabitation}
-        onNext={focusNextField}
-        onChange={(value) => setValues({ ...values, cohabitation: value })}
-      />
+            <div className="grid grid-cols-2 gap-3">
+              <BottomSheetInput
+                label="使用マット"
+                value={values.substrate || ""}
+                placeholder="例: クヌギマット"
+                suggestions={suggestions.container}
+                onNext={focusNextField}
+                onChange={(val) => setValues((prev) => ({ ...prev, substrate: val }))}
+              />
+              <BottomSheetInput
+                label="容器サイズ"
+                value={values.containerSize || ""}
+                placeholder="例: 2000cc"
+                onNext={focusNextField}
+                suggestions={suggestions.container}
+                onChange={(val) => setValues((prev) => ({ ...prev, containerSize: val }))}
+              />
+            </div>
+            <BottomSheetInput
+              label="詰圧"
+              value={values.pressure || ""}
+              placeholder="例: 硬め / 3"
+              onNext={focusNextField}
+              onChange={(val) => setValues((prev) => ({ ...prev, pressure: val }))}
+            />
+            <MoistureField
+              value={values.moisture || 3}
+              onNext={focusNextField}
+              onChange={(value) => setValues((prev) => ({ ...prev, moisture: value }))}
+            />
+            <SwitchBotTemperatureField
+              value={values.temperature}
+              suggestions={suggestions.temperature}
+              onChange={(value) => setValues({ ...values, temperature: value })}
+              onNext={focusNextField}
+              onFetch={() =>
+                onFetchTemperature((value) =>
+                  setValues((current) => ({ ...current, temperature: value }))
+                )
+              }
+              isFetching={isFetchingTemperature}
+            />
+            <CohabitationField
+              value={values.cohabitation}
+              onNext={focusNextField}
+              onChange={(value) => setValues({ ...values, cohabitation: value })}
+            />
 
-      <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-50">
-        <BottomSheetInput
-          label="割出卵数"
-          value={values.eggCount ?? ""}
-          placeholder="例: 15"
-          onNext={focusNextField}
-          onChange={(val) => setValues((prev) => ({ ...prev, eggCount: parseInt(val) || 0 }))}
-        />
-        <BottomSheetInput
-          label="割出幼虫数"
-          value={values.larvaCount ?? ""}
-          placeholder="例: 10"
-          onNext={focusNextField}
-          onChange={(val) => setValues((prev) => ({ ...prev, larvaCount: parseInt(val) || 0 }))}
-        />
-      </div>
+            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-50">
+              <BottomSheetInput
+                label="割出卵数"
+                value={values.eggCount ?? ""}
+                placeholder="例: 15"
+                onNext={focusNextField}
+                onChange={(val) => setValues((prev) => ({ ...prev, eggCount: parseInt(val) || 0 }))}
+              />
+              <BottomSheetInput
+                label="割出幼虫数"
+                value={values.larvaCount ?? ""}
+                placeholder="例: 10"
+                onNext={focusNextField}
+                onChange={(val) => setValues((prev) => ({ ...prev, larvaCount: parseInt(val) || 0 }))}
+              />
+            </div>
 
-      <BottomSheetInput
-        label="メモ / 備考"
-        value={values.memo || ""}
-        type="textarea"
-        placeholder="セットの様子や親個体の状態など"
-        onNext={focusNextField}
-        onChange={(val) => setValues({ ...values, memo: val })}
-      />
+            <BottomSheetInput
+              label="メモ / 備考"
+              value={values.memo || ""}
+              type="textarea"
+              placeholder="セットの様子や親個体の状態など"
+              onNext={focusNextField}
+              onChange={(val) => setValues({ ...values, memo: val })}
+            />
+          </>
+        )}
 
         {/* ナビゲーションバー回避用のスペーサー */}
         <div className="h-32" />
