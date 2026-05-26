@@ -800,6 +800,36 @@ export function BeetleManager() {
   }, [setSelectedType, startEditing]);
 
   const mainViewTabs = useMemo(() => ["成虫", "幼虫", "産卵セット", "分析", "タスク"], []);
+  const handleStatusFilterSwipe = useCallback((direction: "next" | "prev") => {
+    if (activeTab === "成虫") {
+      const filters = ["active", "deceased", "sold"] as const;
+      const currentIndex = filters.indexOf(adultFilter);
+      const nextIndex = direction === "next" ? currentIndex + 1 : currentIndex - 1;
+      if (nextIndex < 0 || nextIndex >= filters.length) return false;
+      setAdultFilter(filters[nextIndex]);
+      return true;
+    }
+
+    if (activeTab === "幼虫") {
+      const filters = ["active", "emerged", "deceased", "sold"] as const;
+      const currentIndex = filters.indexOf(larvaFilter);
+      const nextIndex = direction === "next" ? currentIndex + 1 : currentIndex - 1;
+      if (nextIndex < 0 || nextIndex >= filters.length) return false;
+      setLarvaFilter(filters[nextIndex]);
+      return true;
+    }
+
+    if (activeTab === "産卵セット") {
+      const filters = ["active", "finished"] as const;
+      const currentIndex = filters.indexOf(spawnSetFilter);
+      const nextIndex = direction === "next" ? currentIndex + 1 : currentIndex - 1;
+      if (nextIndex < 0 || nextIndex >= filters.length) return false;
+      setSpawnSetFilter(filters[nextIndex]);
+      return true;
+    }
+
+    return false;
+  }, [activeTab, adultFilter, larvaFilter, spawnSetFilter]);
   const activeTheme = useMemo(() => {
     if (activeTab === "幼虫") {
       return {
@@ -2021,15 +2051,20 @@ export function BeetleManager() {
 
               const swipeThreshold = 50;
               const velocityThreshold = 400;
+              const isSwipeLeft = info.offset.x < -swipeThreshold || info.velocity.x < -velocityThreshold;
+              const isSwipeRight = info.offset.x > swipeThreshold || info.velocity.x > velocityThreshold;
 
-              if (info.offset.x < -swipeThreshold || info.velocity.x < -velocityThreshold) {
+              if (isSwipeLeft && handleStatusFilterSwipe("next")) return;
+              if (isSwipeRight && handleStatusFilterSwipe("prev")) return;
+
+              if (isSwipeLeft) {
                 // 左にスワイプ -> 次のカテゴリ（タブ）へ
                 if (currentIndex < mainViewTabs.length - 1) {
                   const next = mainViewTabs[currentIndex + 1];
                   setActiveTab(next);
                   handleTabChange(next);
                 }
-              } else if (info.offset.x > swipeThreshold || info.velocity.x > velocityThreshold) {
+              } else if (isSwipeRight) {
                 // 右にスワイプ -> 前のカテゴリ（タブ）へ
                 if (currentIndex > 0) {
                   const prev = mainViewTabs[currentIndex - 1];
