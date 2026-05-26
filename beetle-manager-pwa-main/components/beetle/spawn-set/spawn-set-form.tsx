@@ -12,6 +12,7 @@ import {
 import type { AdultBeetle, BeetleEntry, SpawnSetFormValues } from "@/types/beetle";
 import { EntryBaseFields } from "@/components/beetle/shared/entry-base-fields";
 import { today, addDays } from "@/types/utils";
+import { isSpawnSetFinished } from "@/types/utils";
 
 export function SpawnSetForm({
   initialValues,
@@ -159,7 +160,14 @@ export function SpawnSetForm({
       className={`flex flex-col h-auto overflow-hidden touch-pan-y ${className || ''}`}
       onSubmit={(event) => {
         event.preventDefault();
-        onSubmit(valuesRef.current);
+        const isFinished = isSpawnSetFinished(valuesRef.current);
+        if (isFinished) {
+          if (window.confirm("産卵セットを終了しますか？終了すると以後の記録ができなくなります。")) {
+            onSubmit(valuesRef.current);
+          }
+        } else {
+          onSubmit(valuesRef.current);
+        }
       }}
     >
       <div className="flex-1 overflow-y-auto px-1 space-y-2 mb-2 overscroll-contain">
